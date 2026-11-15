@@ -1,107 +1,107 @@
-# HA/DR basics - RPO, RTO and choosing a strategy
+# Noções básicas de HA/DR - RPO, RTO e escolher uma estratégia
 
-> **Exam skills:** Recommend HA/DR strategy based on RPO/RTO requirements, Evaluate Azure-specific HA/DR solutions
-> **Reading time:** ~9 min
+> **Habilidades cobradas:** Recomendar a estratégia HA/DR com base nos requisitos RPO / RTO, Avaliar soluções HA/DR específicas do Azure
+> **Tempo de leitura:** ~9 min
 
-## The big idea
-Before you pick any HA/DR tool, the business must answer two questions. How long can we be down? How much data can we lose? The answers are the **RTO** and the **RPO**. The tool you pick must meet both, at a cost the business accepts.
+## Conceito central
+Antes de escolher qualquer ferramenta HA/DR, a empresa deve responder a duas perguntas. Quanto tempo podemos ficar para baixo? Quantos dados podemos perder? As respostas são o **RTO** e o **RPO**. A ferramenta que você escolhe deve atender a ambos, a um custo que a empresa aceita.
 
-Think of a pizza shop. If the oven breaks, how long can the shop stay closed (RTO)? If the order book burns, how many orders can it forget (RPO)?
+Pense em uma pizzaria. Se o forno quebrar, quanto tempo a loja pode ficar fechada (RTO)? Se o livro de pedidos queimar, quantas ordens ele pode esquecer (RPO)?
 
-## RTO - recovery time objective
-- **RTO** = the **longest time** the system may be down after a failure.
-- Question it answers: "How long can the business afford to be down?"
-- It can be set for a whole system or for one part (one instance, one database).
-- The **slowest part sets the real RTO**. If the database is back in 5 minutes but the app server needs 20 minutes, the total RTO is 20 minutes.
+## RTO - objetivo de tempo de recuperação
+- **RTO** = the **tempo mais longo** O sistema pode estar desligado após uma falha.
+- A pergunta responde: "Quanto tempo a empresa pode se dar ao luxo de ficar para baixo?"
+- Pode ser definido para um sistema inteiro ou para uma parte (uma instância, um banco de dados).
+- O **A parte mais lenta define o verdadeiro RTO**. Se o banco de dados estiver de volta em 5 minutos, mas o servidor do aplicativo precisar de 20 minutos, o total RTO São 20 minutos.
 
-**Example:** An online ticket site has an RTO of 30 minutes. A server fails at 9:00. The site must be working again by 9:30.
+**Exemplo:** Um site de ingressos online tem um RTO de 30 minutos. Um servidor falha às 9:00. O site deve estar funcionando novamente às 9:30.
 
-## RPO - recovery point objective
-- **RPO** = the **most data, measured in time**, you may lose.
-- Question it answers: "How much data loss is acceptable?"
-- Your **backup or copy frequency** limits your RPO. If log backups run every 30 minutes, your RPO can't be better than 30 minutes.
+## RPO - objetivo do ponto de recuperação
+- **RPO** = the **A maioria dos dados, medidos no tempo**Você pode perder.
+- Pergunta responde: "Quanta perda de dados é aceitável?"
+- O seu **backup ou frequência de cópia** limita o seu RPO. Se o registro backups correr a cada 30 minutos, o seu RPO não pode ser melhor do que 30 minutos.
 
-**Example:** A bank app has an RPO of 15 minutes. A failure hits at 10:00. The data must be restorable to 9:45 or later. Payments made between 9:45 and 10:00 might be lost.
+**Exemplo:** Um aplicativo bancário tem um RPO de 15 minutos. Uma falha atinge as 10:00. Os dados devem ser reembolsáveis às 9:45 ou mais tarde. Os pagamentos feitos entre 9:45 e 10:00 podem ser perdidos.
 
-## How to set RTO and RPO
-- **Business needs drive them.** If an hour of downtime costs $10,000, a faster (more expensive) solution is worth it.
-- **Balance cost and risk.** Zero downtime and zero data loss are very expensive and often not practical.
-- **Be realistic.** If a restore takes 3 hours but the RTO is 2 hours, the plan fails.
-- **Write them down, test them and review them** regularly.
+## Como definir RTO e RPO
+- **Os requisitos do negócio orientam essa escolha.** Se uma hora de downtime custar US$ 10.000, pode valer a pena investir em uma solução mais rápida e mais cara.
+- O tempo de inatividade **Equilíbrio custo e risco.** Zero e a perda zero de dados são muito caros e muitas vezes não práticos.
+- **Use metas realistas.** Se o restore leva 3 horas e o RTO é de 2 horas, o plano não atende à meta.
+- **Anote-os, teste-os e revise-os** regularmente.
 
 ## HA vs DR
-| | High availability (HA) | Disaster recovery (DR) |
+| | Alta disponibilidade (HA) | Recuperação de desastres (DR) |
 |---|---|---|
-| Protects against | One server, disk or datacenter failing | A whole site or region failing |
-| Where the copy lives | Same region (same datacenter or another zone) | Another region (or on-premises to Azure) |
-| Typical RTO/RPO | Seconds to minutes | Minutes to hours |
-| Example | Failover to another node in the same region | Switch to a copy in another region |
+| Protege contra | Um servidor, disco ou datacenter falhando | Todo um site ou região falhando |
+| Onde mora a cópia | mesma região (mesma data center ou outra zona) | Outra região (ou on-premises para Azure) |
+| Típico RTO / RPO | Segundos a minutos | Minutos a horas |
+| Exemplo | Failover para outro nó na mesma região | Mudar para uma cópia em outra região |
 
-**Example:** A shop app has two copies in West Europe zones (HA) and one more copy in North Europe (DR). A zone power cut uses the HA copy. A full regional outage uses the DR copy.
+**Exemplo:** Um aplicativo de loja tem duas cópias nas zonas da Europa Ocidental (HA) e mais uma cópia no Norte da Europa (DR). Um corte de energia de zona usa a cópia HA. Uma interrupção regional completa usa a cópia DR.
 
-Backups are not HA. They are the **last line of defence** against mistakes, bugs, ransomware and disasters. You need them even when you have HA and DR.
+Backups não são HA. Eles são o **last line of defence** contra erros, bugs, ransomware e desastres. Você precisa deles mesmo quando você tem HA e DR.
 
-## IaaS vs PaaS - who does the work
-| | IaaS: SQL Server on Azure VM | PaaS: Azure SQL Database / Managed Instance |
+## IaaS vs PaaS - quem faz o trabalho
+| | IaaS: SQL Server em Azure VM | PaaS: Azure SQL Database / Managed Instance |
 |---|---|---|
-| Who manages SQL Server and OS | You | Microsoft |
-| HA | You build it (AG, FCI) plus availability sets/zones | Built in, automatic |
-| DR | You build it (AG, distributed AG, log shipping, Site Recovery) | You turn it on (geo-replication, failover groups) |
-| Backups | You set them up | Automatic |
-| Control | Full | Limited, but much less work |
+| Quem gerencia SQL Server e OS | Você | Microsoft |
+| HA | Você o constrói (AG, FCI) mais conjuntos de disponibilidade / zonas | Construído em, automático |
+| DR | Você o constrói (AG, distribuído AG, log shipping, Recuperação de Site) | Você liga (geo-replication, failover groups) |
+| Backups | Você os criou | Automático |
+| Controle | Completo | Limitado, mas muito menos trabalho |
 
-**Example:** A company with an old app that needs SQL Server Agent jobs and instance-level settings may pick a VM and build an AG. A new SaaS app picks Azure SQL Database and simply adds a failover group.
+**Exemplo:** Uma empresa com um aplicativo antigo que precisa de SQL Server Agent jobs e configurações de nível de instância pode escolher um VM e construir um AG. Um novo aplicativo SaaS escolhe Azure SQL Database e simplesmente adiciona um failover group.
 
-## Choosing a strategy
-| If you need... | Pick |
+## Escolhendo uma estratégia
+| Se você precisar... | Escolha |
 |---|---|
-| HA for a whole SQL Server instance (logins, jobs, everything) on VMs | **Failover cluster instance (FCI)** |
-| Fast HA for some databases, with readable copies, on VMs | **Always On availability group (AG)** |
-| Cheap, simple DR with manual failover | **Log shipping** |
-| DR between regions or clusters for VMs | **AG across regions** or **distributed AG** |
-| Simple DR for whole VMs, not SQL-aware | **Azure Site Recovery** |
-| Survive a datacenter failure for VMs | **Availability zones** |
-| Survive host hardware/maintenance in one datacenter | **Availability sets** |
-| PaaS HA in one region | **Built-in HA**, add **zone redundancy** |
-| PaaS DR, readable copies, Azure SQL Database only | **Active geo-replication** |
-| PaaS DR, several databases together, no connection string change | **Failover group** |
-| Fix human error (deleted rows) | **Point-in-time restore** |
-| Keep backups for years (compliance) | **Long-term retention (LTR)** |
+| HA para uma instância SQL Server inteira (logins, jobs, tudo) no VMs | **Failover cluster instance (FCI)** |
+| HA rápido para algumas bancos de dados, com cópias legíveis, em VMs | **Always On availability group (AG)** |
+| DR simples e barato com manual failover | **Log shipping** |
+| DR entre regiões ou clusters para VMs | **AG entre regiões** ou **distribuído AG** |
+| DR simples para VMs inteiro, não SQL -ciente | **Azure Site Recovery** |
+| Sobreviver a uma falha do datacenter para VMs | **Availability zones** |
+| Sobreviver a hardware/manutenção de host em um datacenter | **Conjuntos de disponibilidade** |
+| PaaS HA em uma região | **Built-in HA**, adicione **redundância de zona** |
+| PaaS DR, cópias legíveis, Azure SQL Database apenas | **Active geo-replication** |
+| PaaS DR, várias bancos de dados em conjunto, nenhuma mudança connection string | **Failover group** |
+| Corrigir erro humano (linhas excluídas) | **Point-in-time restore** |
+| Mantenha backups por anos (conformidade) | **Long-term retention (LTR)** |
 
-**Example:** An e-commerce site needs RPO of 5 minutes and RTO of 10 minutes on Azure SQL Database. Automatic log backups give PITR. A failover group gives fast regional DR without changing the app's connection string.
+**Exemplo:** Um site de comércio eletrônico precisa de RPO de 5 minutos e RTO de 10 minutos em Azure SQL Database. log automático backups dar PITR. A failover group dá DR regional rápido sem alterar o connection string do aplicativo.
 
-## From requirement to design: three worked cases
-Read the requirement words in a question and map them to a tool.
+## Da exigência ao design: três casos trabalhados
+Leia as palavras obrigatórias em uma pergunta e mapeie-as para uma ferramenta.
 
-**Case 1 - "lowest cost, a few hours of downtime is fine".** A small charity runs SQL Server on one Azure VM. RTO is 8 hours, RPO is 1 hour. Hourly log backups to Blob Storage (backup to URL) with geo-redundant storage are enough. A second always-running server would be wasted money.
+**Caso 1 - "o menor custo, algumas horas de inatividade é bom".** Uma pequena instituição de caridade executa SQL Server em uma Azure VM. RTO é de 8 horas, RPO é de 1 hora. Registro por hora backups a Blob Storage (backup a URL) com armazenamento geo-redundante são suficientes. Um segundo servidor sempre em execução seria desperdiçado dinheiro.
 
-**Case 2 - "near-zero data loss inside the region, automatic failover".** A hospital runs SQL Server on VMs. RPO is near zero and RTO is under a minute. Use an **AG with two synchronous replicas in two availability zones** and automatic failover. Add an async replica in another region for DR.
+**Caso 2 - "perda de dados quase zero dentro da região, automatic failover".** Um hospital corre SQL Server em VMs. RPO está perto de zero e RTO está abaixo de um minuto. Use um **AG com duas réplicas síncronas em dois availability zones** e automatic failover. Adicione uma réplica assíncrona em outra região para DR.
 
-**Case 3 - "minimal admin effort, regional DR, apps must not change".** A SaaS company uses Azure SQL Database. Use built-in HA plus **zone redundancy**, and a **failover group** to another region. Apps use the listener, so nothing changes after failover.
+**Caso 3 - "esforço mínimo de administração, DR regional, aplicativos não devem mudar".** Uma empresa de SaaS usa Azure SQL Database. Use o HA integrado mais **redundância de zona** e um **failover group** para outra região. Os aplicativos usam o listener, portanto, nada muda depois do failover.
 
-Key words to watch for:
-| Question says | Think |
+Palavras-chave a serem observadas:
+| Pergunta diz | Pensar |
 |---|---|
-| "minimise administrative effort" | PaaS built-in features |
-| "no data loss" | Synchronous commit, planned failover |
-| "minimise cost" | Log shipping, backups, LRS for non-critical |
-| "instance-level objects" | FCI or contained AG |
-| "without changing connection strings" | Failover group or AG listener |
+| "minimizar o esforço administrativo" | PaaS built-in características |
+| "sem perda de dados" | Commit síncrono, planned failover |
+| "custo mínimo" | Log shipping, backups, LRS para não-crítico |
+| "objetos de nível de instância" | FCI ou contido AG |
+| "sem alterar as cordas de conexão" | Failover group ou AG listener |
 
-## Remember for the exam
-- **RTO = time** to come back. **RPO = data** you can lose (in time).
-- Backup frequency limits RPO. Restore speed limits RTO.
-- The slowest component decides the real RTO.
+## Para lembrar na prova
+- **RTO = time** para voltar. **RPO = data** você pode perder (a tempo).
+- Limites de frequência Backup RPO. Limites de velocidade de restauração RTO.
+- O componente mais lento decide o RTO real.
 - HA = same region, short RTO. DR = other region, longer RTO.
-- IaaS: you build HA/DR. PaaS: HA is built in, you configure DR.
-- "Protect the whole instance" → FCI. "Protect some databases, readable copies" → AG.
-- "Cheapest DR, manual failover is OK" → log shipping.
-- "No connection string change after failover" → failover group.
+- IaaS: você constrói HA/DR. PaaS: HA está embutido, você configura DR.
+- "Proteger toda a instância" → FCI. "Proteger algumas bancos de dados, cópias legíveis" → AG.
+- "Mais barato DR, manual failover é OK " → log shipping.
+- "Nenhuma mudança connection string após failover " → failover group.
 
-## Quick check
-1. Log backups run every hour. The business asks for an RPO of 10 minutes. Is the plan good?
-   <details><summary>Answer</summary>No. Up to one hour of data could be lost. Take log backups at least every 10 minutes, or use a replica.</details>
-2. A database recovers in 5 minutes but the web tier takes 25 minutes to restart. What is the real RTO?
-   <details><summary>Answer</summary>25 minutes. The slowest part sets the RTO.</details>
-3. You need HA for SQL Server on VMs in one region and must also keep logins and Agent jobs together with the data. Which SQL feature protects the whole instance?
-   <details><summary>Answer</summary>A failover cluster instance (FCI). An AG protects databases only (unless it is a contained AG).</details>
+## Teste rápido
+1. Log backups correr a cada hora. O negócio pede um RPO de 10 minutos. O plano é bom?
+   <details><summary>Resposta</summary>Não. Até uma hora de dados pode ser perdido. Tome log backups pelo menos a cada 10 minutos, ou use uma réplica.</details>
+2. Um banco de dados recupera em 5 minutos, mas a camada web leva 25 minutos para reiniciar. Qual é o verdadeiro RTO?
+   <details><summary>Resposta</summary>25 minutos. A parte mais lenta define o RTO.</details>
+3. Você precisa de HA para SQL Server em VMs em uma região e também deve manter o logins e o Agente jobs junto com os dados. Qual recurso SQL protege toda a instância?
+   <details><summary>Resposta</summary>A failover cluster instance (FCI). An AG protege apenas os bancos de dados (a menos que seja um AG).</details>

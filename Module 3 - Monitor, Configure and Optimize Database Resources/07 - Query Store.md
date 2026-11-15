@@ -1,54 +1,54 @@
 # Query Store
 
-> **Exam skills:** Configure Query Store, Monitor by using Query Store
-> **Reading time:** ~8 min
+> **Habilidades cobradas:** Configurar Query Store, Monitorar usando Query Store
+> **Tempo de leitura:** ~8 min
 
-## The big idea
-Without Query Store, SQL Server keeps only the **current** plan of each query in memory, and it is lost on restart. **Query Store** is a recorder inside the database. It saves query text, every plan used, run-time numbers and waits, and keeps them **after restarts**. You can see when a query got slower and **force** the old, faster plan.
+## Conceito central
+Sem Query Store, SQL Server mantém apenas o plano **corrente** de cada consulta na memória, e ele é perdido no reinício. **Query Store** é um gravador dentro do banco de dados. Ele salva o texto da consulta, todos os planos usados, números de tempo de execução e esperas, e os mantém **após reinícios**. Você pode ver quando uma consulta ficou mais lenta e **força** o plano antigo e mais rápido.
 
-Think of a flight's black box. After a problem, you replay what happened and see exactly when things went wrong.
+Pense na caixa preta de um voo. Depois de um problema, você repete o que aconteceu e vê exatamente quando as coisas deram errado.
 
-## What Query Store saves
-| Store | Contents |
+## O que o Query Store salva
+| Loja | Sumário |
 |-------|----------|
-| **Plan store** | Query text and execution plans, including forced plans |
-| **Runtime stats store** | CPU, duration, reads, row counts per plan per time interval |
-| **Wait stats store** | Waits per query (I/O, locks, memory...) |
+| **Plan loja** | Texto de consulta e planos de execução, incluindo planos forçados |
+| **Runtime stats loja** | CPU, duração, leituras, contagem de linhas por plano por intervalo de tempo |
+| **loja Wait stats** | Esperas por consulta (I/O, fechaduras, memória...) |
 
-- Data is collected when a query first runs, recompiles, and on each run.
-- It is written to disk **asynchronously** (in the background), so the cost is small.
+- Os dados são coletados quando uma consulta é executada pela primeira vez, recompiles e em cada execução.
+- Está escrito no disco **assíncrona** (no fundo), então o custo é pequeno.
 
-## Turning it on
-- **On by default** in Azure SQL Database, Azure SQL Managed Instance and **new** databases in SQL Server 2022+.
-- In Azure SQL Database single and pooled databases it **cannot be turned off**.
-- In SQL Server 2016–2019 turn it on yourself:
+## Ligando-o
+- **Por padrão** em bancos de dados Azure SQL Database, Azure SQL Managed Instance e **Novo** em SQL Server 2022+.
+- In Azure SQL Database único e bancos de dados agrupados ele **não pode ser desligado**.
+- Em SQL Server 2016–2019 Vira-o sobre ti mesmo:
 
 ```sql
 ALTER DATABASE SalesDb SET QUERY_STORE = ON (OPERATION_MODE = READ_WRITE);
 ```
 
-## Operation modes
-| Mode | Meaning |
+## Modos de operação
+| Modo | Significado |
 |------|---------|
-| **READ_WRITE** | Normal: collects new data |
-| **READ_ONLY** | Stops collecting; you can still read old data |
-| **OFF** | Disabled |
+| **READ_WRITE** | Normal: coleta novos dados |
+| **READ_ONLY** | Para de coletar; você ainda pode ler dados antigos |
+| **OFF** | Deficientes |
 
-**Why does Query Store switch to READ_ONLY by itself?**
-- It reached **MAX_STORAGE_SIZE_MB** (most common).
-- Fix: raise the max size, turn on size-based cleanup, lower the stale query threshold, or capture fewer queries. Then set it back to READ_WRITE.
-- Check the current and desired mode in `sys.database_query_store_options` (`actual_state_desc`, `desired_state_desc`, `readonly_reason`).
+**Por que o Query Store muda para o READ_ONLY por si só?**
+- Alcançou o **MAX_STORAGE_SIZE_MB** (mais comum).
+- Fix: aumentar o tamanho máximo, ativar a limpeza baseada em tamanho, diminuir o limite de consulta obsoleto ou capturar menos consultas. Em seguida, defina-o de volta para READ_WRITE.
+- Verifique o modo atual e desejado em `sys.database_query_store_options` (`actual_state_desc`, `desired_state_desc`, `readonly_reason`).
 
-## Key settings (SQL Server 2019+ / Azure SQL DB defaults)
-| Setting | Default | Meaning |
+## Configurações de chave (padrão SQL Server 2019+ / Azure SQL DB)
+| Configuração | Padrão | Significado |
 |---------|---------|---------|
-| `OPERATION_MODE` | READ_WRITE | Collect or not |
-| `QUERY_CAPTURE_MODE` | **AUTO** (was ALL in 2016/2017) | AUTO skips tiny, rare queries; ALL catches everything; NONE catches no new queries; CUSTOM lets you set rules |
-| `MAX_STORAGE_SIZE_MB` | **1000** (was 100) | Size cap; when full → READ_ONLY |
-| `SIZE_BASED_CLEANUP_MODE` | AUTO | Deletes oldest data as it nears the cap |
-| `STALE_QUERY_THRESHOLD_DAYS` | **30** | How long to keep data |
-| `DATA_FLUSH_INTERVAL_SECONDS` | **900** (15 min) | How often memory data is written to disk |
-| `INTERVAL_LENGTH_MINUTES` | **60** | Size of each statistics time bucket |
+| `OPERATION_MODE` | READ_WRITE | Recolher ou não |
+| `QUERY_CAPTURE_MODE` | **AUTO** (era ALL em 2016/2017) | AUTO pula consultas pequenas e raras; ALL pega tudo; NONE não captura novas consultas; CUSTOM permite que você defina regras |
+| `MAX_STORAGE_SIZE_MB` | **1000** (era 100) | Tamanho máximo; quando → READ_ONLY completo |
+| `SIZE_BASED_CLEANUP_MODE` | AUTO | Apaga dados mais antigos à medida que se aproxima do limite |
+| `STALE_QUERY_THRESHOLD_DAYS` | **30** | Quanto tempo para manter os dados |
+| `DATA_FLUSH_INTERVAL_SECONDS` | **900** (15 min) | Com que frequência os dados de memória são gravados no disco |
+| `INTERVAL_LENGTH_MINUTES` | **60** | Tamanho de cada intervalo de tempo das estatísticas |
 
 ```sql
 ALTER DATABASE SalesDb SET QUERY_STORE (
@@ -58,35 +58,35 @@ ALTER DATABASE SalesDb SET QUERY_STORE (
     CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30));
 ```
 
-**Exam trap:** the **data flush interval** controls how often data is written to disk. The **statistics collection interval** (`INTERVAL_LENGTH_MINUTES`) only controls how runtime numbers are grouped. Questions about write pressure point to the **data flush interval**. Questions about Query Store becoming read-only because it is full point to **max size and cleanup**.
+**Armadilha do exame:** o **intervalo de dados flush** controla a frequência com que os dados são gravados no disco. O **intervalo de recolha de estatísticas** (`INTERVAL_LENGTH_MINUTES`) apenas controla como os números de tempo de execução são agrupados. Perguntas sobre o ponto de pressão de gravação para o **intervalo de dados flush**. Perguntas sobre o Query Store tornando-se read-only porque é ponto completo para **tamanho máximo e limpeza**.
 
-**Example:** A busy shop database's Query Store keeps going READ_ONLY every two weeks. `readonly_reason` shows it is full. The DBA raises MAX_STORAGE_SIZE_MB to 2048 and sets SIZE_BASED_CLEANUP_MODE = AUTO. It stays in READ_WRITE.
+**Exemplo:** Um banco de dados de loja ocupado Query Store continua READ_ONLY A cada duas semanas. `readonly_reason` mostra que está cheio. O DBA raises MAX_STORAGE_SIZE_MB até 2048 e sets SIZE_BASED_CLEANUP_MODE = AUTO. Permanece em READ_WRITE.
 
-**Query Store for readable secondaries** (preview): always on in Azure SQL Database and MI (Always-up-to-date policy); opt-in in SQL Server 2025 with `ALTER DATABASE ... FOR SECONDARY SET QUERY_STORE = ON`.
+**Query Store para secundários legíveis** (preview): always on em Azure SQL Database e MI (política sempre atualizada); opt-in em SQL Server 2025 com `ALTER DATABASE ... FOR SECONDARY SET QUERY_STORE = ON`.
 
-## Built-in reports (SSMS → database → Query Store)
-| Report | Use it to |
+## Relatórios integrados (banco de dados SSMS → → Query Store)
+| Relatório | Use-o para |
 |--------|-----------|
-| **Regressed Queries** | Find queries that got slower; compare old and new plans; **force** the old plan |
-| **Overall Resource Consumption** | See total CPU, duration, reads over time and drill into the cause |
-| **Top Resource Consuming Queries** | Find the top 25 most expensive queries |
-| **Queries With Forced Plans** | See and **unforce** forced plans |
-| **Queries With High Variation** | Find queries that are sometimes fast, sometimes slow (often parameter sniffing) |
-| **Query Wait Statistics** | See wait categories and the queries causing them |
-| **Tracked Queries** | Follow one query's history by its ID |
+| **Consultas Regressadas** | Encontre consultas que ficaram mais lentas; compare planos antigos e novos; **força** o plano antigo |
+| **Consumo global de recursos** | Ver CPU total, duração, lê ao longo do tempo e perfurar a causa |
+| **Top Resource Consumir Consultas** | Encontre as 25 consultas mais caras |
+| **Queries com planos forçados** | Ver e **unforce** planos forçados |
+| **Queries com alta variação** | Encontre consultas que às vezes são rápidas, às vezes lentas (muitas vezes parameter sniffing) |
+| **Query Wait Estatísticas** | Veja as categorias de espera e as consultas que as causam |
+| **Consultas Rastreadas** | Siga a história de uma consulta pelo seu ID |
 
-## Forcing and unforcing a plan
+## Forçar e abrir um plano
 ```sql
 EXEC sp_query_store_force_plan   @query_id = 73, @plan_id = 79;
 EXEC sp_query_store_unforce_plan @query_id = 73, @plan_id = 79;
 ```
 
-**Example:** After a statistics update, the monthly invoice procedure takes 12 seconds instead of 1. In **Regressed Queries**, the DBA sees plan 79 (old, 1 second) and plan 85 (new, 12 seconds). They force plan 79. The procedure is fast again while they look for the real cause.
+**Exemplo:** Após uma atualização estatística, o procedimento de fatura mensal leva 12 segundos em vez de 1. No **Consultas Regressadas**, o DBA vê o plano 79 (antigo, 1 segundo) e o plano 85 (novo, 12 segundos). Eles forçam o plano 79. O procedimento é rápido novamente enquanto procuram a causa real.
 
-Automatic tuning (lesson 5) can do the same thing for you with **FORCE_LAST_GOOD_PLAN**.
+Automatic tuning (lição 5) pode fazer a mesma coisa por você com **FORCE_LAST_GOOD_PLAN**.
 
 ## Query Store hints
-Sometimes you cannot change the query text, for example in a vendor app. **Query Store hints** attach a hint to a query **without changing its code**. Available in Azure SQL Database, MI and SQL Server 2022+.
+Às vezes, você não pode alterar o texto da consulta, como em um aplicativo de terceiros. Com **Query Store hints**, você aplica um hint a uma consulta **sem mudar seu código**. O recurso está disponível em Azure SQL Database, MI e SQL Server 2022+.
 
 ```sql
 -- 1. find the query_id
@@ -97,35 +97,35 @@ WHERE qt.query_sql_text LIKE N'%ORDER BY CustomerName DESC%';
 -- 2. add the hint
 EXEC sys.sp_query_store_set_hints @query_id = 42, @query_hints = N'OPTION(RECOMPILE, MAXDOP 1)';
 ```
-- See hints in `sys.query_store_query_hints`. Remove with `sys.sp_query_store_clear_hints @query_id = 42`.
-- Hints survive restarts and failovers.
-- They **override** hints written in the query and **plan guides**.
+- Veja dicas em `sys.query_store_query_hints`. Remova com `sys.sp_query_store_clear_hints @query_id = 42`.
+- As dicas sobrevivem a reinícios e failovers.
+- Eles **sobreposição** dicas escritas na consulta e **guias de plano**.
 
-**Example:** A vendor's billing app runs a hard-coded query that suffers from parameter sniffing. The company may not edit the app. The DBA adds a Query Store hint `OPTION(RECOMPILE)` to that query_id. The problem goes away and no code changed.
+**Exemplo:** O aplicativo de faturamento de um fornecedor executa uma consulta codificada que sofre de parameter sniffing. A empresa pode não editar o aplicativo. O DBA adiciona uma dica Query Store `OPTION(RECOMPILE)` a esse query_id. O problema desaparece e nenhum código mudou.
 
-## Catalog views to know
-| View | Shows |
+## Vistas de catálogo para saber
+| Ver | Mostra |
 |------|-------|
-| `sys.database_query_store_options` | Current settings and state |
-| `sys.query_store_query` / `sys.query_store_query_text` | Queries and their text |
-| `sys.query_store_plan` | Plans, including `is_forced_plan` |
-| `sys.query_store_runtime_stats` | Runtime numbers per interval |
-| `sys.query_store_wait_stats` | Waits per plan |
+| `sys.database_query_store_options` | Configurações atuais e estado |
+| `sys.query_store_query` / `sys.query_store_query_text` | Consultas e seu texto |
+| `sys.query_store_plan` | Planos, incluindo `is_forced_plan` |
+| `sys.query_store_runtime_stats` | Números de tempo de execução por intervalo |
+| `sys.query_store_wait_stats` | Esperas por plano |
 
-## Remember for the exam
-- Query Store is **on by default** in Azure SQL DB, MI and new SQL Server 2022+ databases. Turn it on with `SET QUERY_STORE = ON`.
-- Full → goes **READ_ONLY**. Fix with bigger **MAX_STORAGE_SIZE_MB** and **cleanup**.
-- Write-pressure question → **DATA_FLUSH_INTERVAL_SECONDS** (default 900), not the statistics interval.
-- Capture mode **AUTO** skips trivial queries; **ALL** catches everything.
-- Find slower queries → **Regressed Queries** report. Fix → **force the plan** with `sp_query_store_force_plan`.
-- Sometimes fast, sometimes slow → **Queries With High Variation**.
-- Cannot change app code → **Query Store hints** (`sp_query_store_set_hints`).
-- Automatic plan correction relies on Query Store.
+## Para lembrar na prova
+- Query Store é **por defeito** em Azure SQL DB, MI e novas bancos de dados SQL Server 2022+. Ligue-o com `SET QUERY_STORE = ON`.
+- → completo vai **READ_ONLY**. Corrigir com maior **MAX_STORAGE_SIZE_MB** e **limpeza**.
+- Questão de pressão de escrita → **DATA_FLUSH_INTERVAL_SECONDS** (padrão 900), não o intervalo de estatísticas.
+- O modo de captura **AUTO** pula consultas triviais; **Todos** captura tudo.
+- Encontre consultas mais lentas → **Consultas Regressadas** relatório. Corrigir → **forçar o plano** com `sp_query_store_force_plan`.
+- Sometimes fast, sometimes slow → **Queries com alta variação**.
+- Não é possível alterar o código do aplicativo → **Query Store hints** (`sp_query_store_set_hints`).
+- Automatic plan correction depende de Query Store.
 
-## Quick check
-1. Query Store in your database shows `actual_state_desc = READ_ONLY` and the reason is size. What do you do?
-   <details><summary>Answer</summary>Increase MAX_STORAGE_SIZE_MB and/or enable size-based cleanup and a shorter stale threshold, then set OPERATION_MODE back to READ_WRITE.</details>
-2. A procedure became slow after a deployment. You want the old plan back right away. What do you use?
-   <details><summary>Answer</summary>The Regressed Queries report to find the old plan, then force it (in SSMS or with sp_query_store_force_plan).</details>
-3. A third-party app sends a query you cannot edit, and it needs MAXDOP 1. How do you apply it?
-   <details><summary>Answer</summary>A Query Store hint: sys.sp_query_store_set_hints with N'OPTION(MAXDOP 1)' for that query_id.</details>
+## Teste rápido
+1. Query Store em seu banco de dados mostra `actual_state_desc = READ_ONLY` e a razão é tamanho. O que você faz?
+   <details><summary>Resposta</summary>Aumente MAX_STORAGE_SIZE_MB e/ou permita a limpeza baseada em tamanho e um limite mais curto e, em seguida, defina OPERATION_MODE de volta para READ_WRITE.</details>
+2. Um procedimento tornou-se lento após uma implantação. Você quer o plano antigo de volta imediatamente. O que você usa?
+   <details><summary>Resposta</summary>As Consultas Regressadas relatam para encontrar o plano antigo, em seguida, forçá-lo (em SSMS ou com sp_query_store_force_plan).</details>
+3. Um aplicativo de terceiros envia uma consulta que você não pode editar e precisa do MAXDOP 1. Como você aplica?
+   <details><summary>Resposta</summary>A Query Store dica: sys.sp_query_store_set_hints com N'OPTION(MAXDOP 1) para isso query_id.</details>

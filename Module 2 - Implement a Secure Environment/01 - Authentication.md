@@ -1,122 +1,122 @@
-# Authentication
+# Autenticação
 
-> **Exam skills:** Configure Microsoft Entra ID authentication for Azure SQL Database, Azure SQL Managed Instance, and SQL Server, Configure authentication for SQL on Azure VMs and Azure SQL Managed Instance
-> **Reading time:** ~10 min
+> **Habilidades cobradas:** Configurar autenticação Microsoft Entra ID para Azure SQL Database, Azure SQL Managed Instance e SQL Server, Configurar autenticação para SQL em Azure VMs e Azure SQL Managed Instance
+> **Tempo de leitura:** ~10 min
 
-## The big idea
-**Authentication** answers "Who are you?". **Authorization** answers "What are you allowed to do?". This lesson is about the first question. Think of an office building: the guard at the door checks your ID card (authentication). Your key card then opens only some rooms (authorization).
+## Conceito central
+**Autenticação** responde "Quem é você?". **Autorização** responde "O que você tem permissão para fazer?". Esta lição é sobre a primeira pergunta. Pense em um prédio de escritórios: o guarda na porta verifica seu cartão ID (autenticação). Seu cartão-chave, em seguida, abre apenas alguns quartos (autorização).
 
-## The two main ways to log in
-SQL Server and Azure SQL support two main kinds of login.
+## As duas principais maneiras de fazer login
+SQL Server e Azure SQL suportam dois tipos principais de login.
 
-- **SQL authentication.** A username and password stored **inside** SQL Server. Easy, but less secure. Each password must be managed by hand.
-- **Microsoft Entra ID authentication** (Entra ID was called Azure Active Directory, or Azure AD, before). Users log in with their company cloud account. This is the same account they use for the Azure portal and Microsoft 365.
-- **Windows authentication.** Used by on-premises SQL Server and SQL Server on Azure VMs. Users log in with their Windows (Active Directory) account. A VM can join the company Active Directory for single sign-on.
+- **SQL authentication.** Um nome de usuário e senha armazenados **dentro** SQL Server. Fácil, mas menos seguro. Cada senha deve ser gerenciada à mão.
+- **Autenticação Microsoft Entra ID** (Entra ID era chamado Azure Active Directory, ou Azure AD, antes). Os usuários fazem login com sua conta de nuvem da empresa. Esta é a mesma conta que eles usam para o Azure portal e Microsoft 365.
+- **Windows authentication.** Usado por on-premises SQL Server e SQL Server on Azure VMs. Os usuários fazem login com sua conta do Windows (Active Directory). Um VM pode se juntar à empresa Active Directory para logon único.
 
-Why Entra ID is better:
-- One place to manage people. If you **disable** a user in Entra ID, they lose database access at once.
-- It supports **MFA** (multi-factor authentication: a second check like a phone push, SMS, or one-time code).
-- It supports **single sign-on** (log in once, use many services) and **Conditional Access** (rules like "only from company laptops").
+Por que o Entra ID é melhor:
+- Um lugar para gerenciar pessoas. Se você **Desactivar** um usuário no Entra ID, eles perdem o acesso ao banco de dados de uma só vez.
+- Suporta **MFA** (autenticação multifator: uma segunda verificação como um toque de telefone, SMS ou código único).
+- Ele suporta **single sign-on** (logue uma vez, use muitos serviços) e **Acesso Condicional** (regras como "apenas de laptops da empresa").
 
-**Example:** A shop worker leaves the company. With SQL logins, the DBA must find and drop the login on every server. With Entra ID, HR disables one account and all database access stops.
+**Exemplo:** Um trabalhador de loja deixa a empresa. Com SQL logins, o DBA deve encontrar e soltar o login em todos os servidores. Com o Entra ID, o HR desabilita uma conta e todas as paradas de acesso ao banco de dados.
 
-## Which option works where
+## Qual opção funciona onde
 
-| Platform | SQL auth | Entra ID auth | Classic Windows auth |
+| Plataforma | SQL auth | Entrada ID auth | Clássico Windows auth |
 |----------|----------|---------------|--------------|
-| SQL Server on Azure VM | Yes | Yes (SQL Server 2022+) | Yes (VM joined to Active Directory) |
-| Azure SQL Managed Instance | Yes | Yes | No domain join |
-| Azure SQL Database | Yes | Yes | No |
+| SQL Server em Azure VM | Sim | Sim (SQL Server 2022+) | Sim (VM aderiu ao Active Directory) |
+| Azure SQL Managed Instance | Sim | Sim | Nenhum domínio aderir |
+| Azure SQL Database | Sim | Sim | Não |
 
-Note: Azure SQL Database and Managed Instance are cloud services. They use **Entra ID** in place of the on-premises Windows Active Directory. On a VM, you control everything (it is your own SQL Server), so all three options are open to you.
+Observação: Azure SQL Database e Managed Instance são serviços em nuvem. Eles usam **Entra ID** no lugar do on-premises Windows Active Directory. Em um VM, você controla tudo (é seu próprio SQL Server), então todas as três opções estão abertas para você.
 
-## Set up Entra ID authentication on Azure SQL Database and Managed Instance
-The key step is to set a **Microsoft Entra admin** for the server.
+## Configurar a autenticação Entra ID no Azure SQL Database e Managed Instance
+O passo principal é definir um **Microsoft Entra admin** para o servidor.
 
-- Set it in the **Azure portal** (logical server → **Settings → Microsoft Entra ID** → set admin → Save), or with **PowerShell** or **Azure CLI**.
-- This setting is **server-wide**, not per database.
-- The Entra admin gets **sysadmin-like** power on all databases on the server.
-- **Best practice:** make an Entra **group** the admin, not one person. If a person leaves, the group still works.
+- Configure-o no **Azure portal** (servidor lógico → **Configurações → Microsoft Entra ID** → set admin → Save), ou com **PowerShell** ou **Azure CLI**.
+- Esta configuração é **servidor-lar**, não por banco de dados.
+- O administrador do Entra obtém energia **sysadmin-like** em todas Os bancos de dados no servidor.
+- **Práticas recomendadas:** fazer um Entra **grupo** o administrador, não uma pessoa. Se uma pessoa sai, o grupo ainda funciona.
 
-**Example:** A school creates an Entra group called "SQL-Admins" with three DBAs. The group is set as the Entra admin. When one DBA leaves, they are just removed from the group.
+**Exemplo:** Uma escola cria um grupo Entra chamado "SQL -Admins" com três DBAs. O grupo é definido como o administrador Entra. Quando um DBA sai, eles são apenas removidos do grupo.
 
-### Microsoft Entra-only authentication
-You can switch off SQL authentication completely. This is called **Microsoft Entra-only authentication**.
+### Autenticação somente Microsoft Entra
+Você pode desligar o SQL authentication completamente. Isso é chamado **Autenticação somente Microsoft Entra**.
 
-- Works on Azure SQL Database and Managed Instance.
-- It also blocks the **SQL server admin** login (the one made with a password when the server was created).
-- You must set the **Entra admin first**.
-- Turn it on in the portal, or with:
+- Funciona em Azure SQL Database e Managed Instance.
+- Ele também bloqueia o **SQL server admin** login (aquele feito com uma senha quando o servidor foi criado).
+- Você deve definir o **Admin primeiro**.
+- Ligue-o no portal, ou com:
   - `az sql server ad-only-auth enable` / `Enable-AzSqlServerActiveDirectoryOnlyAuthentication`
   - Managed Instance: `az sql mi ad-only-auth enable`
-- You can also force it across many servers with **Azure Policy**.
-- Who can switch it on or off: **SQL Security Manager**, **Owner**, or **Contributor**. **SQL Server Contributor cannot** (this keeps duties separate).
+- Você também pode forçá-lo em muitos servidores com **Azure Policy**.
+- Quem pode ligá-lo ou desligá-lo: **SQL Security Manager**, **Proprietário** ou **Contribuidor**. **SQL Server Contribuidor não pode** (isso mantém os deveres separados).
 
-### Connecting with MFA from SSMS
-In SQL Server Management Studio (SSMS), pick the authentication option **Microsoft Entra MFA**. Its old name was "Universal with MFA".
+### Conectando-se com MFA de SSMS
+Em SQL Server Management Studio (SSMS), escolha a opção de autenticação **Microsoft Entra MFA**. Seu nome antigo era "Universal com MFA".
 
-## Entra ID on SQL Server (VM or on-premises)
-SQL Server 2022 and later can also use Entra ID. In short:
-- Register a Microsoft Entra application and give it permissions.
-- Create and assign a certificate.
-- Set it up in the Azure portal, then create logins and users.
-- Connect with SSMS using an Entra option.
+## Entre ID em SQL Server (VM ou on-premises)
+SQL Server 2022 e posterior também pode usar o Entra ID. Em suma:
+- Registre uma aplicação Microsoft Entra e dê-lhe permissões.
+- Criar e atribuir um certificado.
+- Configure-o no Azure portal e, em seguida, crie o logins e os usuários.
+- Conecte-se com o SSMS usando uma opção de entrada.
 
-You do not need to remember every click. Know that **SQL Server 2022+** supports Entra ID logins.
+Você não precisa se lembrar de cada clique. Saiba que o **SQL Server 2022+** suporta Entra ID logins.
 
-## Identities for apps: service principals and managed identities
-People are not the only ones who log in. Apps and Azure services log in too.
+## Identidades para aplicações: service principals e managed identities
+As pessoas não são as únicas que fazem login. Aplicativos e serviços do Azure também fazem login.
 
-- **Service principal.** An identity for an app, registered in Entra ID. It proves itself with a **secret** (like a password) or a **certificate**. You must store and rotate that secret.
-- **Managed identity.** An identity that Azure creates and manages for an Azure resource (a VM, a web app, a SQL server). **No password** is stored anywhere. Azure handles the secret for you.
-  - **System-assigned:** tied to one resource. It is deleted when the resource is deleted.
-  - **User-assigned:** a separate Azure resource. You can give it to many resources, and it lives on its own.
+- **Service principal.** Uma identidade para um aplicativo, registrado no Entra ID. Prova-se com um **segredo** (como uma senha) ou um **certificado**. Você deve armazenar e girar esse segredo.
+- **Managed identity.** Uma identidade que o Azure cria e gerencia para um recurso do Azure (a VMum aplicativo web, a SQL server). **Não senha** O Azure lida com o segredo para você.
+  - **Sistema-atribuído:** vinculado a um recurso. É excluído quando o recurso é excluído.
+  - **Atribuído pelo usuário:** um recurso separado do Azure. Você pode dá-lo a muitos recursos, e ele vive por conta própria.
 
-**Example:** A web app reads orders from Azure SQL Database. With SQL auth, the password sits in a config file. With a managed identity, the app has no password at all. The DBA just creates a database user for the app's identity.
+**Exemplo:** Um aplicativo web lê ordens de Azure SQL Database. Com o auth SQL, a senha fica em um arquivo de configuração. Com um managed identity, o aplicativo não tem nenhuma senha. O DBA apenas cria um usuário de banco de dados para a identidade do aplicativo.
 
-Where managed identities show up in this module:
-- An app connects to Azure SQL with no password.
-- A SQL server reads its **TDE key** from Azure Key Vault (lesson 4).
-- Auditing writes to a storage account (lesson 6).
-- Microsoft Purview scans a database (lesson 6).
+Onde o managed identities aparece neste módulo:
+- Um aplicativo se conecta ao Azure SQL sem senha.
+- A SQL server lê sua **Chave TDE** A partir Azure Key Vault (lição 4).
+- A auditoria escreve para uma conta de armazenamento (lição 6).
+- Microsoft Purview digitaliza um banco de dados (lição 6).
 
-## Azure RBAC: managing the resource, not the data
-**Azure RBAC** (role-based access control) controls what someone can do to the **Azure resource**. For example: create, delete, or scale a database. It does **not** let them read the data inside.
+## Azure RBAC: gerenciamento do recurso, não dos dados
+**Azure RBAC** (role-based access control) controla o que alguém pode fazer com o **Recursos do Azure**. Por exemplo: criar, excluir ou dimensionar um banco de dados. Ele faz **E** deixá-los ler os dados dentro.
 
-| Role | Can do | Cannot do |
+| Papel | Pode fazer | Não pode fazer |
 |------|--------|-----------|
-| SQL DB Contributor | Create and manage databases | Read data |
-| SQL Server Contributor | Create, delete and configure servers and databases | Read data |
-| SQL Security Manager | Manage security settings (auditing, threat detection, Entra-only auth) | Read data |
+| Contribuidor SQL DB | Criar e gerenciar bancos de dados | Ler dados |
+| Contribuidor SQL Server | Criar, excluir e configurar servidores e bancos de dados | Ler dados |
+| SQL Security Manager | Gerenciar configurações de segurança (auditoria, detecção de ameaças, autenticação apenas no intra) | Ler dados |
 
-**Example:** A DevOps engineer has SQL DB Contributor. She can deploy a new database for the payroll team. She still cannot run `SELECT` on the salary table. That needs a **database** permission.
+**Exemplo:** O engenheiro DevOps tem SQL DB Contributor. Ela pode implantar um novo banco de dados para a equipe de folha de pagamento. Ela ainda não pode executar `SELECT` na tabela salarial. Isso precisa de uma permissão **banco de dados**.
 
-This is called **separation of duties**: people who run the infrastructure are not automatically allowed to see the data.
+Isso é chamado **separação de deveres**: as pessoas que administram a infraestrutura não têm permissão automática para ver os dados.
 
-## Compare at a glance
+## Compare em um relance
 
-| Method | Password stored? | Best for |
+| Método | Senha armazenada? | Melhor para |
 |--------|------------------|----------|
-| SQL authentication | Yes, in SQL Server | Old apps, quick tests |
-| Entra ID user or group | No (Entra handles it) | People; supports MFA |
-| Service principal | Yes, a secret or certificate | Apps outside Azure, automation |
-| Managed identity | No | Azure resources talking to Azure SQL or Key Vault |
-| Windows authentication | No | SQL Server on a domain-joined VM |
+| SQL authentication | Sim, em SQL Server | Aplicativos antigos, testes rápidos |
+| Intra ID usuário ou grupo | Não (Entra lida com isso) | Pessoas; suporta MFA |
+| Service principal | Sim, um segredo ou certificado | Aplicativos fora do Azure, automação |
+| Managed identity | Não | Recursos do Azure falando com Azure SQL ou Key Vault |
+| Windows authentication | Não | SQL Server em um domínio-juntado VM |
 
-## Remember for the exam
+## Para lembrar na prova
 - Authentication = who you are. Authorization = what you can do.
-- Best practice: **Entra ID + MFA**, and an Entra **group** as the server admin.
-- The Entra admin is set **per server**, not per database.
-- **Entra-only authentication** turns off all SQL logins, including the SQL server admin. Set the Entra admin first.
-- **SQL Server Contributor cannot** turn Entra-only auth on or off. SQL Security Manager can.
-- Azure RBAC roles manage resources; they **never** give data access.
-- "App in Azure, no passwords" → **managed identity**.
-- SSMS option for MFA = **Microsoft Entra MFA** (old name: Universal with MFA).
+- Prática recomendada: **Entre ID + MFA** e um Entra **grupo** como administrador do servidor.
+- O administrador do Entra é definido **por servidor**, não por banco de dados.
+- **Autenticação apenas intra** desliga todos os SQL logins, incluindo o administrador SQL server. Defina o administrador Entra primeiro.
+- **SQL Server Contributor** não pode habilitar ou desabilitar a autenticação exclusiva do Microsoft Entra. **SQL Security Manager** pode.
+- As funções do Azure RBAC gerenciam recursos; eles **Nunca** dão acesso a dados.
+- "App no Azure, sem senhas" → **managed identity**.
+- SSMS opção para MFA = **Microsoft Entra MFA** (nome antigo: Universal com MFA).
 
-## Quick check
-1. A company wants to block all password-based logins to its Azure SQL Database, including the server admin. What should it enable?
-   <details><summary>Answer</summary>Microsoft Entra-only authentication. It disables SQL authentication completely, but an Entra admin must be set first.</details>
-2. A user has the SQL DB Contributor role. Can they read customer rows?
-   <details><summary>Answer</summary>No. Azure RBAC roles manage the resource only. Reading data needs database permissions.</details>
-3. A web app in Azure must connect to Azure SQL Database with no stored password. What should you use?
-   <details><summary>Answer</summary>A managed identity. Azure manages its credentials, so nothing is stored in code or config.</details>
+## Teste rápido
+1. Uma empresa quer bloquear todo o logins baseado em senha para o seu Azure SQL Database, incluindo o administrador do servidor. O que ele deve habilitar?
+   <details><summary>Resposta</summary>Autenticação somente Microsoft Entra. Desativa o SQL authentication completamente, mas um administrador do Entra deve ser definido primeiro.</details>
+2. Um usuário tem a função de Colaborador SQL DB. Eles podem ler as linhas do cliente?
+   <details><summary>Resposta</summary>Não. As funções do Azure RBAC gerenciam apenas o recurso. Ler dados precisa de permissões de banco de dados.</details>
+3. Um aplicativo web no Azure deve se conectar ao Azure SQL Database sem senha armazenada. O que você deve usar?
+   <details><summary>Resposta</summary>A managed identity. O Azure gerencia suas credenciais, portanto nada é armazenado em código ou configuração.</details>

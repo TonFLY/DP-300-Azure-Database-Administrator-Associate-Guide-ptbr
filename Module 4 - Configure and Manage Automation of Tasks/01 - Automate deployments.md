@@ -1,45 +1,45 @@
-# Automate deployments
+# Automatizar implantações
 
-> **Exam skills:** Automate deployment by using ARM and Bicep templates, Automate deployment by using Azure PowerShell, Automate deployment by using Azure CLI
-> **Reading time:** ~8 min
+> **Habilidades cobradas:** Automatizar a implantação usando modelos ARM e Bicep, Automatizar a implantação utilizando Azure PowerShell, Automatizar implantação usando Azure CLI
+> **Tempo de leitura:** ~8 min
 
-## The big idea
-In a data centre, a new server means racks and cables. In Azure, everything is created through an API (a doorway programs use to talk to Azure). So you can write your servers and databases down as code. This is **Infrastructure as Code (IaC)**. It is like a recipe card: anyone who follows it gets the same cake every time.
+## Conceito central
+Em um data center, um novo servidor significa racks e cabos. No Azure, tudo é criado através de um API (programas de entrada usam para falar com o Azure). Então você pode escrever seus servidores e bancos de dados como código. Este é **Infraestrutura como Código (IaC)**. É como um cartão de receita: qualquer um que o siga recebe o mesmo bolo todas as vezes.
 
-Why IaC helps:
-- The same file builds **Dev, Test and Prod** the same way.
-- Fewer human mistakes than clicking in the portal.
-- You keep the files in **source control** (GitHub, Azure Repos). You can see every change and go back to an older version.
-- A **CI/CD pipeline** (Azure Pipelines or GitHub Actions) can deploy the file automatically on every change.
+Por que o IAC ajuda:
+- O mesmo arquivo constrói **Dev, Test e Prod** da mesma maneira.
+- Menos erros humanos do que clicar no portal.
+- Você mantém os arquivos em **controle de fonte** (GitHub, Repos do Azure). Você pode ver todas as alterações e voltar para uma versão mais antiga.
+- A **gasoduto CI / CD** (Azure Pipelines : GitHub Actions) pode implantar o arquivo automaticamente em cada mudança.
 
-**Example:** A school app needs the same database in 3 environments. One Bicep file plus 3 small parameter files builds all three.
+**Exemplo:** Um aplicativo escolar precisa do mesmo banco de dados em 3 ambientes. Um arquivo Bicep mais 3 pequenos arquivos de parâmetros constrói todos os três.
 
-## Two deployment models
+## Dois modelos de implantação
 
-| | Declarative | Imperative |
+| | Declarativo | Imperativo |
 |---|---|---|
-| You write | The **end result** you want | **Each step**, in order |
-| Who decides the order | Azure (it reads the dependencies) | You |
-| Tools | **ARM templates**, **Bicep** | **Azure PowerShell**, **Azure CLI** |
-| Best for | Big, repeatable deployments | Small jobs, quick changes, checks |
+| Você escreve | O **resultado final** que você quer | **Cada passo**, em ordem |
+| Quem decide a ordem | Azure (leu as dependências) | Você |
+| Ferramentas | **Modelos ARM**, **Bicep** | **Azure PowerShell**, **Azure CLI** |
+| Melhor para | Implantações grandes e repetíveis | jobs pequeno, mudanças rápidas, verificações |
 
-**Example:** Declarative is telling a taxi "take me to the airport". Imperative is giving every turn: "left, then right, then straight".
+**Exemplo:** Declarativo está dizendo um táxi "levar-me para o aeroporto". Imperativo está dando cada volta: "esquerda, então direita, então em linha reta".
 
-## ARM templates
-- An **ARM template** (Azure Resource Manager template) is a **JSON** file that lists resources and their settings.
-- It supports **parameters**, so one file works with different values (region, size, names).
-- ARM works out the **order**. For example, it creates the SQL server before the database. In JSON you state this order with **`dependsOn`**.
-- You can create a resource in the portal and **export** it as a template.
-- You deploy templates with the portal, PowerShell, Azure CLI or Azure Pipelines.
+## Modelos ARM
+- An **Modelo ARM** (Azure Resource Manager é um modelo de **JSON** arquivo que lista recursos e suas configurações.
+- Ele suporta **parâmetros**, então um arquivo funciona com valores diferentes (região, tamanho, nomes).
+- ARM funciona o **ordem**. Por exemplo, ele cria o SQL server antes do banco de dados. Em JSON você declara esta ordem com **`dependsOn`**.
+- Você pode criar um recurso no portal e **exportação** como um modelo.
+- Você implanta modelos com o portal, PowerShell, Azure CLI ou Azure Pipelines.
 
 ## Bicep
-- **Bicep** is Microsoft's **recommended** language for templates.
-- It is much shorter and easier to read than JSON. A storage account is about 6 lines of Bicep but about 20 lines of JSON.
-- A `.bicep` file is **turned into ARM JSON** when you deploy. Anything ARM can do, Bicep can do.
-- To turn an exported JSON template into Bicep, use **`bicep decompile`** (or `az bicep decompile`).
-- In Bicep, a child resource uses **`parent:`**. Bicep then works out the dependency for you.
+- **Bicep** é a linguagem **Recomendado** da Microsoft para modelos.
+- É muito mais curto e fácil de ler do que JSON. Uma conta de armazenamento é cerca de 6 linhas de Bicep, mas cerca de 20 linhas de JSON.
+- A `.bicep` arquivo é **transformado em ARM JSON** quando você implantar. Qualquer coisa ARM pode fazer, Bicep pode fazer.
+- Para transformar um modelo JSON exportado em Bicep, use **`bicep decompile`** (ou `az bicep decompile`).
+- Em Bicep, um recurso infantil usa **`parent:`**. Bicep então resolve a dependência para você.
 
-**Example (Bicep): a SQL server and one database**
+**Exemplo (Bicep): um SQL server e uma banco de dados**
 ```bicep
 @secure()
 param adminPassword string
@@ -58,9 +58,9 @@ resource db 'Microsoft.Sql/servers/databases@2021-11-01' = {
   sku: { name: 'S0' }
 }
 ```
-`@secure()` hides the password from logs. `uniqueString()` makes a server name that nobody else has used.
+`@secure()` esconde a senha dos logs. `uniqueString()` faz um nome de servidor que ninguém mais usou.
 
-**The same database in ARM JSON (only the part that differs):**
+**O mesmo banco de dados em ARM JSON (apenas a parte que difere):**
 ```json
 {
   "type": "Microsoft.Sql/servers/databases",
@@ -71,15 +71,15 @@ resource db 'Microsoft.Sql/servers/databases@2021-11-01' = {
   "dependsOn": [ "[resourceId('Microsoft.Sql/servers', parameters('serverName'))]" ]
 }
 ```
-In JSON you must write `dependsOn` yourself. In Bicep, `parent: srv` does it.
+Em JSON você deve escrever `dependsOn` Você mesmo. Em Bicep, `parent: srv` Faz isso.
 
 ## Azure PowerShell
-- PowerShell is a shell and scripting language. It runs on **Windows, Linux and macOS**.
-- The **Az module** manages Azure. **Az.Sql** is the part for Azure SQL Database and Managed Instance.
-- Commands use **Verb-Noun** names: `New-AzSqlServer`, `Get-AzSqlDatabase`.
-- Run it on your PC, in **Azure Cloud Shell** (in the browser, nothing to install), or in Docker.
+- PowerShell é uma linguagem de shell e script. É executado em **Windows, Linux e macOS**.
+- O **módulo Az** gerencia o Azure. O **Az.Sql** é a parte para Azure SQL Database e Managed Instance.
+- Os comandos usam nomes **Verbo-Noun**: `New-AzSqlServer`, `Get-AzSqlDatabase`.
+- Execute-o em seu PC, no **Azure Cloud Shell** (no navegador, nada para instalar), ou no Docker.
 
-**Example (PowerShell): create a server and a database**
+**Exemplo (PowerShell): criar um servidor e uma banco de dados**
 ```powershell
 Connect-AzAccount
 New-AzResourceGroup -Name shopRG -Location eastus
@@ -88,22 +88,22 @@ New-AzSqlServer -ResourceGroupName shopRG -ServerName shop-sql-01 `
 New-AzSqlDatabase -ResourceGroupName shopRG -ServerName shop-sql-01 `
   -DatabaseName shopdb -RequestedServiceObjectiveName S0
 ```
-- `New-AzSqlInstance` creates a Managed Instance. Note: **Gen4 hardware is retired**; use Gen5 or newer.
+- `New-AzSqlInstance` cria um Managed Instance. Nota: **Hardware Gen4 é aposentado**; use Gen5 ou mais recente.
 
-**Deploy a template with PowerShell:**
+**Implantar um modelo com PowerShell:**
 ```powershell
 New-AzResourceGroupDeployment -ResourceGroupName shopRG `
   -TemplateFile ./main.bicep -TemplateParameterFile ./prod.parameters.json
 ```
-- Azure PowerShell needs the **Bicep CLI installed by hand**.
+- Azure PowerShell precisa do **Bicep CLI instalado à mão**.
 
 ## Azure CLI
-- The **Azure CLI** (command-line interface) also runs everywhere, including Cloud Shell.
-- It works in **Cmd, Bash and PowerShell**. Azure PowerShell works only in PowerShell.
-- Command shape: `az <group> <command> --parameter value`.
-- Some commands for Azure Database for PostgreSQL and MySQL exist **only in the CLI**.
+- O **Azure CLI** (interface de linha de comando) também é executado em todos os lugares, incluindo o Cloud Shell.
+- Funciona em **Cmd, Bash e PowerShell**. Azure PowerShell funciona apenas em PowerShell.
+- Forma do comando: `az <group> <command> --parameter value`.
+- Alguns comandos para Azure Database for PostgreSQL e MySQL existem **Somente no CLI**.
 
-**Example (Azure CLI): the same server and database**
+**Exemplo (Azure CLI): o mesmo servidor e banco de dados**
 ```bash
 az login
 az group create --name shopRG --location eastus
@@ -113,43 +113,43 @@ az sql server firewall-rule create --resource-group shopRG --server shop-sql-01 
   -n AllowAzure --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
 az sql db create --resource-group shopRG --server shop-sql-01 --name shopdb --service-objective S0
 ```
-The firewall rule `0.0.0.0` to `0.0.0.0` means "allow Azure services".
+A regra de firewall `0.0.0.0` para `0.0.0.0` significa "permitir serviços do Azure".
 
-**Deploy a template with the CLI:**
+**Implantar um modelo com o CLI:**
 ```bash
 az deployment group create --resource-group shopRG --template-file main.bicep
 az deployment group create --resource-group shopRG --template-uri "https://<storage>/main.json" --query-string $sasToken
 ```
-- The CLI **installs Bicep automatically**.
-- A **local** `.bicep` file deploys directly. You can also pass `--parameters main.bicepparam`.
-- **Neither tool can deploy a remote `.bicep` file.** For a file in storage or on GitHub, build it to JSON first, then deploy the JSON. Remote JSON templates work, with a **SAS token** (a time-limited access key) for private storage.
-- CLI scopes: `az deployment group` (resource group), `sub` (subscription), `mg` (management group), `tenant`.
+- CLI **instala Bicep automaticamente**.
+- O arquivo **local** `.bicep` é implantado diretamente. Você também pode passar `--parameters main.bicepparam`.
+- **Nenhuma das ferramentas pode implantar um arquivo `.bicep` remoto.** Para um arquivo armazenado ou no GitHub, construa-o para o JSON primeiro e implante o JSON. Os modelos JSON remotos funcionam, com uma **token SAS** (uma chave de acesso limitada por tempo) para armazenamento privado.
+- escopos CLI: `az deployment group` (grupo de recursos), `sub` (assinatura), `mg` (grupo de gerenciamento), `tenant`.
 
-## Compare at a glance
-| Task | Azure CLI | PowerShell |
+## Compare em um relance
+| Tarefa | Azure CLI | PowerShell |
 |---|---|---|
-| Sign in | `az login` | `Connect-AzAccount` |
-| Switch subscription | `az account set --subscription` | `Set-AzContext -Subscription` |
-| Create SQL server | `az sql server create` | `New-AzSqlServer` |
-| Create database | `az sql db create` | `New-AzSqlDatabase` |
-| Deploy template | `az deployment group create` | `New-AzResourceGroupDeployment` |
-| Installs Bicep for you | Yes | No |
+| Iniciar sessão | `az login` | `Connect-AzAccount` |
+| Mudar assinatura | `az account set --subscription` | `Set-AzContext -Subscription` |
+| Criar SQL server | `az sql server create` | `New-AzSqlServer` |
+| Criar banco de dados | `az sql db create` | `New-AzSqlDatabase` |
+| deploy template | `az deployment group create` | `New-AzResourceGroupDeployment` |
+| Instala Bicep para você | Sim | Não |
 
-## IaaS vs PaaS deployments
-On an **Azure VM** you must also script the SQL Server install and settings, and patch it. On **SQL Database / Managed Instance**, Azure installs and patches SQL; you only choose database settings.
+## IaaS vs PaaS implantações
+Em um **Azure VM**, você também deve rotear a instalação e as configurações do SQL Server e corrigi-lo. No **SQL Database / Managed Instance**, o Azure instala e patches SQL; você só escolhe as configurações de banco de dados.
 
-## Remember for the exam
-- "Describe the end state, repeatable, in source control" → **ARM or Bicep** (declarative).
-- "Quick change or check a setting" → **PowerShell or CLI** (imperative).
-- **Bicep turns into ARM JSON** at deploy time. Bicep is the recommended language.
-- JSON uses **`dependsOn`**. Bicep uses **`parent`** or a symbolic reference.
-- **Remote `.bicep` files cannot be deployed** by CLI or PowerShell. Build to JSON first.
+## Para lembrar na prova
+- "Descreva o estado final, repetível, no controle da fonte" → **ARM ou Bicep** (declarativo).
+- "Alterar ou verificar rapidamente uma configuração" → **PowerShell ou CLI** (imperativo).
+- **Bicep se transforma em ARM JSON** no momento da implantação. Bicep é a linguagem recomendada.
+- JSON usa **`dependsOn`**. Bicep usa **`parent`** ou uma referência simbólica.
+- **Arquivos `.bicep` remotos não podem ser implantados** por CLI ou PowerShell. Construir para JSON primeiro.
 - PowerShell = `New-AzResourceGroupDeployment`. CLI = `az deployment group create`.
 
-## Quick check
-1. You must deploy a Bicep file stored in a storage account using the Azure CLI. What do you do?
-   <details><summary>Answer</summary>Build it to ARM JSON first, then deploy the JSON with --template-uri. The CLI cannot deploy remote .bicep files.</details>
-2. Your team wants the same SQL setup in Dev, Test and Prod, kept in Git. Declarative or imperative?
-   <details><summary>Answer</summary>Declarative (Bicep or ARM). You describe the end state once and reuse it.</details>
-3. In an ARM JSON template, the database is created before its server and fails. What is missing?
-   <details><summary>Answer</summary>A dependsOn on the server. In Bicep you would use parent.</details>
+## Teste rápido
+1. Você deve implantar um arquivo Bicep armazenado em uma conta de armazenamento usando o Azure CLI. O que você faz?
+   <details><summary>Resposta</summary>Construa-o para ARM JSON primeiro, em seguida, implante o JSON com --template-uri. O CLI não pode implantar arquivos remotos. bicep.</details>
+2. Sua equipe quer a mesma configuração SQL em Dev, Test e Prod, mantida no Git. Declarativo ou imperativo?
+   <details><summary>Resposta</summary>Declarativo (Bicep ou ARM). Você descreve o estado final uma vez e reutiliza-o.</details>
+3. Em um modelo ARM JSON, o banco de dados é criado antes de seu servidor e falha. O que está faltando?
+   <details><summary>Resposta</summary>A dependsOn no servidor. Em Bicep Você usaria os pais.</details>

@@ -1,94 +1,94 @@
-# Configure compute, storage and server settings
+# Configurar configurações de computação, armazenamento e servidor
 
-> **Exam skills:** Configure server settings for performance, Configure Resource Governor for performance, Configure compute and storage resources for scaling
-> **Reading time:** ~12 min
+> **Habilidades cobradas:** Configurar as configurações do servidor para desempenho, Configurar Resource Governor para desempenho, Configurar recursos de computação e armazenamento para escalabilidade
+> **Tempo de leitura:** ~12 min
 
-## The big idea
-A database needs enough **compute** (CPU and memory) and fast enough **storage** (disks). Too little and it is slow. Too much and you waste money. On an Azure VM you choose disks, VM size and server settings yourself. In Azure SQL Database and Managed Instance, Azure does much of this, and you mostly choose a tier and size.
+## Conceito central
+Um banco de dados precisa de **compu** suficiente (CPU e memória) e rápido o suficiente **armazenamento** (discos). Muito pouco e é lento. Demasiado e você desperdiça dinheiro. Em uma Azure VM você escolhe discos, tamanho VM e configurações do servidor. Em Azure SQL Database e Managed Instance, o Azure faz muito disso, e você escolhe principalmente uma camada e tamanho.
 
-Think of a restaurant kitchen. The chefs are the CPUs, the worktop is memory, and the fridge is storage. A fast chef with a tiny worktop and a slow fridge still serves food slowly.
+Pense em uma cozinha de restaurante. Os chefs são o CPUs, a bancada é memória e a geladeira é armazenamento. Um chef rápido com uma pequena bancada e uma geladeira lenta ainda serve comida lentamente.
 
-## Storage for SQL Server on Azure VMs
-Use **managed disks** for data and log files, **Blob storage** for backups ("backup to URL"), and **Azure Files** for shared storage in failover cluster instances.
+## Armazenamento para SQL Server on Azure VMs
+Use **discos gerenciados** para dados e arquivos de log, **Blob storage** para backups ("backup a URL"), e **Azure Files** para armazenamento compartilhado em failover cluster instances.
 
-### Managed disk types
-| Disk | Best for | Notes |
+### Tipos de discos gerenciados
+| Disco | Melhor para | Notas |
 |------|----------|-------|
-| **Ultra Disk** | Most critical workloads | Very high IOPS (input/output operations per second), under 1 ms latency |
-| **Premium SSD v2** | Most modern production data and log | Sub-ms latency; size, IOPS and throughput set separately; usually cheaper than Ultra |
-| **Premium SSD** | Production | Good speed and price |
-| **Standard SSD** | Dev/test | Medium speed |
-| **Standard HDD** | Dev/test, archive | Slowest |
+| **Disco Ultra** | Cargas de trabalho mais críticas | IOPS muito alto (operações de entrada/saída por segundo), com latência inferior a 1 ms |
+| **Premium SSD v2** | A maioria dos dados e logs de produção modernos | Latência de sub-ms; tamanho, IOPS e taxa de transferência definida separadamente; geralmente mais barato do que Ultra |
+| **Premium SSD** | Produção | Boa velocidade e preço |
+| **Padrão SSD** | Dev/test | Velocidade média |
+| **Padrão HDD** | Dev/test, arquivo | mais lento |
 
-For production use **Premium SSD v2, Premium SSD or Ultra Disk**. Premium SSD v2 is recommended with the **Ebdsv5** VM series.
+Para uso da produção **Premium SSD v2, Premium SSD ou Ultra Disk**. Premium SSD v2 Recomenda-se com o **Ebdsv5** VM série.
 
-### Disk best practices
-- Put **data and log files on separate disks**.
-- **Data disks:** turn on **read-only host caching** (faster reads). This works on **Premium SSD only**. Premium SSD v2 and Ultra Disk do not support host caching, and neither do disks of 4 TiB or more. Stop SQL Server before changing cache settings.
-- **Log disks:** set caching to **None**.
-- Put **tempdb on the local D: drive** (temporary local SSD). It is wiped on reboot, but tempdb is rebuilt at every start anyway.
-- Turn on **Instant File Initialization** (data files grow faster because SQL Server skips writing zeros).
-- Format data disks with a **64-KB allocation unit size**.
-- Plan about **20% extra IOPS and throughput** for spikes.
-- On **M-series** VMs, use **Write Accelerator** for the **log** disk (never for data).
+### Práticas recomendadas de disco
+- Coloque **dados e arquivos de log em discos separados**.
+- **Discos de dados:** ligar o **read-only host cache** (leituras mais rápidas). Isso funciona em **Somente Premium SSD**. Premium SSD v2 e Ultra Disk não suportam cache host, e nem discos de 4 TiB ou mais. Pare SQL Server antes de alterar as configurações de cache.
+- **Discos de registro:** conjunto de cache para **Nenhum**.
+- Coloque **Tempdb no local D: unidade** (temporário local SSD). É limpo no reboot, mas tempdb é reconstruído em todos os começos de qualquer maneira.
+- Ative o **Inicialização instantânea do arquivo** (arquivos de dados crescem mais rápido porque o SQL Server pula zeros).
+- Formato de discos de dados com um **Tamanho da unidade de alocação 64- KB**.
+- Planeje cerca de **20% extra IOPS e taxa de transferência** para picos.
+- Ligado **Série M** VMs, use **Gravar Acelerador** para a **log** disco (nunca para dados).
 
-**Disk striping:** combine several disks into one volume with **Storage Spaces** (Windows) to add up their IOPS and size. Do **not** turn on redundancy in the pool; Azure already keeps copies.
+**Disk Striping:** combinar vários discos em um volume com **Espaços de armazenamento** (Windows) para adicionar o seu IOPS e tamanho. Faça **E** ligar redundância na piscina; Azure já mantém cópias.
 
-**Example:** 10 × 1 TB Premium SSDs at 5,000 IOPS each, striped together = one 10 TB volume with **50,000 IOPS**.
+**Exemplo:** 10 Premium SSDs de 1 TB com 5.000 IOPS cada, combinados com striping, formam um volume de 10 TB com **50.000 IOPS**.
 
-## Choosing and resizing the VM (compute)
-SQL Server is licensed **per core**, so more cores = higher licence cost. Memory and IOPS often matter more than CPU.
+## Escolhendo e redimensionando o VM (computa)
+SQL Server é licenciado **por núcleo**, so more cores = higher licence cost. Memory and IOPS Muitas vezes importa mais do que CPU.
 
-**VM families:**
-- **Memory-optimized** sizes are recommended for production: a memory-to-vCore ratio of **8:1** and at least **4 vCores**.
-- **Ebdsv5** is the recommended starting point (best price-performance).
-- **Mbdsv3 / M-series** for mission-critical or the largest workloads.
-- **D-series and B-series** (general purpose) are for dev/test.
+**Famílias VM:**
+- Os tamanhos **Memória-otimizada** são recomendados para produção: uma relação memória-para-vCore de **8:1** e pelo menos **4 vCores**.
+- **Ebdsv5** é o ponto de partida recomendado (melhor preço-desempenho).
+- **Série Mbdsv3/M** para cargas de trabalho de missão crítica ou maiores.
+- **Séries D e B** (general purpose) são para desenvolvimento / teste.
 
-**Constrained cores:** a VM size that keeps all the memory, storage and I/O of a big VM but exposes only **½ to ¼** of its vCPUs (for example **M64-32ms**, **M64-16ms**). Compute cost stays the same, but you pay SQL Server licences for fewer cores.
+**Núcleos restritos:** um tamanho VM que mantém toda a memória, armazenamento e E/S de um grande VM, mas expõe apenas **½ to ¼** do seu vCPUs (por exemplo **M64-32ms**, **M64-16ms**). O custo de computação permanece o mesmo, mas você paga licenças SQL Server por menos núcleos.
 
-**Example:** A reporting database needs 512 GB of memory but only light CPU. Instead of licensing 64 cores, the DBA picks a constrained-core size with 16 active cores and the same memory. The licence bill drops a lot.
+**Exemplo:** Um banco de dados de relatórios precisa de 512 GB de memória, mas apenas luz CPU. Em vez de licenciar 64 núcleos, o DBA escolhe um tamanho de núcleo restrito com 16 núcleos ativos e a mesma memória. A conta da licença cai muito.
 
-**Resizing a VM:**
-- You can resize any time as the workload grows or shrinks.
-- Azure **restarts** the VM, so expect a **short outage**.
-- Sometimes you must **deallocate** (fully stop) the VM first, for example when moving to a different VM family.
+**Redimensionando um VM:**
+- Você pode redimensionar a qualquer momento à medida que a carga de trabalho cresce ou encolhe.
+- Azure **reinicializações** o VM, então espere um **interrupção curta**.
+- Sometimes you must **deallocate** (completamente parado) o VM primeiro, por exemplo, quando se move para um VM Família.
 
-## Storage in Azure SQL Database and Managed Instance
-- You do not manage disks. Pick a **service tier** (a level of service with its own speed and price).
-- For better IOPS and lower latency, use **Business Critical** or **Hyperscale**.
-- **Azure SQL Database** has only **one data file** (Hyperscale usually several). You cannot add files.
-- **Managed Instance** lets you add files and change file sizes, but not choose physical disks.
+## Armazenamento em Azure SQL Database e Managed Instance
+- Escolha um **nível de serviço** (um nível de serviço com sua própria velocidade e preço).
+- Para melhor IOPS e menor latência, use **Business Critical** ou **Hyperscale**.
+- **Azure SQL Database** tem apenas **um arquivo de dados** (Hyperscale geralmente vários). Você não pode adicionar arquivos.
+- **Managed Instance** permite adicionar arquivos e alterar o tamanho dos arquivos, mas não escolher discos físicos.
 
-### tempdb
-**tempdb** is a shared system database for temp tables, sorts, temporary results and row versions.
-| Platform | tempdb files |
+### temdb
+**temdb** é um banco de dados de sistema compartilhado para tabelas temporárias, tipos, resultados temporários e versões de linha.
+| Plataforma | temdb arquivos |
 |----------|--------------|
-| **SQL Server** | Setup creates one file per logical processor, **up to 8**. Keep sizes equal. If contention stays, add files in **multiples of 4** (up to the number of cores). |
-| **Azure SQL Database** | Number of files grows with vCores (e.g. 2 vCores = 4 files), **max 16**. You cannot change it. |
-| **Managed Instance** | **12 data files** by default. You **can** change the number (max 128), growth and max size. Settings survive restarts and failovers. |
+| **SQL Server** | A configuração cria um arquivo por processador lógico, **até 8**. Mantenha os tamanhos iguais. Se a contenção permanecer, adicione arquivos em **múltiplos de 4** (até o número de núcleos). |
+| **Azure SQL Database** | O número de arquivos cresce com vCores (e.g. 2 vCores = 4 files), **max 16**. Você não pode mudá-lo. |
+| **Managed Instance** | **12 arquivos de dados** por padrão. Você **pode** altera o número (máximo 128), crescimento e tamanho máximo. Configurações sobrevivem reinicializações e failovers. |
 
-Memory-optimized tempdb metadata (SQL Server 2019+) is **not** available in Azure SQL Database or Managed Instance.
+Memory-optimized tempdb metadata (SQL Server 2019+) é **E** disponível em Azure SQL Database ou Managed Instance.
 
-## Scaling compute and storage in PaaS
-- **Scale up/down:** change the vCores or service tier. Use this when CPU, memory, I/O or log rate stays at the limit.
-- **Hyperscale** separates compute from storage:
-  - Storage grows automatically up to **128 TB** per database.
-  - Compute can be scaled on its own.
-  - Add **read replicas**: up to **4 HA replicas**, up to **30 named replicas**, plus geo-replicas. Send read-only work there with `ApplicationIntent=ReadOnly`.
-  - Moving to Hyperscale is one-way, except you can go back to **General Purpose within 45 days**.
+## Escalando computação e armazenamento em PaaS
+- **Escala para cima/para baixo:** mudar o vCores ou nível de serviço. Use isso quando CPU, memória, I/O ou taxa de log permanece no limite.
+- **Hyperscale** separa computação do armazenamento:
+  - O armazenamento cresce automaticamente até **128 TB** por banco de dados.
+  - A computação pode ser dimensionada sozinha.
+  - Add **ler réplicas**: até **4 HA réplicas**, até **30 réplicas nomeadas**, além de geo-replicas. Envie read-only trabalhar lá com `ApplicationIntent=ReadOnly`.
+  - Mover-se para Hyperscale é one-way, exceto que você pode voltar para **General Purpose dentro de 45 dias**.
 
-**Example:** A news site's database grows 5 TB a year. In **Hyperscale**, storage grows on its own and named replicas serve the reporting team.
+**Exemplo:** O banco de dados de um site de notícias cresce 5 TB por ano. Em **Hyperscale**, o armazenamento cresce por conta própria e as réplicas nomeadas atendem à equipe de reportagem.
 
-## Server settings for performance
-These are mainly **instance-level** settings on SQL Server (VM) and Managed Instance, set with `sp_configure`.
+## Configurações do servidor para desempenho
+Estas são principalmente configurações **nível de instância** em SQL Server (VM) e Managed Instance, definido com `sp_configure`.
 
-| Setting | What it does | Tip |
+| Configuração | O que faz | Dica |
 |---------|--------------|-----|
-| **max degree of parallelism (MAXDOP)** | How many CPU cores one query may use at once | Too high = more memory use and `CXPACKET` waits on busy systems |
-| **cost threshold for parallelism** | How "expensive" a query must be before SQL Server runs it in parallel (default 5) | Raise it so small queries stay single-threaded |
-| **max server memory** | Upper limit of memory SQL Server takes | Set it so the OS keeps enough memory |
-| **optimize for ad hoc workloads** | Stores only a small stub for a query plan the first time a query runs | Saves memory when many queries run only once |
+| **grau máximo de paralelismo (MAXDOP)** | Quantos núcleos CPU uma consulta pode usar de uma vez | Too high = more memory use and `CXPACKET` espera em sistemas ocupados |
+| **limiar de custo para paralelismo** | Quão "cara" uma consulta deve ser antes de SQL Server executá-la em paralelo (padrão 5) | Levantar para que pequenas consultas fiquem single-threaded |
+| **memória do servidor max** | Limite superior de memória SQL Server leva | Configure-o para que o OS mantenha memória suficiente |
+| **otimizar para cargas de trabalho ad hoc** | Armazena apenas um pequeno esboço para um plano de consulta na primeira vez que uma consulta é executada | Salva memória quando muitas consultas são executadas apenas uma vez |
 
 ```sql
 EXEC sp_configure 'show advanced options', 1; RECONFIGURE;
@@ -96,28 +96,28 @@ EXEC sp_configure 'max degree of parallelism', 4; RECONFIGURE;
 EXEC sp_configure 'cost threshold for parallelism', 50; RECONFIGURE;
 ```
 
-**In Azure SQL Database** you cannot use `sp_configure`. Set MAXDOP per database instead:
+**Azure SQL Database** você não pode usar `sp_configure`. Defina MAXDOP por banco de dados em vez disso:
 ```sql
 ALTER DATABASE SCOPED CONFIGURATION SET MAXDOP = 4;
 ```
-New Azure SQL databases default to **MAXDOP 8**. You can also use the query hint `OPTION (MAXDOP n)` for one query.
+Novo padrão Azure SQL databases para **MAXDOP 8**. Você também pode usar a dica de consulta `OPTION (MAXDOP n)` para uma consulta.
 
-**Example:** An order system on a 16-core VM shows many `CXPACKET` waits. Small queries are going parallel and fighting for CPU. The DBA sets MAXDOP to 8 and raises the cost threshold for parallelism, so only big reports use many cores.
+**Exemplo:** Um sistema de pedidos em um VM de 16 núcleos mostra muitas esperas `CXPACKET`. Pequenas consultas estão indo paralelamente e lutando por CPU. O DBA define MAXDOP para 8 e aumenta o limite de custo para o paralelismo, então apenas grandes relatórios usam muitos núcleos.
 
 ## Resource Governor
-**Resource Governor** limits how much **CPU, memory and I/O** each group of sessions can use. It stops one workload from starving others.
-- Available in **SQL Server** and **Azure SQL Managed Instance**.
-- **Not available in Azure SQL Database** (the platform manages resources).
-- **SQL Server 2025:** now also in **Standard** edition (before: Enterprise/Developer only) and can limit **tempdb space** per workload group.
+**Resource Governor** limita o quanto **CPU, memória e I/O** cada grupo de sessões pode usar. Ele impede que uma carga de trabalho passe fome em outras pessoas.
+- Disponível em **SQL Server** e **Azure SQL Managed Instance**.
+- **Não disponível em Azure SQL Database** (a plataforma gerencia recursos).
+- **SQL Server 2025:** agora também na edição **Padrão** (antes: Enterprise/Developer apenas) e pode limitar **espaço tempdb** por grupo de carga de trabalho.
 
-### Three parts
-1. **Resource pool** – a slice of server resources.
-   - **Internal** pool: for SQL Server itself; cannot be limited.
-   - **Default** pool: where sessions go if not classified.
-   - **User-defined** pools: you create them.
-   - Settings: MIN/MAX CPU %, **CAP_CPU_PERCENT** (a hard cap, used even when the server is idle), MIN/MAX memory %, MIN/MAX IOPS per volume, NUMA affinity.
-2. **Workload group** – a group of sessions. Each group belongs to **one pool**; a pool can have many groups.
-3. **Classifier function** – a user function that runs **at login** and returns the workload group name for the new session. Keep it fast, because it runs on every connection.
+### Três partes
+1. **pool de recursos** – uma fatia de recursos do servidor.
+   - Piscina **Interna**: para o próprio SQL Server; não pode ser limitada.
+   - Piscina **Padrão**: onde as sessões vão se não forem classificadas.
+   - Piscinas **Definido pelo usuário**: você as cria.
+   - Configurações: MIN / MAX CPU %, **CAP_CPU_PERCENT** (uma tampa dura, usada mesmo quando o servidor está ocioso), MIN / MAX memória %, MIN / MAX IOPS por volume, afinidade NUMA.
+2. **Grupo de carga de trabalho** – um grupo de sessões. Cada grupo pertence ao **uma piscina**; uma piscina pode ter muitos grupos.
+3. **Função do classificador** – uma função de usuário que executa **em login** e retorna o nome do grupo de carga de trabalho para a nova sessão. Mantenha-o rápido, porque ele funciona em todas as conexões.
 
 ```sql
 CREATE FUNCTION dbo.RGClassifier() RETURNS sysname WITH SCHEMABINDING
@@ -130,27 +130,27 @@ ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = dbo.RGClassifier);
 ALTER RESOURCE GOVERNOR RECONFIGURE;
 ```
 
-- Changes apply to **new sessions** only.
-- On **Managed Instance**, the configuration lives in `master` and **replicates to secondary replicas**. In SQL Server availability groups you must configure **each replica**.
+- As alterações só se aplicam ao **novas sessões**.
+- Ligado **Managed Instance**, a configuração vive em `master` e **réplicas a réplicas secundárias**. Em SQL Server availability groups você deve configurar **Cada réplica**.
 
-**Example:** One SQL Server runs a shop's online orders and its reports. Reports log in as `ReportUser`. The DBA puts them in a pool capped at 30% CPU. Checkout stays fast even when a big report runs at lunchtime.
+**Exemplo:** Um SQL Server executa pedidos on-line de uma loja e seus relatórios. Relatórios log in as `ReportUser`. O DBA coloca-los em uma piscina tampada em 30% CPU. O checkout permanece rápido mesmo quando um grande relatório é executado na hora do almoço.
 
-## Remember for the exam
-- Production disks: **Premium SSD v2, Premium SSD or Ultra Disk**. Standard = dev/test.
-- **Read-only caching on data disks, None on log disks.** Host caching only on Premium SSD (not v2, not Ultra, not 4 TiB+).
-- **tempdb on the local D: drive** on a VM.
-- **Constrained cores** = same memory and I/O, fewer cores, lower SQL licence cost.
-- VM resize = **restart** (short outage); a family change may need **deallocate**.
-- tempdb files: SQL Server up to 8 then multiples of 4; SQL DB fixed (max 16); MI 12 by default and changeable.
-- **cost threshold for parallelism** controls *when* a query goes parallel; **MAXDOP** controls *how many* cores.
-- Azure SQL Database: no `sp_configure`; use **ALTER DATABASE SCOPED CONFIGURATION SET MAXDOP**.
-- **Resource Governor: SQL Server and MI only**, classifier runs at login, internal pool cannot be limited.
-- **CAP_CPU_PERCENT** is a hard limit; MAX_CPU_PERCENT only applies when there is contention.
+## Para lembrar na prova
+- Discos de produção: **Premium SSD v2, Premium SSD ou Ultra Disk**. Standard = dev/test.
+- **Read-only cache em discos de dados, Nenhum em discos de log.** Anfitrião cache apenas no Premium SSD (não v2, não Ultra, não 4 TiB +).
+- **Tempdb no local D: unidade** em um VM.
+- **Núcleos restritos** = same memory and I/O, fewer cores, lower SQL Custo da licença.
+- VM resize = **reiniciar** (breve): uma mudança de família pode precisar **deallocate**.
+- arquivos tempdb: SQL Server até 8, em seguida, múltiplos de 4; SQL DB fixo (max 16); MI 12 por padrão e mutável.
+- **limiar de custo para paralelismo** controla *Quando* uma consulta vai paralelo; **MAXDOP** controla núcleos *Quantos*.
+- Azure SQL Database: não `sp_configure`; use **ALTER DATABASE SCOPED CONFIGURATION SET MAXDOP**.
+- **Resource Governor: Somente SQL Server e MI**, classificador é executado em login, piscina interna não pode ser limitada.
+- **CAP_CPU_PERCENT** é um limite difícil; MAX_CPU_PERCENT só se aplica quando há contenção.
 
-## Quick check
-1. A memory-heavy, CPU-light workload on an Azure VM has high SQL Server licence costs. What do you choose?
-   <details><summary>Answer</summary>A constrained-core VM size. It keeps the memory and I/O but exposes fewer cores to license.</details>
-2. You must stop a reporting login from using more than 20% CPU on Azure SQL Managed Instance, even when the server is idle. What do you use?
-   <details><summary>Answer</summary>Resource Governor with a resource pool using CAP_CPU_PERCENT = 20 and a classifier function that sends the login to that pool's workload group.</details>
-3. Which caching setting do you use for a Premium SSD that holds the transaction log?
-   <details><summary>Answer</summary>None. Log writes must go straight to disk; read-only caching is for data disks.</details>
+## Teste rápido
+1. Uma carga de trabalho de memória pesada, CPU - leve em uma Azure VM tem altos custos de licença SQL Server. O que você escolhe?
+   <details><summary>Resposta</summary>Um tamanho VM de núcleo restrito. Ele mantém a memória e E / S, mas expõe menos núcleos à licença.</details>
+2. Você deve parar um relatório login de usar mais do que 20% CPU no Azure SQL Managed Instance, mesmo quando o servidor está ocioso. O que você usa?
+   <details><summary>Resposta</summary>Resource Governor com um pool de recursos usando CAP_CPU_PERCENT = 20 and a classifier function that sends the login para o grupo de carga de trabalho dessa piscina.</details>
+3. Qual configuração de cache você usa para um SSD Premium que contém o log de transação?
+   <details><summary>Resposta</summary>As gravações de log devem ir direto para o disco; O cache read-only é para discos de dados.</details>

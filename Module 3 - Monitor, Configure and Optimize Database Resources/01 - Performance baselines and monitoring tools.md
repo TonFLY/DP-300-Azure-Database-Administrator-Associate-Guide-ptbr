@@ -1,128 +1,128 @@
-# Performance baselines and monitoring tools
+# Bases de base de desempenho e ferramentas de monitoramento
 
-> **Exam skills:** Prepare an operational performance baseline, Determine sources for performance metrics, Interpret performance metrics, Configure and monitor activity and performance
-> **Reading time:** ~11 min
+> **Habilidades cobradas:** Preparar uma linha de base de desempenho operacional, Determinar fontes para métricas de desempenho, Interpretar métricas de desempenho, Configurar e monitorar atividade e desempenho
+> **Tempo de leitura:** ~11 min
 
-## The big idea
-You cannot say "the database is slow" unless you know what "normal" looks like. So first you record normal numbers (a **baseline**). Then you watch the same numbers every day with the right tools. When a number moves far from normal, you get an alert and you start looking.
+## Conceito central
+Você não pode dizer "o banco de dados é lento" a menos que você saiba o que "normal" parece. Então, primeiro você registra números normais (a **basal basal**). Então você assiste os mesmos números todos os dias com as ferramentas certas. Quando um número se move longe do normal, você recebe um alerta e começa a procurar.
 
-Think of a doctor. Your normal heart rate is 70. If it is 140 while you sit still, something is wrong. The doctor only knows this because 70 was written down earlier.
+Imagine uma consulta médica. Sua frequência cardíaca normal é de 70. Se chegar a 140 enquanto você está sentado, há um problema. O médico sabe disso porque registrou o valor de 70 antes.
 
-## What is a baseline?
-- A **baseline** is a record of your normal performance numbers (CPU, memory, disk, queries per second) over a normal period.
-- Later you compare new numbers against it.
-- Without a baseline you cannot tell a **normal busy peak** from a **real problem**.
+## O que é uma linha de base?
+- A **basal basal** é um registro de seus números normais de desempenho (CPU, memória, disco, consultas por segundo) durante um período normal.
+- Mais tarde, você compara novos números com ele.
+- Sem uma linha de base, você não pode dizer um **pico normal ocupado ocupado** de um **problema real**.
 
-**Example:** A school app normally uses 30–40% CPU during the day. One Monday it shows 95%. Because you have a baseline, you know this is not normal and you start to investigate.
+**Exemplo:** Um aplicativo escolar normalmente usa 30–40% CPU durante o dia. Uma segunda-feira mostra 95%. Porque você tem uma linha de base, você sabe que isso não é normal e você começa a investigar.
 
-## Look at SQL Server and the OS together
-On **SQL Server on an Azure VM** (a virtual machine where you install and run SQL Server yourself), a problem can come from two places:
-- **Inside SQL Server**, for example a bad query.
-- **Outside SQL Server**, in the operating system (OS) or hardware, for example a slow disk.
+## Veja o SQL Server e o OS juntos
+Ligado **SQL Server em uma Azure VM** (uma máquina virtual onde você instala e executa SQL Server um problema pode vir de dois lugares:
+- **Dentro SQL Server**, por exemplo, uma consulta ruim.
+- **fora SQL Server**, no sistema operacional (OS) ou hardware, por exemplo, um disco lento.
 
-So you collect both kinds of numbers and look at them side by side.
-- On **Windows**, use **Performance Monitor (Perfmon)** (the built-in Windows tool that records counters).
-- On **Linux**, tools like **InfluxDB**, **collectd** and **Grafana** do the same job.
+Então você coleta os dois tipos de números e olha para eles lado a lado.
+- Ligado **Windows**, use **Performance Monitor (Perfmon)** (a ferramenta Windows integrada que registra contadores).
+- Ligado **Linux**, ferramentas como **InfluxDB**, **coleccionado** e **Grafana** Faça o mesmo job.
 
-**Example:** A DMV (a built-in system view, explained in lesson 6) shows slow reads from a data file. Perfmon also shows slow reads on the disk. So the disk is slow, not the query. If Perfmon showed a fast disk, you would look at the query instead.
+**Exemplo:** A DMV (uma visão interna do sistema, explicada na lição 6) mostra leituras lentas de um arquivo de dados. Perfmon também mostra leituras lentas no disco. Então o disco é lento, não a consulta. Se Perfmon mostrou um disco rápido, você olharia para a consulta em vez disso.
 
-## Key Perfmon counters for a baseline
-| Counter | What it shows | What to look for |
+## Contadores Key Perfmon para uma linha de base
+| Contador | O que mostra | O que procurar |
 |---------|---------------|------------------|
-| `Processor(_Total)\% Processor Time` | Total CPU use | High CPU = heavy queries or a VM that is too small |
-| `Paging File(_Total)\% Usage` | Use of the page file (disk used as extra memory) | Memory pressure |
-| `PhysicalDisk(_Total)\Avg. Disk sec/Read` and `/Write` | Disk delay (latency) per read or write | Normally under 20 ms; under 10 ms on Premium storage |
-| `System\Processor Queue Length` | Tasks waiting for a CPU | Above 0 means CPU pressure |
-| `SQLServer:Buffer Manager\Page life expectancy` | How long data pages stay in SQL Server memory | A sudden drop = memory pressure or bad queries |
-| `SQLServer:SQL Statistics\Batch Requests/sec` | Queries run per second | How busy the server is |
-| `SQLServer:SQL Statistics\SQL Compilations/sec` and `Re-Compilations/sec` | How often SQL Server builds query plans | Very high values = query or memory issues |
+| `Processor(_Total)\% Processor Time` | Utilização total CPU | Alta CPU = heavy queries or a VM Isso é muito pequeno |
+| `Paging File(_Total)\% Usage` | Uso do arquivo de página (disk usado como memória extra) | Pressão da memória |
+| `PhysicalDisk(_Total)\Avg. Disk sec/Read` e `/Write` | Delay do disco (latência) por leitura ou escrita | Normalmente com menos de 20 ms; abaixo de 10 ms no armazenamento Premium |
+| `System\Processor Queue Length` | Tarefas aguardando um CPU | Acima de 0 significa pressão CPU |
+| `SQLServer:Buffer Manager\Page life expectancy` | Quanto tempo as páginas de dados ficam na memória SQL Server | A sudden drop = memory pressure or bad queries |
+| `SQLServer:SQL Statistics\Batch Requests/sec` | Queries run por segundo | Quão ocupado é o servidor |
+| `SQLServer:SQL Statistics\SQL Compilations/sec` e `Re-Compilations/sec` | Com que frequência o SQL Server constrói planos de consulta | Very high values = query or memory issues |
 
-Also record **wait statistics** (why queries are waiting) with `sys.dm_os_wait_stats`. Lesson 8 covers waits in detail.
+Também gravar **estatísticas de espera** (por que as consultas estão esperando) com `sys.dm_os_wait_stats`. Lição 8 cobre esperas em detalhes.
 
-## Where performance numbers come from (metric sources)
-Different tools see different layers. This is a common exam theme.
+## De onde vêm os números de desempenho (fontes métricas)
+Ferramentas diferentes vêem camadas diferentes. Este é um tema de exame comum.
 
-| Source | What it sees | Notes |
+| Fonte | O que vê | Notas |
 |--------|--------------|-------|
-| **Azure Monitor** (Azure's built-in monitoring service) | Host-level VM numbers: CPU, disk I/O, network | Does **not** show SQL Server internal numbers |
-| **VM Insights / enhanced monitoring** | Guest OS numbers: free memory, disk latency, disk space | Installs the **Azure Monitor agent**; data goes to a Log Analytics workspace |
-| **Log Analytics workspace** | Stores logs and metrics | You query it with **KQL** (Kusto Query Language) |
-| **SQL IaaS Agent extension** | SQL-specific management for a VM in the portal | Marketplace SQL images register automatically; self-installed SQL Server 2016+ is usually auto-registered, otherwise register by hand |
-| **Perfmon** | OS and SQL Server counters inside the VM | Can send its data to Azure Monitor |
-| **DMVs** | What is happening inside SQL Server right now | Works on all Azure SQL types |
-| **Query Store / Query Performance Insight** | Query history and top queries | See below and lesson 7 |
+| **Azure Monitor** (serviço de monitoramento integrado da Azure) | Números VM de nível de host: CPU, E/O do disco, rede | **E** mostra números internos SQL Server |
+| **VM Insights / monitoramento aprimorado** | Números OS: memória livre, latência do disco, espaço em disco | Instala o **agente Azure Monitor**; os dados vão para um Log Analytics workspace |
+| **Log Analytics workspace** | Armazena logs e métricas | Você consulta com **KQL** (Kusto Query Language) |
+| **SQL IaaS Agent extension** | Gerenciamento específico SQL para um VM no portal | As imagens do Marketplace SQL registram-se automaticamente; o SQL Server 2016+ auto-instalado geralmente é registrado automaticamente, caso contrário, registre-se manualmente |
+| **Perfmon** | Contadores OS e SQL Server dentro do VM | Pode enviar seus dados para Azure Monitor |
+| **DMVs** | O que está acontecendo dentro do SQL Server agora | Funciona em todos os tipos Azure SQL |
+| **Query Store / Query Performance Insight** | Histórico de consultas e principais consultas | Veja abaixo e lição 7 |
 
-Note: The SQL IaaS Agent extension can also do automated patching, but this is moving to **Azure Update Manager**. The extension's Automated Patching retires 17 Sep 2027.
+Observação: O SQL IaaS Agent extension também pode fazer o automated patching, mas isso está se movendo para o **Azure Update Manager**. O Automated Patching da extensão se aposenta em 17 de setembro de 2027.
 
-## Azure Monitor metrics and alerts
-- Azure Monitor collects numbers from Azure resources at regular times.
-- It keeps metric data for **93 days**. To keep it longer, send it to **Azure Storage** (or a Log Analytics workspace).
-- You can draw charts and create **alert rules**.
+## Azure Monitor metrics e alertas
+- O Azure Monitor coleta números de recursos do Azure em horários regulares.
+- Ele mantém dados métricos para **93 dias**. Para mantê-lo por mais tempo, envie-o para **Azure Storage** (ou um Log Analytics workspace).
+- Você pode desenhar gráficos e criar **Regras de alerta**.
 
-**Alert rule parts:**
-- **Scope** – which resources to watch. For VMs this can be a list of VMs, all VMs in resource groups, or all VMs in a subscription (always in **one Azure region**).
-- **Condition** – a metric, an operator (`>`, `<`) and an aggregation (average, max, min, total, count).
-- **Threshold** – two types:
+**Peças da regra de alerta:**
+- **Scope** – quais recursos assistir. Para VMs, esta pode ser uma lista de VMs, todos os VMs em grupos de recursos ou todos os VMs em uma assinatura (sempre em **uma região do Azure**).
+- **Condição** – uma métrica, um operador (`>`, `<`) e uma agregação (média, max, min, total, contagem).
+- **Lim limiar** – dois tipos:
 
-| Threshold type | How it works | Good for |
+| Tipo de limiar | Como funciona | Bom para |
 |----------------|--------------|----------|
-| **Static** | You set the number, for example CPU > 80% | Simple, fixed limits |
-| **Dynamic** | Azure learns from history and sets the limit itself | Workloads with daily or seasonal patterns |
+| **Estática** | Você define o número, por exemplo CPU > 80% | Limites simples e fixos |
+| **Dinâmico** | Azure aprende com a história e define o limite em si | Cargas de trabalho com padrões diários ou sazonais |
 
-**Action group** – what happens when the alert fires:
-- **Notify:** email, SMS, push notification, voice call, email an Azure Resource Manager role.
-- **Automate:** Azure Automation runbook, Azure Function, Logic App, ITSM, webhook, secure webhook.
-- With no action group, the alert is only logged.
+**Grupo de acção** – o que acontece quando o alerta dispara:
+- **Notificar:** e-mail, SMS, notificação push, chamada de voz, e-mail um papel Azure Resource Manager.
+- **Automate:** Azure Automation runbook, Função do Azure, App Lógica, ITSM, webhook, webhook seguro.
+- Sem nenhum grupo de ação, o alerta é registrado apenas.
 
-**Example:** An online shop sets a dynamic CPU alert. On Black Friday CPU rises, but Azure knows this pattern, so no false alarm. A strange spike at 3 a.m. does fire the alert, and a runbook emails the on-call admin.
+**Exemplo:** Uma loja online define um alerta CPU dinâmico. Na Black Friday CPU sobe, mas o Azure conhece esse padrão, portanto, nenhum alarme falso. Um estranho pico em 3 a.m. dispara o alerta e um runbook envia e-mails ao administrador de plantão.
 
-## Key metrics for Azure SQL Database and Managed Instance
-In PaaS (Azure runs the server for you) you cannot use Perfmon. You use the portal metrics and DMVs.
-- `sys.dm_db_resource_stats` – CPU, data I/O, log I/O and memory for **one Azure SQL database**. One row every **15 seconds**, about **1 hour** kept.
-- `sys.server_resource_stats` – resource use for a **Managed Instance**. About **14 days** kept.
-- `sys.dm_user_db_resource_governance` – the limits of your Azure SQL database (what your tier allows).
-- `sys.dm_instance_resource_governance` – the same for Managed Instance.
+## Métricas-chave para Azure SQL Database e Managed Instance
+Em PaaS (Azure executa o servidor para você) você não pode usar Perfmon. Você usa as métricas do portal e DMVs.
+- `sys.dm_db_resource_stats` – CPU, I/O de dados, E/O de log e memória para **Azure SQL database**. Uma linha cada **15 segundos**, aproximadamente **1 hora** mantido.
+- `sys.server_resource_stats` – uso de recursos para um **Managed Instance**. Cerca de **14 dias** mantido.
+- `sys.dm_user_db_resource_governance` – os limites do seu Azure SQL database (o que o seu nível permite).
+- `sys.dm_instance_resource_governance` – o mesmo para Managed Instance.
 
-**How to read the numbers:**
-- CPU near 100% for a long time → find the top CPU queries (Query Store), tune them, or scale up.
-- Data I/O near the limit → missing indexes (too many scans) or a tier that is too small.
-- Log I/O near the limit → too many writes; you may see `LOG_RATE_GOVERNOR` waits.
+**Como ler os números:**
+- CPU perto de 100% por um longo tempo → encontrar o top CPU consultas (Query Store), ajustá-los, ou escalar.
+- I/O de dados perto do limite → índices ausentes (excesso de varreduras) ou um nível que é muito pequeno.
+- Log I/O perto do limite → muitas escritas; você pode ver `LOG_RATE_GOVERNOR` espera.
 
 ## Query Performance Insight (QPI)
-**QPI** is a page in the Azure portal that shows your most expensive queries. It reads its data from **Query Store**.
-- Where: Azure SQL database → **Intelligent Performance** → **Query Performance Insight**.
-- **Azure SQL Database only** (single and pooled). **Not** Managed Instance.
-- Needs **Query Store** turned on (it is on by default in Azure SQL Database).
+**QPI** é uma página no Azure portal que mostra suas consultas mais caras. Ele lê seus dados do **Query Store**.
+- Onde: Azure SQL database → **Intelligent Performance** → **Query Performance Insight**.
+- **Somente Azure SQL Database** (único e agrupado). **Não** Managed Instance.
+- Needs **Query Store** ligado (está ativado por padrão no Azure SQL Database).
 
-**Three views:**
-| View | What it shows |
+**Três pontos de vista:**
+| Ver | O que mostra |
 |------|---------------|
-| **Resource consuming queries** | Top queries by CPU, data I/O or log I/O |
-| **Long running queries** | Top queries by duration (default: past 24 hours) |
-| **Custom** | Choose metric (current docs: CPU, duration, execution count) and time range (24 h, past week, past month) |
+| **Consultas de consumo de recursos** | Consultas de topo por CPU, I/O de dados ou log I/O |
+| **Consultas de longa duração** | Top consultas por duração (padrão: últimas 24 horas) |
+| **Personalizado** | Escolha métrica (documentos atuais: CPU, duração, contagem de execução) e intervalo de tempo (24 h, semana passada, mês passado) |
 
-**Limits:**
-- Shows only the **top 5–20** queries.
-- Shows **totals and averages**, not single runs.
-- Does **not** show execution plans. Click a query, note its **Query ID**, and open that query in Query Store to see the plan.
-- For deeper analysis, Microsoft points to **database watcher** (lesson 2).
+**Limites:**
+- Mostra apenas as consultas **top 5–20**.
+- Mostra **totais e médias**, não corridas únicas.
+- O **E** mostra planos de execução. Clique em uma consulta, anote seu **Consulta ID** e abra essa consulta no Query Store para ver o plano.
+- Para uma análise mais profunda, a Microsoft aponta para **database watcher** (lição 2).
 
-**Example:** A food delivery app is slow on Friday nights. In QPI, "Resource consuming queries" sorted by CPU shows one `SELECT` joining Orders and Customers uses 60% of the CPU. The DBA takes its Query ID to Query Store and finds a table scan in the plan.
+**Exemplo:** Um aplicativo de entrega de alimentos é lento nas noites de sexta-feira. Em QPI, "Consultas de consumo de recursos" classificadas por CPU mostra um `SELECT` juntando Pedidos e Clientes usa 60% do CPU. O DBA leva sua Query ID para Query Store e encontra um table scan no plano.
 
-## Remember for the exam
-- A **baseline** = normal numbers recorded first, so you can spot what is abnormal later.
-- **Azure Monitor does not show SQL Server internal metrics** on a VM. Use Perfmon, DMVs or the SQL IaaS Agent extension.
-- Azure Monitor keeps metrics **93 days**; archive to Storage for longer.
-- **Dynamic thresholds** learn from history; good for seasonal patterns.
-- Alert scope for VMs is always inside **one region**.
-- **QPI = Azure SQL Database only**, needs Query Store, no plans shown, top 5–20 queries.
-- Disk latency should be **under 20 ms** (under 10 ms on Premium).
-- `sys.dm_db_resource_stats` = one Azure SQL database, 15-second rows, about 1 hour of history.
+## Para lembrar na prova
+- Uma **baseline** registra os valores normais primeiro, para que você possa identificar anomalias depois.
+- **Azure Monitor não mostra métricas internas SQL Server** em um VM. Use Perfmon, DMVs ou o SQL IaaS Agent extension.
+- Azure Monitor mantém métricas **93 dias**; arquivo para armazenamento por mais tempo.
+- **limiares dinâmicos** aprender com a história; bom para padrões sazonais.
+- O escopo de alerta para o VMs está sempre dentro do **uma região**.
+- **QPI = Azure SQL Database apenas**, precisa de Query Store, sem planos mostrados, top 5–20 consultas.
+- A latência do disco deve ser **Menos de 20 ms** (menos de 10 ms no Premium).
+- `sys.dm_db_resource_stats` = one Azure SQL database, 15 segundos linhas, cerca de 1 hora de história.
 
-## Quick check
-1. Your SQL Server VM shows high CPU in Azure Monitor. You need to see the SQL Server counter "Batch Requests/sec". Which tool do you use?
-   <details><summary>Answer</summary>Performance Monitor (Perfmon) inside the VM, or DMVs. Azure Monitor does not show SQL Server internal counters.</details>
-2. You need to find the top 5 CPU-heavy queries of an Azure SQL Managed Instance in the portal using Query Performance Insight. Will this work?
-   <details><summary>Answer</summary>No. QPI works only for Azure SQL Database. On Managed Instance use Query Store or DMVs.</details>
-3. Your workload is busy every Monday morning. You want alerts only for unusual CPU, not the normal Monday peak. Which threshold type?
-   <details><summary>Answer</summary>A dynamic threshold. It learns the normal pattern from history.</details>
+## Teste rápido
+1. Seu SQL Server VM mostra alta CPU em Azure Monitor. Você precisa ver o contador SQL Server "Solicitação de correspondência / seg". Qual ferramenta você usa?
+   <details><summary>Resposta</summary>Performance Monitor (Perfmon) dentro do VM, ou DMVs. Azure Monitor não mostra contadores internos SQL Server.</details>
+2. Você precisa encontrar o top 5 CPU -pesados consultas de um Azure SQL Managed Instance no portal usando Query Performance Insight. Será que este trabalho?
+   <details><summary>Resposta</summary>No. QPI trabalha somente para Azure SQL Database. Em Managed Instance use Query Store ou DMVs.</details>
+3. Sua carga de trabalho está ocupada todas as manhãs de segunda-feira. Você quer alertas apenas para o incomum CPU, não o pico normal de segunda-feira. Que tipo de limite?
+   <details><summary>Resposta</summary>Um limiar dinâmico. Aprende o padrão normal da história.</details>

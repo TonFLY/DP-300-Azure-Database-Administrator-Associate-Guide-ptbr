@@ -1,32 +1,32 @@
-# Troubleshoot SQL Server Agent jobs
+# Diagnosticar problemas em jobs do SQL Server Agent
 
-> **Exam skills:** Troubleshoot SQL Server Agent jobs, Configure job alerts and notifications
-> **Reading time:** ~7 min
+> **Habilidades cobradas:** Diagnosticar problemas em jobs do SQL Server Agent e configurar alertas e notificações de jobs
+> **Tempo de leitura:** ~7 min
 
-## The big idea
-When a job fails, work through a short checklist. Is Agent running? What does the history say? Who does the job run as? Did the email go out? It is like a car that will not start: check fuel, then battery, then the key.
+## Conceito central
+Quando um job falha, siga uma lista curta de verificações. O SQL Server Agent está em execução? O que o histórico mostra? Qual conta executa o job? O e-mail foi enviado? É como verificar combustível, bateria e chave, nessa ordem, quando um carro não liga.
 
-## 1. Is the Agent service running?
-- **VM:** if the Agent service is stopped, jobs simply do not run. SSMS shows **"Agent XPs disabled"** next to SQL Server Agent.
-- Set **Start mode = Automatic** in **SQL Server Configuration Manager**. Change the service account there too.
-- Check SQL Server Agent **Error Logs** for start-up problems.
+## 1. O serviço do Agent está em execução?
+- **VM:** se o serviço do Agent estiver parado, os jobs não rodam. O SSMS exibe **“Agent XPs disabled”** ao lado de SQL Server Agent.
+- Em **SQL Server Configuration Manager**, configure **Start mode = Automatic**. Se precisar alterar a conta do serviço, faça isso ali também.
+- Verifique os **Error Logs** do SQL Server Agent se houver falha na inicialização.
 
 ```sql
 SELECT servicename, status_desc, startup_type_desc, service_account
 FROM sys.dm_server_services;
 ```
 
-- **Managed Instance:** Agent is **always running**. If a job does not run, look at the schedule, whether the job is enabled, and permissions.
+- **Managed Instance:** o Agent fica **sempre em execução**. Se um job não rodar, verifique o schedule, se o job está habilitado e quais permissões estão disponíveis.
 
-## 2. Read the job history
-| Object in `msdb` | What it holds |
+## 2. Consultar o histórico do job
+| Objeto em `msdb` | O que armazena |
 |---|---|
-| `dbo.sysjobs` | Job definitions (name, enabled, owner) |
-| `dbo.sysjobsteps` | Step definitions (type, command, database, proxy) |
-| `dbo.sysjobhistory` | Results. **`step_id = 0` is the overall job result.** A row is written **after** a step finishes. |
-| `dbo.sysjobactivity` | Jobs **running right now** and the last run |
+| `dbo.sysjobs` | Definições de jobs (nome, status de habilitação e owner). |
+| `dbo.sysjobsteps` | Definições de steps (tipo, comando, banco de dados e proxy). |
+| `dbo.sysjobhistory` | Resultados. **`step_id = 0` representa o resultado geral do job.** Uma linha é gravada **depois** que o step termina. |
+| `dbo.sysjobactivity` | Jobs **em execução agora** e a última execução. |
 
-**`run_status`**: **0** Failed · **1** Succeeded · **2** Retry · **3** Canceled · **4** In progress.
+**`run_status`**: **0** falhou · **1** teve sucesso · **2** nova tentativa · **3** cancelado · **4** em andamento.
 
 ```sql
 SELECT j.name, h.step_id, h.step_name, h.run_date, h.run_time, h.message
@@ -38,47 +38,47 @@ ORDER BY h.run_date DESC, h.run_time DESC;
 EXEC msdb.dbo.sp_help_jobhistory @job_name = N'NightlyBackup', @run_status = 0, @mode = N'FULL';
 ```
 
-### "Old history is gone"
-- Default limits: **1,000 rows in total** and **100 rows per job**. A busy job pushes old rows out quickly.
-- **VM:** change this in **SQL Server Agent Properties → History**. Delete history by hand with `sp_purge_jobhistory`.
-- **Managed Instance:** fixed at **1,000 / 100**. You **cannot change it**.
-- The `message` column holds only **4,000 characters**. Long errors get cut off. Fix this with step output (next section).
+### Quando o histórico mais antigo some
+- Limites padrão de **1.000 linhas no total** e **100 linhas por job**. Um job frequente faz as linhas antigas saírem rapidamente.
+- **VM:** altere os limites em **SQL Server Agent Properties → History**. Para limpar o histórico manualmente, use `sp_purge_jobhistory`.
+- **Managed Instance:** os limites são fixos em **1.000 / 100** e não podem ser alterados.
+- A coluna `message` guarda apenas **4.000 caracteres**. Mensagens mais longas são truncadas. Para capturá-las por inteiro, configure a saída do step.
 
-## 3. Capture the full step output
-On the job step's **Advanced** page (or `sp_update_jobstep`), send output to a **file** or a **table**:
+## 3. Capturar a saída completa do step
+Na página **Advanced** do step, ou com `sp_update_jobstep`, direcione a saída para um **arquivo** ou uma **tabela**:
 
-| `@flags` | Effect |
+| `@flags` | Efeito |
 |---|---|
-| `0` / `2` | Overwrite / **append** to the output file |
-| `8` / `16` | **Log to table** (`msdb.dbo.sysjobstepslogs`), overwrite / append |
+| `0` / `2` | Sobrescrever ou **acrescentar** ao arquivo de saída. |
+| `8` / `16` | **Log to table** (tabela `msdb.dbo.sysjobstepslogs`), sobrescrevendo ou acrescentando registros. |
 
 ```sql
 EXEC msdb.dbo.sp_update_jobstep @job_name = N'NightlyIndexMaint', @step_id = 1,
      @output_file_name = N'D:\SQLLogs\IndexMaint.txt', @flags = 2;  -- append
 ```
-On **Managed Instance** there is no file system access, so use **log to table**.
+Em **Managed Instance**, use **Log to table**, pois não há acesso ao sistema de arquivos.
 
-## 4. Who does the job run as?
-| Problem | What you see | Fix |
+## 4. Qual conta executa o job?
+| Problema | Sintoma | Solução |
 |---|---|---|
-| **Job owner left the company** (login dropped or disabled) | "Unable to determine if the owner ... has server access" | Make a **service login** or `sa` the owner: `sp_update_job @owner_login_name = N'sa'` |
-| **Owner is not sysadmin** | T-SQL step runs as the owner and lacks rights | Grant the rights, or let a sysadmin own the job |
-| **CmdExec / PowerShell / SSIS step denied** | Access denied to a file share or OS | Use a **proxy** with a **credential** that has the rights |
-| **Proxy not usable** | Proxy not in the list, or step fails | Grant it: `sp_grant_proxy_to_subsystem` and `sp_grant_login_to_proxy` |
+| **O job owner saiu da empresa** (login excluído ou desabilitado) | “Unable to determine if the owner ... has server access” | Defina um **service login** ou `sa` como owner com `sp_update_job @owner_login_name = N'sa'`. |
+| **O owner não é sysadmin** | O step T-SQL executa no contexto do owner e não tem as permissões necessárias. | Conceda as permissões necessárias ou defina um sysadmin como owner do job. |
+| **O step CmdExec, PowerShell ou SSIS teve acesso negado** | O step não acessa um compartilhamento ou o sistema operacional. | Use um **proxy** com uma **credential** que tenha as permissões. |
+| **O proxy não pode ser usado** | O proxy não aparece na lista ou o step falha. | Conceda acesso ao proxy usando `sp_grant_proxy_to_subsystem` e `sp_grant_login_to_proxy`. |
 
-- **T-SQL steps never use proxies.** Only a **sysadmin** can create proxies.
-- Non-sysadmin users need an Agent role in `msdb`: **SQLAgentUserRole**, **SQLAgentReaderRole** or **SQLAgentOperatorRole**. SQLAgentUserRole sees **only its own jobs**.
+- **Steps T-SQL nunca usam proxies.** Somente um **sysadmin** pode criar proxies.
+- Usuários que não são sysadmin precisam de uma role do Agent em `msdb`: **SQLAgentUserRole**, **SQLAgentReaderRole** ou **SQLAgentOperatorRole**. SQLAgentUserRole dá visibilidade **apenas aos próprios jobs**.
 
-**Example:** A school's ETL job starts failing on Monday. Its owner was a DBA who left on Friday. His login was removed. Change the job owner to a service login and it works again.
+**Exemplo:** o job de ETL de uma escola começa a falhar na segunda-feira. Seu owner era um DBA que saiu na sexta-feira e teve o login removido. Troque o owner por um service login para que o job volte a funcionar.
 
-## 5. Emails do not arrive
-1. Check the Database Mail set-up from [lesson 3](<03 - SQL Server Agent jobs.md>): profile enabled in Agent and Agent restarted (VM), or profile named `AzureManagedInstance_dbmail_profile` plus outbound SMTP in the NSG (MI).
-2. Check the **operator** is enabled and named on the job's **Notifications** page.
-3. Look for send errors in `msdb.dbo.sysmail_event_log` and `sysmail_faileditems`.
+## 5. Os e-mails não chegam
+1. Verifique a configuração do Database Mail na [lição 3](<03 - SQL Server Agent jobs.md>). Em VM, confira se o perfil está habilitado no Agent e se o Agent foi reiniciado. Em MI, verifique o perfil `AzureManagedInstance_dbmail_profile` e a regra de SMTP de saída no NSG.
+2. Verifique se o **operator** está habilitado e selecionado na página **Notifications** do job.
+3. Procure erros de envio em `msdb.dbo.sysmail_event_log` e `sysmail_faileditems`.
 
-## 6. Jobs and availability groups
-- An **availability group (AG)** keeps copies of databases on several servers. But `msdb` is **not** in the AG, so **jobs do not fail over**.
-- Create each job on **every replica**. Make the first step check whether this server is the primary:
+## 6. Jobs e availability groups
+- Um **availability group (AG)** mantém cópias dos bancos de dados em vários servidores. O `msdb` fica fora do AG, portanto **os jobs não acompanham o failover**.
+- Crie cada job em **todas as réplicas**. No primeiro step, confira se o servidor é o primário:
 
 ```sql
 IF ISNULL(sys.fn_hadr_is_primary_replica(N'SalesDb'), 0) <> 1
@@ -87,33 +87,33 @@ BEGIN
     RETURN;
 END
 ```
-- The function returns **1** on the primary, **0** on a secondary, **NULL** if the database is not in an AG.
-- Exception: **SQL Server 2022+ contained AGs** have their own `msdb`, so their jobs follow the primary.
-- **Managed Instance failover groups** do not copy `msdb` either. Re-create the jobs on the secondary.
+- A função retorna **1** no primário, **0** em um secundário e **NULL** quando o banco não está em um AG.
+- A exceção são os **contained AGs no SQL Server 2022+**, que têm um `msdb` próprio. Neles, os jobs acompanham o primário.
+- Os **Managed Instance failover groups** também não copiam `msdb`. Recrie os jobs no secundário.
 
-## 7. Managed Instance Agent limits
-| Supported on MI | Not supported on MI |
+## 7. Limites do Agent em Managed Instance
+| Com suporte em MI | Sem suporte em MI |
 |---|---|
-| T-SQL steps, SSIS steps, replication Snapshot / Log Reader / Distribution steps | **Proxies**, **Agent alerts**, Pager, NetSend, EventLog |
-| Schedules, operators, **email** notifications | Turning Agent on/off; changing Agent properties (`sp_set_agent_properties`) |
-| SQLAgent roles in `msdb` | CmdExec, **Idle-CPU** schedules, Merge / Queue Reader steps, SSAS, MSX/TSX, PowerShell Core |
+| Steps T-SQL e SSIS e steps Snapshot, Log Reader e Distribution de replication. | **Proxies**, **Agent alerts**, Pager, NetSend e EventLog. |
+| Schedules, operators e notificações por **e-mail**. | Ligar ou desligar o Agent e editar suas propriedades (`sp_set_agent_properties`). |
+| Roles SQLAgent em `msdb`. | CmdExec, schedules **Idle-CPU**, steps Merge e Queue Reader, SSAS, MSX/TSX e PowerShell Core. |
 
-- Microsoft Entra users must be **mapped directly to a login** (not only through a group) to manage jobs.
+- Usuários do Microsoft Entra precisam estar **mapeados diretamente para um login** para gerenciar jobs. O mapeamento apenas por grupo é insuficiente.
 
-## Remember for the exam
-- `run_status = 0` = failed. `step_id = 0` = the whole job's result.
-- "Job running right now?" → `sysjobactivity`.
-- "Older history missing" → **1,000 total / 100 per job** limits. On MI you cannot change them.
-- "Long error is cut off" → output **file** or **log to table**.
-- "Job fails after an employee left" → change the **job owner**.
-- "CmdExec step cannot reach a share" → **proxy + credential** (VM only).
-- "Job runs or fails on the AG secondary" → add **`sys.fn_hadr_is_primary_replica`** and create the job on every replica.
-- MI: **no proxies, no alerts**, mail profile **`AzureManagedInstance_dbmail_profile`**.
+## Para lembrar na prova
+- `run_status = 0` indica falha. `step_id = 0` indica o resultado geral do job.
+- Para verificar se um job está rodando agora, consulte `sysjobactivity`.
+- Quando o histórico antigo some, verifique os limites de **1.000 linhas no total / 100 por job**. Em MI, os limites são fixos.
+- Para capturar uma mensagem truncada, grave a saída em **arquivo** ou use **Log to table**.
+- Se o job falhar após a saída de um funcionário, troque o **job owner**.
+- Se um step CmdExec não acessar um compartilhamento, use **proxy e credential** (disponível em VM).
+- Se o job rodar ou falhar no secundário de um AG, adicione a verificação com **`sys.fn_hadr_is_primary_replica`** e crie o job em todas as réplicas.
+- Em MI, **proxies e alertas do Agent não têm suporte**. O perfil de e-mail é **`AzureManagedInstance_dbmail_profile`**.
 
-## Quick check
-1. A job's history shows only the last few days. Where is the rest?
-   <details><summary>Answer</summary>It was removed by the history limits (1,000 rows total, 100 per job). On a VM you can raise them; on MI you cannot.</details>
-2. A backup job runs on both AG replicas and fails on the secondary. What do you add?
-   <details><summary>Answer</summary>A first step that checks sys.fn_hadr_is_primary_replica and exits if the server is not the primary.</details>
-3. On Managed Instance you try to create a proxy for a job step. What happens?
-   <details><summary>Answer</summary>It is not supported. MI does not support SQL Agent proxies.</details>
+## Teste rápido
+1. O histórico de um job só mostra os últimos dias. O que aconteceu com as entradas anteriores?
+   <details><summary>Resposta</summary>As entradas antigas foram removidas pelos limites do histórico (1.000 linhas no total e 100 por job). Em uma VM, é possível aumentar os limites. Em MI, são fixos.</details>
+2. Um job de backup roda nas duas réplicas do AG e falha no secundário. O que você adiciona?
+   <details><summary>Resposta</summary>Um step inicial que verifica sys.fn_hadr_is_primary_replica e encerra a execução se o servidor não for o primário.</details>
+3. O que acontece se você tentar criar um proxy para um job step em Managed Instance?
+   <details><summary>Resposta</summary>Managed Instance não oferece suporte a proxies do SQL Server Agent.</details>

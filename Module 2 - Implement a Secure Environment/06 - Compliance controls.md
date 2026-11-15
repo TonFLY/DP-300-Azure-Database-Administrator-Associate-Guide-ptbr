@@ -1,139 +1,139 @@
-# Compliance controls
+# Controles de conformidade
 
-> **Exam skills:** Apply a data classification strategy, Configure server and database audits, Implement dynamic data masking, Implement ledger in Azure SQL, Implement row-level security
-> **Reading time:** ~17 min
+> **Habilidades cobradas:** Aplicar uma estratégia de classificação de dados, Configurar auditorias de servidor e banco de dados, Implementar dynamic data masking, Implementar livro contábil em Azure SQL, Implementar row-level security
+> **Tempo de leitura:** ~17 min
 
-## The big idea
-Laws like GDPR, HIPAA and PCI-DSS say you must know where sensitive data is, control who sees it, and prove what happened to it. Azure SQL gives you a toolbox:
-- **Find and label** sensitive data → data classification, Microsoft Purview.
-- **Hide** it → dynamic data masking, row-level security.
-- **Record** who did what → auditing.
-- **Prove** nobody tampered with it → ledger.
-- **Watch for attacks** → Microsoft Defender for SQL.
+## Conceito central
+Leis como GDPR, HIPAA e PCI-DSS dizem que você deve saber onde os dados sensíveis estão, controlar quem vê e provar o que aconteceu com isso. Azure SQL dá-lhe uma caixa de ferramentas:
+- Dados sensíveis **Localizar e etiquetar** Classificação de dados →, Microsoft Purview.
+- **Esconder** ele → dynamic data masking, row-level security.
+- **Gravar** que fez o que a auditoria →.
+- **Prove** ninguém adulterou com ele → livro.
+- **Cuidado com os ataques** → Microsoft Defender for SQL.
 
-Think of a pharmacy. Labels mark the dangerous medicines (classification). Staff see only their own shop's stock (row-level security). The till receipt hides most of the card number (masking). CCTV records who came in (auditing). A sealed, numbered logbook shows if a page was torn out (ledger). A security guard watches for thieves (Defender).
+Pense em uma farmácia. Os rótulos marcam os medicamentos perigosos (classificação). A equipe vê apenas o estoque de sua própria loja (row-level security). O recibo até esconde a maior parte do número do cartão (mascaramento). Registros CCTV que entraram (auditoria). Um diário de bordo selado e numerado mostra se uma página foi arrancada. Um guarda de segurança vigia os ladrões (Defender).
 
-## Data classification
-**Data classification** means tagging columns with labels that say how sensitive they are.
-- **Sensitivity label:** how secret it is, e.g. Public, General, Confidential, Highly Confidential.
-- **Information type:** what kind of data it is, e.g. Email, Credit Card, National ID.
+## Classificação dos dados
+**Classificação dos dados** significa marcar colunas com rótulos que dizem o quão sensíveis eles são.
+- **Etiqueta da sensibilidade:** quão secreto é, e.g. Público, Geral, Confidencial, Altamente Confidencial.
+- **Tipo de informação:** que tipo de dados é, e.g. E-mail, cartão de crédito, nacional ID.
 
-**Example:** A healthcare app labels `PatientName` as Confidential and `MedicalHistory` as Highly Confidential. The team then knows which columns need encryption or masking.
+**Exemplo:** Um aplicativo de saúde rotula `PatientName` como Confidencial e `MedicalHistory` como Altamente Confidencial. A equipe então sabe quais colunas precisam de criptografia ou mascaramento.
 
-### How to classify
-- **Automatic recommendations:** in the Azure portal (database → **Security → Data Discovery & Classification**) or SSMS. The engine looks at **column names** like "email", "dob", "ssn". Badly named columns (like `col1`) will be missed.
-- **Manual:** portal, SSMS, or T-SQL.
+### Como classificar
+- **Recomendações automáticas:** no Azure portal (banco de dados → **Segurança → Dados Descoberta e Classificação**) ou SSMS. O motor olha para **nomes de colunas** como "email", "dob", "ssn". Colunas mal nomeadas (como `col1`) serão perdidas.
+- Portal **Manual:**, SSMS ou T-SQL.
 
 ```sql
 ADD SENSITIVITY CLASSIFICATION TO Application.People.EmailAddress
 WITH (LABEL = 'Confidential', INFORMATION_TYPE = 'Email');
 ```
 
-### Where labels are stored
-- SQL Server 2019+, Azure SQL Database and Managed Instance: system view **`sys.sensitivity_classifications`**.
-- Older SQL Server: **extended properties** on the column.
+### Onde os rótulos são armazenados
+- SQL Server 2019+, Azure SQL Database e Managed Instance: vista do sistema **`sys.sensitivity_classifications`**.
+- Older SQL Server: **propriedades estendidas** na coluna.
 
-### Custom labels and policies
-- Make your own labels and information types in **Microsoft Defender for Cloud** (the information protection policy). You need rights at the **root management group**.
-- Or switch the tenant to the **Microsoft Purview Information Protection** policy to use Microsoft 365 sensitivity labels. This needs tenant-wide **Security Admin**, and automatic recommendations are turned off in that mode.
-- Label-based **access control** for Azure SQL Database is **retired**. Labels are now for discovery, reporting and auditing only.
+### Etiquetas e políticas personalizadas
+- Faça seus próprios rótulos e tipos de informações no **Microsoft Defender for Cloud** (a política de proteção de informações). Você precisa de direitos no **grupo de gestão raiz**.
+- Ou mude o locatário para a política **Proteção de Informação Microsoft Purview** para usar os rótulos de sensibilidade do Microsoft 365. Isso precisa do **Administrador de Segurança** em todo o locatário, e as recomendações automáticas são desativadas nesse modo.
+- O **controle de acesso** para Azure SQL Database baseado em etiquetas é **aposentado**. Os rótulos são agora apenas para descoberta, relatórios e auditoria.
 
-### Why it matters
-- Shows where sensitive data lives.
-- Helps you plan **encryption** and **masking**.
-- **Auditing** can record when labelled columns are read (see below).
+### Por que é importante
+- Mostra onde os dados sensíveis vivem.
+- Ajuda a planejar **Criptografia** e **mascaramento**.
+- **Auditoria** pode gravar quando as colunas rotuladas são lidas (veja abaixo).
 
 ## Microsoft Purview
-**Microsoft Purview** is a **data governance** service for the **whole organisation**, not just one database. It covers on-premises, multi-cloud (AWS, GCP) and SaaS sources.
-- **Data map and catalog:** register sources, **scan** them, and let people **search** for data ("where are customer emails?").
-- **Classification:** finds sensitive data automatically.
-- **Lineage:** shows how data flows from source to destination (e.g. through stored procedures and pipelines).
-- **Insights:** reports such as how much of the estate is scanned or holds sensitive data.
+**Microsoft Purview** é um serviço **governança de dados** para o **organização inteira**, não apenas um banco de dados. Ele cobre on-premises, multi-nuvem (AWS, GCP) e fontes SaaS.
+- Fontes de registro **Mapa e catálogo de dados:**, **scan**-los, e deixar as pessoas **search** para dados ("onde estão os e-mails do cliente?").
+- O **Classificação:** encontra dados confidenciais automaticamente.
+- **Linhagem:** mostra como os dados fluem da fonte para o destino (e.g. através de procedimentos armazenados e dutos).
+- Relatórios **Insights:**, como quanto da propriedade é digitalizada ou contém dados confidenciais.
 
-**Example:** A company with 10,000 databases uses Purview to find every column that holds credit card numbers, across Azure SQL, Power BI and on-premises servers.
+**Exemplo:** Uma empresa com bancos de dados 10,000 usa o Purview para encontrar todas as colunas que possuem números de cartão de crédito, em servidores Azure SQL, Power BI e on-premises.
 
-### Scanning Azure SQL Database
-1. **Register** the database in Purview.
-2. Create a **scan** (which objects, which classification rules).
-3. Test the connection and run it.
+### Digitalização Azure SQL Database
+1. **Registro** o banco de dados em Purview.
+2. Criar um **scan** (quais objetos, quais regras de classificação).
+3. Teste a conexão e execute-a.
 
-Authentication for the scan, best first:
-- **System-assigned managed identity** of the Purview account (simplest, recommended).
+Autenticação para a varredura, melhor primeiro:
+- **System-assigned managed identity** da conta Purview (simples, recomendado).
 - User-assigned managed identity.
 - **Service principal**.
-- **SQL authentication** (least recommended).
+- **SQL authentication** (menos recomendado).
 
-Network: allow Purview through the firewall (Allow Azure services), or use a **self-hosted integration runtime** or a **managed virtual network**. With a **self-hosted runtime, managed identities do not work**: use a service principal or SQL auth.
+Rede: permitir Purview através do firewall (Permitir serviços Azure), ou usar um **tempo de execução da integração auto-hospedada** ou um **rede virtual gerenciada**. Com um **Tempo de execução auto-hospedado, managed identities não funciona**: use um auth service principal ou SQL.
 
-Stored-procedure lineage is in **preview**. The Purview identity needs **db_owner**, the database needs a master key, and "Allow Azure services" must be on. It does not work through a self-hosted or managed VNet runtime or a private endpoint.
+A linhagem de processo armazenado está em **pré-visualização**. A identidade Purview precisa de **db_owner**, o banco de dados precisa de uma chave mestra e "Permitir serviços Azure" deve estar ligado. Não funciona através de um tempo de execução VNet auto-hospedado ou gerenciado ou um private endpoint.
 
-### Classification vs Purview
+### Classificação vs Purview
 
-| | Data Discovery & Classification | Microsoft Purview |
+| | Descoberta e classificação de dados | Microsoft Purview |
 |--|------------------------------|-------------------|
-| Scope | One database | Whole organisation, many source types |
-| Extra features | Labels, audit of sensitive access | Catalog, search, lineage, insights |
+| Scope | Um banco de dados | Organização inteira, muitos tipos de fonte |
+| Recursos extras | Etiquetas, auditoria de acesso sensível | Catálogo, pesquisa, linhagem, insights |
 
-## Auditing
-**Auditing** records database events (logins, queries, changes) to a log. It helps with compliance and with spotting unusual activity.
+## Auditoria
+**Auditoria** registra eventos de banco de dados (logins, consultas, alterações) em um log. Ajuda na conformidade e na detecção de atividades incomuns.
 
-### Where logs go
+### Para onde vão os logs
 
-| Destination | Good for |
+| Destino | Bom para |
 |-------------|----------|
-| **Azure Storage account** | Cheap long-term archive |
-| **Log Analytics workspace** | Queries and dashboards (Azure Monitor) |
-| **Event Hubs** | Streaming to other systems (e.g. a SIEM) |
+| **Conta Azure Storage** | Arquivo barato de longo prazo |
+| **Log Analytics workspace** | Consultas e dashboards (Azure Monitor) |
+| **Event Hubs** | Streaming para outros sistemas (e.g. a SIEM) |
 
-### Server-level vs database-level
+### Nível de servidor vs nível de banco de dados
 
-| Type | Scope | When |
+| Tipo | Scope | Quando |
 |------|-------|------|
-| **Server-level** | All databases on the server, including new ones | **Recommended** default |
-| **Database-level** | One database | Only if that database needs a different destination or different events |
+| **nível servidor** | Todos os bancos de dados no servidor, incluindo novos | padrão **Recomendado** |
+| **nível de banco de dados** | Um banco de dados | Somente se essa banco de dados precisar de um destino diferente ou eventos diferentes |
 
-- If server auditing is on, it **always applies**. A database audit runs **side by side** with it. It does **not** replace it.
-- Avoid turning on both unless you have a reason (different storage, different rules).
+- Se a auditoria do servidor estiver ativada, ela **sempre se aplica**. Uma auditoria de banco de dados executa **lado a lado** com ela. Ela substitui o **E**.
+- Evite ligar os dois, a menos que você tenha um motivo (armazenamento diferente, regras diferentes).
 
-**Example:** A bank turns on server-level auditing to Log Analytics for all 50 databases. Its fraud database must also keep logs in a separate storage account for regulators, so that one database also gets a database-level audit.
+**Exemplo:** Um banco ativa a auditoria de nível de servidor para o Log Analytics para todos os 50 bancos de dados. Seu banco de dados de fraude também deve manter registros em uma conta de armazenamento separada para reguladores, para que um banco de dados também receba uma auditoria de nível de banco de dados.
 
-### Default events
-The default action groups are:
-- `BATCH_COMPLETED_GROUP` (every query and procedure run)
+### Eventos padrão
+Os grupos de ação padrão são:
+- `BATCH_COMPLETED_GROUP` (cada consulta e procedimento executado)
 - `SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP`
 - `FAILED_DATABASE_AUTHENTICATION_GROUP`
 
-You can add more action groups.
+Você pode adicionar mais grupos de ação.
 
-### Good to know
-- **Sensitive data access:** if columns are classified, the audit log field **`data_sensitivity_information`** shows which labelled columns a query touched.
-- Turned on in the portal: **SQL server → Security → Auditing**.
-- Read-only replicas are audited automatically.
-- Under very heavy load, some events may be dropped.
-- Storage retention default is **0 = keep forever**.
-- Write to storage with a **managed identity** (recommended) or storage keys. Log Analytics and Event Hubs targets use a `SQLSecurityAuditEvents` diagnostic setting.
-- Since July 2025, all server-level audit logs (including read-only replicas) go to one **`master`** folder.
-- Failed **Entra** logins are **not** in the SQL audit log. Use the **Entra sign-in logs**.
+### Bom saber
+- **Acesso a dados sensíveis:** se as colunas forem classificadas, o campo de registro de auditoria **`data_sensitivity_information`** mostra quais colunas rotuladas uma consulta tocada.
+- Ligado no portal: **SQL server → Segurança → Auditoria**.
+- Read-only replicas são auditados automaticamente.
+- Sob carga muito pesada, alguns eventos podem ser descartados.
+- O padrão de retenção de armazenamento é **0 = keep forever**.
+- Escreva para armazenamento com um **managed identity** (recomendado) ou chaves de armazenamento. Os alvos Log Analytics e Event Hubs usam uma configuração de diagnóstico `SQLSecurityAuditEvents`.
+- Desde julho de 2025, todos os registros de auditoria no nível do servidor (incluindo read-only replicas) vão para uma pasta **`master`**.
+- Falha **Entro** logins são **E** no log de auditoria SQL. Use o **Entrar logs**.
 
 ## Dynamic data masking (DDM)
-**DDM** hides part of a column's value **in query results**. The real data in the table is **not changed** and **not encrypted**.
-- Users without the **UNMASK** permission see masked values.
-- Users with UNMASK, or with **CONTROL** (db_owner, sysadmin), always see real data.
-- No app changes needed.
+**DDM** esconde parte do valor **em resultados de consulta** de uma coluna. Os dados reais na tabela são **Não alterado** e **não encriptado**.
+- Usuários sem a permissão **UNMASK** ver valores mascarados.
+- Usuários com UNMASK, ou com **CONTROL** (db_owner, sysadmin), sempre veem dados reais.
+- Não são necessárias alterações no app.
 
-**Example:** A call centre agent runs `SELECT Phone FROM Customers` and sees `XXX-XXX-1234`. The manager, who has UNMASK, sees the full number.
+**Exemplo:** Um agente do call center executa `SELECT Phone FROM Customers` e vê `XXX-XXX-1234`. O gerente, que tem UNMASK, vê o número completo.
 
-### Masking functions
+### Masking funções
 
-| Function | Result | Example |
+| Função | Resultado | Exemplo |
 |----------|--------|---------|
-| `default()` | Full mask: `XXXX`, `0`, `1900-01-01` | Address |
-| `email()` | `aXXX@XXXX.com` | Email |
-| `partial(prefix,"pad",suffix)` | Shows start and end, masks the middle | `partial(0,"XXXX-XXXX-",4)` for phone |
-| `random(low,high)` | A random number in a range | `random(1,12)` |
-| `datetime("Y")` | Masks part of a date (SQL Server 2022+) | Birth date |
+| `default()` | Máscara completa: `XXXX`, `0`, `1900-01-01` | Endereço |
+| `email()` | `aXXX@XXXX.com` | E-mail |
+| `partial(prefix,"pad",suffix)` | Mostra começo e fim, mascara o meio | `partial(0,"XXXX-XXXX-",4)` para telefone |
+| `random(low,high)` | Um número aleatório em um intervalo | `random(1,12)` |
+| `datetime("Y")` | Máscaras parte de uma data (SQL Server 2022+) | Data de nascimento |
 
-The portal also offers a **credit card** mask (`XXXX-XXXX-XXXX-1234`).
+O portal também oferece uma máscara **cartão de crédito** (`XXXX-XXXX-XXXX-1234`).
 
 ```sql
 ALTER TABLE dbo.Customer ALTER COLUMN Email
@@ -143,19 +143,19 @@ GRANT UNMASK ON SCHEMA::Data TO ServiceManager;            -- granular (SQL Serv
 GRANT UNMASK ON Data.Membership(FirstName) TO Attendant;   -- one column
 ```
 
-- Portal: database → **Security → Dynamic Data Masking**.
-- Adding a mask needs **ALTER ANY MASK** plus ALTER on the table.
-- **Copying keeps the mask:** `SELECT * INTO Copy FROM Customers` run by a user without UNMASK stores **masked** values.
-- **Weakness:** clever users can guess values with queries (**inference**, e.g. `WHERE Salary > 50000`). Combine DDM with auditing, encryption and RLS.
+- Portal: banco de dados → **Segurança → Dynamic Data Masking**.
+- Adicionar uma máscara precisa de **ALTER ANY MASK** mais ALTER na tabela.
+- **A cópia mantém a máscara:** `SELECT * INTO Copy FROM Customers` executado por um usuário sem UNMASK armazena valores **mascarada**.
+- **Fraqueza:** usuários inteligentes podem adivinhar valores com consultas (**inferência**, e.g. `WHERE Salary > 50000`). Combine DDM com auditoria, criptografia e RLS.
 
 ## Row-level security (RLS)
-**RLS** controls **which rows** a user can see or change. It works like an automatic `WHERE` clause added to every query by the database itself.
+**RLS** controla **quais linhas** um usuário pode ver ou mudar. Funciona como uma cláusula automática `WHERE` adicionada a cada consulta pelo próprio banco de dados.
 
-**Example:** A SaaS sales app stores all tenants in one `Sales` table. When Tenant1 queries it, they see only rows where `TenantName = 'Tenant1'`. They cannot see Tenant2's orders, however they write the query.
+**Exemplo:** Um aplicativo de vendas SaaS armazena todos os inquilinos em uma tabela `Sales`. Quando o Tenant1 o consulta, eles vêem apenas linhas onde o `TenantName = 'Tenant1'`. Eles não podem ver as ordens do Tenant2, no entanto, escrevem a consulta.
 
-### How it works
-1. Create an **inline table-valued function** (the **predicate**) with the rule.
-2. Create a **security policy** that attaches the function to the table.
+### Como funciona
+1. Crie um **função em linha de tabela-valor** (o **predicado**) com a regra.
+2. Crie um **política de segurança** que atribua a função à tabela.
 
 ```sql
 CREATE FUNCTION sec.fn_TenantFilter(@TenantName NVARCHAR(10))
@@ -168,32 +168,32 @@ ADD FILTER PREDICATE sec.fn_TenantFilter(TenantName) ON dbo.Sales
 WITH (STATE = ON);
 ```
 
-Test with `EXECUTE AS USER = 'Tenant1'; SELECT * FROM dbo.Sales; REVERT;`.
+Teste com `EXECUTE AS USER = 'Tenant1'; SELECT * FROM dbo.Sales; REVERT;`.
 
-### Two kinds of predicate
+### Dois tipos de predicado
 
-| Predicate | What it does | Affects |
+| Predicar | O que faz | Afectes |
 |-----------|--------------|---------|
-| **Filter** | Silently hides rows the user may not see | SELECT, UPDATE, DELETE |
-| **Block** | Stops writes that break the rule | INSERT, UPDATE, DELETE |
+| **Filtro** | Esconde silenciosamente as linhas que o usuário pode não ver | SELECT, UPDATE, DELETE |
+| **Bloco** | Escreve que quebra a regra | INSERT, UPDATE, DELETE |
 
-### Tips
-- RLS does **not encrypt** anything.
-- Watch for **side-channel attacks** (e.g. divide-by-zero errors that reveal a hidden row exists).
-- Put functions and policies in a **separate schema**. Keep predicate functions simple and fast.
+### Dicas
+- RLS faz qualquer coisa **não encriptar**
+- Assista ao **ataques de canal lateral** (e.g. dividir por zero erros que revelam uma linha oculta existe).
+- Coloque funções e políticas em um **esquema separado**. Mantenha as funções de predicados simples e rápidas.
 
 ## Ledger
-**Ledger** makes data **tamper-evident**. It proves to auditors or partners that rows were not secretly changed. It is like blockchain, but inside one database, with no network of computers.
-- Available in **Azure SQL Database, Managed Instance and SQL Server 2022+**.
-- Each transaction is hashed with **SHA-256**. The hashes are **chained** together. If someone changes data outside normal SQL (e.g. edits the files), the chain breaks and **verification fails**.
-- Ledger **detects** tampering. It does **not prevent** it.
+**Ledger** faz dados **invio-evidente**. Prova aos auditores ou parceiros que as linhas não foram secretamente alteradas. É como blockchain, mas dentro de um banco de dados, sem rede de computadores.
+- Disponível em **Azure SQL Database, Managed Instance e SQL Server 2022+**.
+- Cada transação é hashed com **SHA-256**. Os hashes são **acorrentado** juntos. Se alguém muda dados fora do normal SQL (e.g. edita os arquivos), as quebras de cadeia e **Falha na verificação**.
+- Ledger **detecta** adulteração. Ele faz **não evitar** ele.
 
-### Two ledger table types
+### Dois tipos ledger table
 
-| Type | Allows | Use for |
+| Tipo | Permite | Uso para |
 |------|--------|---------|
-| **Updatable ledger table** | Insert, update, delete. Old versions kept in a **history table** | Systems of record, e.g. bank balances |
-| **Append-only ledger table** | **Insert only**. Updates and deletes are blocked | Logs, accounting journals, security events |
+| **Tabela Updatable ledger** | Inserir, atualizar, apagar. Versões antigas mantidas em um **tabela história** | Sistemas de registro, e.g. saldos bancários |
+| **Tabela Append-only ledger** | **Inserir apenas**. Atualizações e exclusões são bloqueadas | Logs, diários de contabilidade, eventos de segurança |
 
 ```sql
 CREATE TABLE dbo.Balances (ID INT PRIMARY KEY, Amount MONEY)
@@ -202,67 +202,67 @@ CREATE TABLE dbo.AuditEvents (ID INT, Msg NVARCHAR(200))
 WITH (LEDGER = ON (APPEND_ONLY = ON));                -- append-only
 ```
 
-### Ledger database and digests
-- A **ledger database** makes **every** table a ledger table. You choose this **only when creating** the database (portal → **Security** tab → Ledger → **Enable for all future tables**). You **cannot** turn it on or off later.
-- You can still make single ledger tables in a normal database with T-SQL.
-- A **digest** is the latest hash of the chain. Store digests outside the database: **Azure Blob Storage with an immutability policy** or **Azure Confidential Ledger** (automatic), or save them manually.
-- Verify with `sys.sp_verify_database_ledger_from_digest_storage` (or `sys.sp_verify_database_ledger` with a saved digest).
+### Banco de dados e resumos Ledger
+- A **banco de dados** makes **Cada** tabela a ledger table. Você escolhe este **somente quando se cria** o banco de dados (portal → **Segurança** tab → Ledger → **Ativar para todas as tabelas futuras**). Você **não pode** Ligue ou desligue mais tarde.
+- Você ainda pode fazer ledger tables único em um banco de dados normal com T-SQL.
+- O A **digest** é o hash mais recente da cadeia. Armazenar digeri fora do banco de dados: **Azure Blob Storage com uma política de imutabilidade** ou **Azure Confidencial Ledger** (automático), ou salvá-los manualmente.
+- Verifique com `sys.sp_verify_database_ledger_from_digest_storage` (ou `sys.sp_verify_database_ledger` com um resumo salvo).
 
-**Example:** A fintech company keeps loan approvals in an updatable ledger table and sends digests to immutable Blob Storage. An auditor runs verification and sees the chain is intact, so no approval was quietly edited.
+**Exemplo:** Uma empresa fintech mantém aprovações de empréstimos em uma tabela updatable ledger e envia digests para Blob Storage imutável. Um auditor executa a verificação e vê que a cadeia está intacta, então nenhuma aprovação foi editada silenciosamente.
 
 ## Microsoft Defender for SQL
-**Defender for SQL** is a security service. It covers Azure SQL Database, Managed Instance, SQL Server on Azure VMs, SQL Server enabled by **Azure Arc** (on-premises or other clouds), and Synapse dedicated SQL pools. It has two parts.
+**Defender para SQL** é um serviço de segurança. Ele cobre Azure SQL Database, Managed Instance, SQL Server on Azure VMs, SQL Server habilitado por **Arco Azure** (on-premises ou outras nuvens), e Synapse piscinas SQL dedicadas. Tem duas partes.
 
-### 1. Vulnerability assessment (VA)
-Scans for **weak settings**: too many permissions, weak authentication, unprotected sensitive data, bad configuration. It gives fix-it recommendations.
-- **Express configuration** (recommended): results stored by Microsoft, **no storage account** needed.
-- **Classic configuration**: results go to **your storage account** (classic VA/ATP APIs retire 16 Aug 2027).
+### 1. Vulnerability Assessment (VA)
+Scans para **Configurações fracas**: muitas permissões, autenticação fraca, dados sensíveis desprotegidos, configuração ruim. Ele dá recomendações fixas.
+- **Configuração expressa** (recomendado): resultados armazenados pela Microsoft, **sem conta de armazenamento** necessário.
+- **Configuração clássica**: os resultados vão para **sua conta de armazenamento** (clássico VA / ATP APIs se aposentar 16 Aug 2027).
 
-**Example:** VA flags that the reporting app's user is in `db_owner` but only needs to read. You move it to `db_datareader`.
+**Exemplo:** VA sinaliza que o usuário do aplicativo de relatório está no `db_owner`, mas só precisa ler. Você move para `db_datareader`.
 
-### 2. Advanced Threat Protection (ATP)
-Watches activity and raises **real-time alerts**:
-- **Vulnerability to SQL injection** (a badly written query that could be exploited).
-- **Potential SQL injection** (an actual attack attempt).
-- Access from an **unusual location**, an **unfamiliar Azure data centre**, or an **unfamiliar principal**.
-- Access from a **potentially harmful application** (known attack tools).
-- **Brute force** SQL credentials (many failed passwords).
+### 2. Proteção Avançada contra Ameaças (ATP)
+atividade relógios e levanta **Alertas em tempo real**:
+- **Vulnerabilidade à injeção SQL** (uma consulta mal escrita que poderia ser explorada).
+- **Injeção potencial SQL** (uma tentativa de ataque real).
+- Acesso a partir de um **Localização incomum**, um **Centro de dados Azure desconhecido** ou um **principal desconhecido**.
+- Acesso a partir de um **aplicação potencialmente prejudicial** (ferramentas de ataque conhecidas).
+- Credenciais **força bruta** SQL (muitas senhas falhadas).
 
-**Example:** 100 failed logins arrive from an unknown country in two minutes. Defender raises a brute-force alert.
+**Exemplo:** 100 logins falhados chegam de um país desconhecido em dois minutos. Defender levanta um alerta de força bruta.
 
-### Turning it on
-- Per server or instance: **Microsoft Defender for Cloud** section → set Defender for SQL **On**.
-- Or for the whole **subscription**: Defender for Cloud → **Environment settings → Defender plans → Databases**. Plans: **Defender for Azure SQL Databases** (SQL DB, MI, Synapse) and **Defender for SQL Servers on Machines** (VMs, Arc). New resources are covered automatically.
-- Turn on **auditing** too, so you can investigate alerts.
-- Who can configure it: **SQL Security Manager** or a server/database admin.
+### Ligando-o
+- Por servidor ou instância: **Microsoft Defender for Cloud** seção → set Defender para SQL **Ligado**.
+- Ou para todo o **assinatura**: Defender for Cloud → **Configurações do ambiente → Planos de defesa → Bancos de dados**. Planos: **Defender para Azure SQL Databases** (SQL DB, MI, Synapse) e **Defender para Servidores SQL em Máquinas** (VMs, Arc). Novos recursos são cobertos automaticamente.
+- Ligue o **Auditoria** também, para que você possa investigar alertas.
+- Quem pode configurá-lo: **SQL Security Manager** ou um administrador de servidor/banco de dados.
 
-## Compare at a glance
+## Compare em um relance
 
-| Need | Feature |
+| Necessidade | Recurso |
 |------|---------|
-| Find and label sensitive columns in a database | Data Discovery & Classification |
-| Find sensitive data and lineage across the company | Microsoft Purview |
-| Record who logged in and what they ran | Auditing |
-| Show only part of a value to some users | Dynamic data masking |
-| Each user sees only their own rows | Row-level security |
-| Prove data was not tampered with | Ledger |
-| Find weak settings / get attack alerts | Defender for SQL (VA / ATP) |
-| Hide values even from DBAs | Always Encrypted (lesson 4) |
+| Localizar e rotular colunas sensíveis em um banco de dados | Descoberta e classificação de dados |
+| Encontre dados sensíveis e linhagens em toda a empresa | Microsoft Purview |
+| Registrar quem logou e o que eles correram | Auditoria |
+| Mostrar apenas parte de um valor para alguns usuários | Dynamic data masking |
+| Cada usuário vê apenas suas próprias linhas | Row-level security |
+| Os dados não foram adulterados com | Ledger |
+| Localizar configurações fracas / obter alertas de ataque | Defensor para SQL (VA / ATP) |
+| Ocultar valores até mesmo de DBAs | Always Encrypted (lição 4) |
 
-## Remember for the exam
-- Classification labels are in **`sys.sensitivity_classifications`**; T-SQL `ADD SENSITIVITY CLASSIFICATION`. Auto-recommendations rely on **column names**.
-- Audit to **Storage** (archive), **Log Analytics** (query), **Event Hubs** (stream). Prefer **server-level**; database audit runs **alongside**, not instead.
-- `data_sensitivity_information` in audit logs shows access to classified columns.
-- DDM changes **output only**; data is not encrypted. **UNMASK** reveals; db_owner always sees real data. Masks survive `SELECT INTO` for non-UNMASK users.
-- RLS = inline TVF + **security policy**. **Filter** hides rows; **block** stops writes.
-- Ledger = **tamper-evidence**, SHA-256 chain. Updatable vs **append-only**. Ledger **database** only at creation. Digests to **immutable Blob** or **Azure Confidential Ledger**.
-- Defender for SQL = **VA** (misconfigurations) + **ATP** (SQL injection, brute force, unusual access).
-- Purview scan with a **self-hosted runtime** → no managed identity; use a service principal or SQL auth.
+## Para lembrar na prova
+- Os rótulos de classificação estão em **`sys.sensitivity_classifications`**; T-SQL `ADD SENSITIVITY CLASSIFICATION`. Auto-recomendações dependem de **nomes de colunas**.
+- Auditoria a **Armazenamento** (arquiva), **Log Analytics** (query), **Event Hubs** (stream). Prefere **servidor-nível**; auditoria de banco de dados roda **Ao lado**, não em vez disso.
+- `data_sensitivity_information` em registros de auditoria mostra o acesso a colunas classificadas.
+- DDM muda **apenas saída**; os dados não são criptografados. **UNMASK** revela; db_owner sempre vê dados reais. As máscaras sobrevivem `SELECT INTO` para usuários não UNMASK.
+- RLS = inline TVF + **política de segurança**. **Filtro** esconde linhas; **bloco** Paradas de escrita.
+- Ledger **adulter- evidência**, SHA-256 corrente. Updatable vs **apenas append**. Ledger **banco de dados** apenas na criação. Digest para **Blob imutável** : **Azure Confidencial Ledger**.
+- Defensor para SQL = **VA** (errosconfigurações) + **ATP** (SQL injeção, força bruta, acesso incomum).
+- Varredura Purview com um **tempo de execução auto-hospedado** → no managed identity; use um auth service principal ou SQL.
 
-## Quick check
-1. Call centre staff must see only the last four digits of card numbers; managers must see the full number. What do you use?
-   <details><summary>Answer</summary>Dynamic data masking with a partial() (or credit card) mask, and GRANT UNMASK to managers.</details>
-2. Regulators need proof that an accounting journal was never edited or deleted. Which table type?
-   <details><summary>Answer</summary>An append-only ledger table. It allows inserts only and its hash chain shows any tampering.</details>
-3. You want the same audit settings on every current and future database on a server. Where do you configure auditing?
-   <details><summary>Answer</summary>At the server level. It applies to all databases on the server.</details>
+## Teste rápido
+1. A equipe do call center deve ver apenas os últimos quatro dígitos dos números de cartão; os gerentes devem ver o número completo. O que você usa?
+   <details><summary>Resposta</summary>Dynamic data masking com uma máscara parcial() (ou cartão de crédito) e GRANT UNMASK para gerentes.</details>
+2. Os reguladores precisam de provas de que um diário de contabilidade nunca foi editado ou excluído. Que tipo de tabela?
+   <details><summary>Resposta</summary>Uma tabela append-only ledger. Permite apenas inserções e sua cadeia de hash mostra qualquer adulteração.</details>
+3. Você quer as mesmas configurações de auditoria em cada banco de dados atual e futuro em um servidor. Onde você configura a auditoria?
+   <details><summary>Resposta</summary>No nível do servidor. Aplica-se a todas Os bancos de dados no servidor.</details>

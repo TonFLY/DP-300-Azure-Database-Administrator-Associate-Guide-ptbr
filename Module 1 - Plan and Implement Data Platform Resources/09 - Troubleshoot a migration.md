@@ -1,128 +1,128 @@
-# Troubleshoot a migration
+# Resolver uma migração
 
-> **Exam skills:** Troubleshoot a migration
-> **Reading time:** ~9 min
+> **Habilidades cobradas:** Resolver uma migração
+> **Tempo de leitura:** ~9 min
 
-## The big idea
-Most migration failures come from four things: **network** (can't reach the source), **permissions** (storage or login rights), **backup format** (wrong kind of backup file) and **unsupported features** on the target. Know where to look, and know the common error messages.
+## Conceito central
+A maioria das falhas de migração vem de quatro coisas: **rede** (não pode chegar à fonte), **permissões** (armazenamento ou direitos login), **Formato backup** (tipo errado de arquivo backup) e **características não suportadas** no alvo. Saiba onde procurar e conheça as mensagens de erro comuns.
 
-Analogy: a parcel that never arrived. Was the address wrong (network)? Did nobody sign for it (permissions)? Was the box the wrong shape (format)? Or is the item banned at the destination (feature)?
+Analogia: um pacote que nunca chegou. O endereço estava errado (rede)? Ninguém assinou por ele (permissões)? A caixa estava na forma errada (formato)? Ou o item foi banido no destino (característica)?
 
-## Where to look
-| Place | What it shows |
+## Para onde olhar
+| Lugar | O que mostra |
 |-------|---------------|
-| **DMS → Monitor migrations** | Per database and per table status and error text |
-| **Activity log** (resource → Activity log → Summary/JSON) | Resource-level failures, exact error messages |
-| **Arc → Monitor and cutover** | LRS files detected, queued, skipped or unrestorable |
-| LRS status | `Get-AzSqlInstanceDatabaseLogReplay` / `az sql midb log-replay show` |
-| Failed MI operation | `Get-AzSqlInstanceOperation` / `az sql mi op show` |
-| MI link state | `Get-AzSqlInstanceLink` / `az sql mi link show` / DMVs |
-| SQL Server error log, XEvent profiler | Engine errors (link, certificates, seeding) |
+| **DMS → Monitorar migrações** | Por banco de dados e por status da tabela e texto de erro |
+| **Diário de atividades** (recurso → Diário de atividades → Resumo/ JSON) | Falhas de nível de recurso, mensagens de erro exatas |
+| **Arc → Monitor e recorte** | Arquivos LRS detectados, enfilados, ignorados ou intransponíveis |
+| Status LRS | `Get-AzSqlInstanceDatabaseLogReplay` / `az sql midb log-replay show` |
+| Operação MI falhada | `Get-AzSqlInstanceOperation` / `az sql mi op show` |
+| estado da ligação MI | `Get-AzSqlInstanceLink` / `az sql mi link show` / DMVs |
+| log de erro SQL Server, perfilr XEvent | Erros do motor (link, certificados, semeadura) |
 
-## Connectivity problems
-| Symptom | Cause | Fix |
+## Problemas de conectividade
+| Sintoma | Causa | Correção |
 |---------|-------|-----|
-| "Error 26 – Error Locating Server/Instance" | **Named instance** or dynamic port | Open **UDP 1434** (SQL Browser) **and** the instance TCP port |
-| DMS can't reach source, stuck | **SHIR** can't see the source or backups | Install SHIR on a machine with line of sight to the source; size it well |
-| Can't read backups on an SMB share | Share rights | Give the migration account **and** the SQL service account full control. Test with `RESTORE HEADERONLY` |
-| Timeout over ExpressRoute (DMS classic) | Missing service endpoints | Enable Service Bus, Storage and target database endpoints on the DMS subnet |
-| MI link won't create | No private path, ports blocked | VPN/ExpressRoute, port **5022** both ways, MI HADR ports, NSG rules |
+| Erro 26 – Erro ao localizar o servidor/instância | **Nomeado instância** ou porto dinâmico | Abrir **UDP 1434** (navegador SQL) **e** a instância TCP porta |
+| DMS não pode chegar fonte, preso | **SHIR** não pode ver a fonte ou backups | Instalar SHIR em uma máquina com linha de visão para a fonte; dimensioná-lo bem |
+| Não é possível ler backups em uma ação SMB | Direitos de partilha | Dê à conta de migração **e** a conta de serviço SQL controle total. Teste com `RESTORE HEADERONLY` |
+| Tempo limite sobre ExpressRoute (clássico DMS) | Falta service endpoints | Habilitar os terminais de banco de dados de serviço, armazenamento e destino na sub-rede DMS |
+| link MI não vai criar | Sem caminho privado, portos bloqueados | VPN / ExpressRoute, porta **5022** ambos os sentidos, portas MI HADR, regras NSG |
 
-**Example:** A DBA migrates `SQL01\SALES` with DMS. It fails with error 26. The firewall only allows TCP 1433. Opening UDP 1434 and the instance's port fixes it.
+**Exemplo:** A DBA migrações `SQL01\SALES` com DMS. Falha com o erro 26. O firewall só permite TCP 1433. Abertura UDP 1434 e o porto da instância conserta-o.
 
-## Backup rules that break migrations
-For DMS (to MI or VM) and LRS:
-- **One backup per file.** Backups **appended** into one file are not supported.
-- Use **`WITH CHECKSUM`**. Without it you might migrate a corrupt database, and restores are slower.
-- **One log file** per database. Databases with several log files are not supported.
-- Only **.bak, .diff, .log** files. **No BACPAC/DACPAC** with LRS.
+## Regras Backup que quebram as migrações
+Para DMS (para MI ou VM) e LRS:
+- **Um backup por arquivo.** Backups **anexado** em um arquivo não são suportados.
+- Use **`WITH CHECKSUM`**. Sem ele, você pode migrar um banco de dados corrompido e as restaurações são mais lentas.
+- **Um arquivo de registro** por banco de dados. Bancos de dados com vários arquivos de log não são suportados.
+- Somente arquivos **.bak,.diff,.log**. **Não BACPAC/DACPAC** com LRS.
 
-## LRS checklist
-| Problem | Cause / fix |
+## Lista de verificação LRS
+| Problema | Causa / correção |
 |---------|-------------|
-| LRS won't start | **SAS must be Read + List only.** Write makes it fail. Make it for the whole container |
-| SAS "invalid" | Time window wrong (time zones). Regenerate with a wider window |
-| Name conflict | A database with the **same name** already exists on MI |
-| Files not found | Each database needs its **own flat folder**. Path can't contain the word **backup/backups** |
-| Can't add new log backups | You used **autocomplete**. Use **continuous** mode |
-| Job disappeared | Hit the **30-day** limit |
-| Restarted from zero | MI failover during the first full restore or during cutover |
-| "Unable to list directories" (portal) | **Your user** lacks **Storage Blob Data Reader** |
-| **Error 2009** (managed identity not set up properly) | The **MI's managed identity** lacks **Storage Blob Data Reader** |
-| "No results were found in directory" | No full backup uploaded yet |
+| LRS não vai começar | **O SAS deve ser lido + lista somente.** Escrever faz com que falhe. Faça para todo o recipiente |
+| SAS "inválido" | Janela de tempo errada (zonas horárias). Regenerar com uma janela mais larga |
+| Conflito de nomes | Um banco de dados com o **mesmo nome** já existe no MI |
+| Arquivos não encontrados | Cada banco de dados precisa de seu **pasta plana**. O caminho não pode conter a palavra **backup/backups** |
+| Não é possível adicionar novo log backups | Você usou **autocompletar**. Use o modo **contínuo** |
+| Job desapareceu | Atingir o limite **30 dias** |
+| Reiniciado do zero | MI failover durante a primeira restauração completa ou durante o corte |
+| "Incapaz de listar diretórios" (portal) | **O seu usuário** não tem **Armazenamento Blob Data Reader** |
+| **Erro 2009** (managed identity não configurado corretamente) | O **MI managed identity** Falta **Armazenamento Blob Data Reader** |
+| Nenhum resultado foi encontrado no diretório | Não full backup Ainda não |
 
-Two more MI facts:
-- MI holds back non-critical updates for up to **36 hours** during a migration. After that, an interrupted migration **restarts from a full restore**.
-- **Business Critical cutover is slow** because it seeds 3 replicas. Fix: migrate to **General Purpose** then upgrade online, or use **MI link**.
+Mais dois fatos MI:
+- MI retém atualizações não críticas para até **36 horas** durante uma migração. Depois disso, uma migração interrompida **reinicia a partir de uma restauração completa**.
+- **O corte Business Critical é lento** Porque ele sementes 3 réplicas. Corrig: migrar para **General Purpose** em seguida, atualizar on-line, ou usar **link MI**.
 
-## MI link problems
+## Problemas de ligação MI
 ```sql
 SELECT rs.synchronization_health_desc   -- HEALTHY / NOT_HEALTHY
 FROM sys.availability_groups ag
 JOIN sys.dm_hadr_availability_replica_states rs ON ag.group_id = rs.group_id
 WHERE rs.is_local = 0 AND rs.role = 2 AND ag.is_distributed = 1 AND ag.name = '<link name>';
 ```
-- Seeding progress: `sys.dm_hadr_physical_seeding_stats`, `sys.dm_hadr_automatic_seeding`.
-- **First seeding is not resilient.** A network drop, restart or failover restarts it. Link creation auto-cancels after **6 days**.
+- Progresso da semeadura: `sys.dm_hadr_physical_seeding_stats`, `sys.dm_hadr_automatic_seeding`.
+- **A primeira semeadura não é resiliente.** Uma queda de rede, reiniciar ou failover reinicia. Link criação auto-cancels depois **6 dias**.
 
-| Error | Meaning | Fix |
+| Erro | Significado | Correção |
 |-------|---------|-----|
-| 41962 | Link not started within 5 minutes | Check network, retry |
-| 41973 / 41974 | Endpoint certificate not imported (SQL Server → MI / MI → SQL Server) | Re-import the certificate |
-| 41976 / 41986 | AG not responding / connection failed | Check names, config, network |
-| **1408 / 1412** | **Log truncated before seeding finished** (a log backup ran) | **Drop and recreate** the link. Pause log backups or use **trace flag 12381** |
+| 41962 | Link não iniciado em 5 minutos | Verificar rede, tentar novamente |
+| 41973 / 41974 | Certificado de endpoint não importado (SQL Server → MI / MI → SQL Server) | Re-importar o certificado |
+| 41976 / 41986 | AG não respondeu / conexão falhou | Nomes de verificação, configuração, rede |
+| **1408 / 1412** | **Log truncado antes da semeadura terminada** (um log backup run) | **Drop e recriar** o link. Pausa log backups ou utilizar **bandeira de rastreamento 12381** |
 
-Other link gotchas:
-- Planned failover **times out** → the secondary is lagging. Wait for it.
-- Both sides PRIMARY after forced failover (**split brain**) → back up the old primary, set it to SECONDARY, fail over properly.
-- **Expired certificate** → rotate it.
-- Don't drop the link before MI's **first full backup** after failover.
-- Firewalls must allow **ICMP** and the SQL Server UCS protocol.
-- A link made by hand in SSMS blocks creating one from the Arc portal.
+Outro link gotchas:
+- Planned failover **vezes fora** → o secundário está atrasado. Espere por isso.
+- Ambos os lados PRIMARY após forced failover (**cérebro dividido**) → backup do primário antigo, configurá-lo para SECONDARY, falhar corretamente.
+- **Certificado expirado** → gire-o.
+- Não solte o link antes MI 's **primeiro full backup** após failover.
+- Os firewalls devem permitir **ICMP** e o protocolo SQL Server UCS.
+- Um link feito à mão em blocos SSMS criando um a partir do portal Arc.
 
-## Azure SQL Database (DMS) problems
-| You see | Why |
+## Problemas com Azure SQL Database (DMS)
+| Você vê | Explicação |
 |---------|-----|
-| Can't click Next | No tables on target. Tick **Migrate missing schema** |
-| Computed columns missing | Not migrated |
-| NULLs became default values | Columns with defaults get the default |
-| Some tables not migrated | **Empty tables are skipped** |
-| Table times out | **Large BLOB** columns |
-| Table name rejected | **Double-byte** characters. Rename, migrate, rename back |
-| Database name rejected | Reserved words or semicolons |
-| CDC won't enable on target | Disable CDC on source before schema migration |
-| Slow with thousands of tables | ADF overhead per table |
+| Não pode clicar em Next | Não há tabelas no alvo. Tick **Migrar o esquema em falta** |
+| Faltam colunas computadas | Não migrado |
+| NULLs tornou-se valores padrão | Colunas com padrão obter o padrão |
+| Algumas tabelas não migradas | **Tabelas vazias são ignoradas** |
+| Tempos da tabela fora | colunas **Grande BLOB** |
+| Nome da tabela rejeitado | Personagens **Double-byte**. Renomear, migrar, renomear de volta |
+| Nome da banco de dados rejeitado | Palavras reservadas ou ponto e vírgulas |
+| CDC não vai ativar no alvo | Desativar o CDC na fonte antes da migração do esquema |
+| Devagar com milhares de tabelas | ADF sobrecarga por tabela |
 
-Permissions: source **db_datareader + VIEW ANY DEFINITION**; target **db_owner**. Schema migration also needs db_owner on the source and SHIR 5.37+.
+Permissões: fonte **db_datareader + VIEW ANY DEFINITION**; alvo **db_owner**. A migração do esquema também precisa de db_owner na fonte e SHIR 5.37 +.
 
-Old DMS (classic) errors you may still see in questions: max **4 databases** per activity; an activity stuck in **Queued** means the instance is full; you can't stop DMS while activities run.
+Erros antigos DMS (clássicos) que você ainda pode ver em perguntas: **4 bancos de dados** máximo por atividade; uma atividade presa no **enfil** significa que a instância está cheia; você não pode parar o DMS enquanto as atividades são executadas.
 
-## After the migration
-| Problem | Fix |
+## Após a migração
+| Problema | Correção |
 |---------|-----|
-| **Orphaned users** (user without matching login) | `ALTER USER [app] WITH LOGIN = [app];` |
-| Logins, Agent jobs, linked servers missing | Database-level tools don't move them. Script them |
-| FILESTREAM/FileTable fails on MI | Not supported. Use a **VM** |
-| In-Memory OLTP fails on MI | Needs **Business Critical** |
-| Service Broker unusable on MI | It was off on the source. Enable it and re-migrate |
-| Can't enable ADR on MI | ADR was off on the source (SQL 2019+). Enable and re-migrate |
-| Queries slower | Update statistics, check **compatibility level**, compare plans with **Query Store** |
+| **Usuários órfãos** (usuário sem correspondência login) | `ALTER USER [app] WITH LOGIN = [app];` |
+| Logins, Agente jobs, servidores vinculados ausentes | As ferramentas de nível de banco de dados não as movem. |
+| FILESTREAM / FileTable falha em MI | Não suportado. Use um **VM** |
+| In-Memory OLTP falha em MI | Necessidades **Business Critical** |
+| Corretor de serviços inutilizável em MI | Foi desligado na fonte. Habilitá-lo e re-migrar |
+| Não é possível ativar o ADR no MI | ADR estava fora da fonte (SQL 2019+). Habilitar e re-migrar |
+| Consultas mais lentas | Atualize estatísticas, verifique **Nível de compatibilidade**, compare planos com **Query Store** |
 
-**Example:** After restoring to a VM, the app can't log in. The database user `app` exists, but its SID doesn't match the new server login. `ALTER USER [app] WITH LOGIN = [app]` fixes it.
+**Exemplo:** Depois de restaurar para um VM, o aplicativo não pode fazer login. O usuário do banco de dados `app` existe, mas seu SID não corresponde ao novo servidor login. `ALTER USER [app] WITH LOGIN = [app]` corrige isso.
 
-## Remember for the exam
-- **Error 2009** → give the **MI managed identity** Storage Blob Data Reader.
-- LRS won't start, SAS has Write → SAS must be **Read + List only**.
-- **Error 1412** on MI link → log truncated during seeding → drop and recreate, pause log backups or **TF 12381**.
-- Named instance unreachable → **UDP 1434** + instance port.
-- DMS to SQL Database is **offline only**. Empty tables are skipped. Computed columns aren't migrated.
-- Slow Business Critical cutover → migrate to GP then upgrade, or use MI link.
-- Orphaned users → `ALTER USER ... WITH LOGIN`.
+## Para lembrar na prova
+- **Erro 2009** → dá o leitor de dados **MI managed identity** Storage Blob.
+- LRS não vai começar, SAS tem escrever → SAS deve ser **Ler + Listar apenas**.
+- **Erro 1412** no MI link → log truncado durante a semeadura → gota e recriar, pausar log backups ou **TF 12381**.
+- A instância nomeada não acessível → **UDP 1434** + porta de instância.
+- DMS para SQL Database é **Apenas offline**. As tabelas vazias são ignoradas. As colunas computadas não são migradas.
+- Slow Business Critical cutover → migrar para GP, em seguida, atualizar, ou usar o link MI.
+- Usuários órfãos → `ALTER USER ... WITH LOGIN`.
 
-## Quick check
-1. LRS fails with error 2009. What do you fix?
-   <details><summary>Answer</summary>Grant the managed instance's managed identity the Storage Blob Data Reader role on the storage account.</details>
-2. MI link creation fails with error 1412. What happened?
-   <details><summary>Answer</summary>A log backup truncated the log before seeding finished. Recreate the link and pause log backups (or use TF 12381).</details>
-3. After DMS to SQL Database, three tables are missing. They had no rows. Is this a failure?
-   <details><summary>Answer</summary>No. DMS skips empty tables by design.</details>
+## Teste rápido
+1. O LRS falha com o erro 2009. O que você corrige?
+   <details><summary>Resposta</summary>Conceda ao managed identity do managed instance a função Storage Blob Data Reader na conta de armazenamento.</details>
+2. A criação do link MI falha com o erro 1412. O que aconteceu?
+   <details><summary>Resposta</summary>Um log backup truncado o log antes da semeadura terminar. Recrie o link e pause log backups (ou use TF 12381).</details>
+3. Depois de DMS a SQL Database, faltam três tabelas. Eles não tinham filas. Isso é um fracasso?
+   <details><summary>Resposta</summary>No. DMS pula tabelas vazias pelo projeto.</details>

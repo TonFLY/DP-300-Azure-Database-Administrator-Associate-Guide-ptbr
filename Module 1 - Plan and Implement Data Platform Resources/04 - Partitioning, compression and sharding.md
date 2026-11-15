@@ -1,29 +1,29 @@
-# Partitioning, compression and sharding
+# Particionamento, compressão e sharding
 
-> **Exam skills:** Plan for table partitioning, Configure table partitioning, Configure data compression, Recommend a database sharding solution
-> **Reading time:** ~13 min
+> **Habilidades cobradas:** Plano para particionamento de tabela, Configurar particionamento de tabela, Configurar data compression, Recomendar um banco de dados sharding solução
+> **Tempo de leitura:** ~13 min
 
-## The big idea
-**Partitioning** cuts one big table into slices inside **one** database. **Compression** makes the data smaller on disk. **Sharding** spreads rows over **many** databases.
+## Conceito central
+**Particionamento** corta uma grande tabela em fatias dentro do banco de dados **um**. **Compressão** torna os dados menores no disco. **Sharding** espalha linhas sobre bancos de dados **muitos**.
 
-Analogy: a library. Partitioning = one shelf per year inside the same library. Compression = smaller print so more books fit. Sharding = opening branch libraries in other towns, each holding some of the books.
+Imagine uma biblioteca. Com partitioning, há uma prateleira para cada ano dentro da mesma biblioteca. Com compression, usa-se uma fonte menor para caberem mais livros. Com sharding, abrem-se filiais em outras cidades, cada uma com parte dos livros.
 
-## Partitioning: the building blocks
-| Object | What it does |
+## Particionamento: os blocos de construção
+| Objeto | O que faz |
 |--------|--------------|
-| **Partition function** | Sets the **boundary values**. Decides which partition a value goes to. |
-| **Partition scheme** | Maps each partition to a **filegroup** (a group of data files). |
-| **Partitioning column** | The **one** column that decides the partition (for example `OrderDate`). |
-| **Aligned index** | An index on the same partition scheme as the table. Needed for fast switching. |
+| **Partition function** | Define o **valores-limite**. Decide qual partição um valor vai para. |
+| **Partition scheme** | Mapas de cada partição para um **filegroup** (um grupo de arquivos de dados). |
+| **Coluna de particionamento** | A coluna **um** que decide a partição (por exemplo, `OrderDate`). |
+| **Aligned index** | Um índice no mesmo partition scheme que a tabela. Necessário para comutação rápida. |
 
-- **RANGE LEFT** (default): the boundary value belongs to the partition on its **left**.
-- **RANGE RIGHT**: the boundary value belongs to the partition on its **right**. Use it for **dates**, so 1 March lands in the March partition.
+- **RANGE LEFT** (padrão): o valor limite pertence à partição em seu **esquerda**.
+- **RANGE RIGHT**: o valor limite pertence à partição em seu **DIREITO**. Use-o para **datas**, então 1 de março pousa na partição de março.
 - **N boundary values = N + 1 partitions.**
-- You can't partition on **timestamp**, LOB types (`varchar(max)`, `xml`), CLR types or alias types.
-- Max **15,000 partitions** per table. Don't create thousands without a reason.
-- Rows with a **NULL** partitioning value go to the left-most partition.
+- Você não pode particionar em **timestamp**, tipos LOB (`varchar(max)`, `xml`), tipos CLR ou tipos de alias.
+- Max **Partições 15,000** por tabela. Não crie milhares sem uma razão.
+- Linhas com um valor de particionamento **NULL** vão para a partição mais à esquerda.
 
-## Configure partitioning
+## Configurar o particionamento
 ```sql
 CREATE PARTITION FUNCTION pfOrderDate (date)
 AS RANGE RIGHT FOR VALUES ('2026-01-01', '2026-02-01', '2026-03-01');
@@ -35,33 +35,33 @@ CREATE TABLE dbo.Orders (OrderID bigint NOT NULL, OrderDate date NOT NULL,
   CONSTRAINT PK_Orders PRIMARY KEY CLUSTERED (OrderDate, OrderID)
 ) ON psOrderDate (OrderDate);
 ```
-- A **unique** index must **include the partitioning column** in its key, or it is not aligned.
-- For a **non-unique** index, SQL Server adds the column for you.
-- `ALTER TABLE dbo.Orders SET (LOCK_ESCALATION = AUTO);` lets locks escalate to one partition, not the whole table.
-- `SELECT $PARTITION.pfOrderDate('2026-02-15');` tells you which partition a value goes to.
+- O índice A **único** deve **Incluir a coluna de particionamento** em sua chave, ou não está alinhado.
+- Para um índice **não-único**, o SQL Server adiciona a coluna para você.
+- `ALTER TABLE dbo.Orders SET (LOCK_ESCALATION = AUTO);` deixa fechaduras escalar para uma partição, não a tabela inteira.
+- `SELECT $PARTITION.pfOrderDate('2026-02-15');` diz-lhe a que partição um valor vai.
 
-## Where partitioning works
-| Platform | Filegroups |
+## Onde funciona o particionamento
+| Plataforma | Filegroups |
 |----------|-----------|
-| SQL Server on VM | Many filegroups. Old data can sit on cheaper disks. Filegroup backup/restore. |
-| Managed Instance | Many filegroups allowed |
-| SQL Database | **PRIMARY only** |
-| SQL database in Fabric | PRIMARY only. Switch and per-partition compression are **blocked** (mirroring) |
+| SQL Server em VM | Muitos grupos de arquivos. Os dados antigos podem ficar em discos mais baratos. Filegroup backup /store. |
+| Managed Instance | Muitos grupos de arquivos permitidos |
+| SQL Database | **Somente PRIMARY** |
+| SQL database in Microsoft Fabric | Apenas PRIMARY. A compressão do interruptor e da per-partição é **bloqueado** (espelho) |
 
-Use many filegroups only for tiered storage or filegroup backups. Otherwise one filegroup is recommended.
+Use muitos grupos de arquivos apenas para armazenamento em camadas ou grupo de arquivos backups. Caso contrário, um grupo de arquivos é recomendado.
 
-## Partition switching and the sliding window
-`ALTER TABLE ... SWITCH` moves a whole partition in or out as a **metadata-only** change. It is almost instant. No rows are copied.
+## Partition switching e a janela deslizante
+`ALTER TABLE ... SWITCH` move uma partição inteira dentro ou fora como uma mudança **metadados-somente**. É quase snapshot. Nenhuma linha é copiada.
 
-Rules for SWITCH:
-- The target table or partition must **exist and be empty**.
-- Same **filegroup**, same columns and indexes, indexes **aligned**.
-- **Compression must match.**
+Regras para SWITCH:
+- A tabela de destino ou partição deve **Existir e estar vazio**.
+- Mesmo **filegroup**, mesmas colunas e índices, índices **alinhado**.
+- **A compressão deve corresponder.**
 
-**Sliding window** (keep the last 12 months):
-1. `SPLIT RANGE` to add an empty partition for next month (set `NEXT USED` first).
-2. `SWITCH` the oldest partition out to an archive table.
-3. `MERGE RANGE` to remove the empty old boundary.
+**Janela deslizante** (mantenha os últimos 12 meses):
+1. `SPLIT RANGE` para adicionar uma partição vazia para o próximo mês (set `NEXT USED` primeiro).
+2. `SWITCH` a partição mais antiga para uma tabela de arquivo.
+3. `MERGE RANGE` para remover o velho limite vazio.
 
 ```sql
 ALTER PARTITION SCHEME psOrderDate NEXT USED [PRIMARY];
@@ -70,32 +70,32 @@ ALTER TABLE dbo.Orders SWITCH PARTITION 1 TO dbo.Orders_Archive;
 ALTER PARTITION FUNCTION pfOrderDate() MERGE RANGE ('2026-01-01');
 TRUNCATE TABLE dbo.Orders WITH (PARTITIONS (1));   -- or just empty a partition
 ```
-Always split and merge **empty** partitions. Otherwise rows move and are heavily logged.
+Divida e mergulhe sempre partições **vazio**. Caso contrário, as linhas se movem e são fortemente registradas.
 
-**Example:** An online shop keeps 12 months of orders. On the 1st of each month it switches out the oldest month in seconds, instead of a slow `DELETE` of 10 million rows.
+**Exemplo:** Uma loja on-line mantém 12 meses de pedidos. No 1o de cada mês, ele desliga o mês mais antigo em segundos, em vez de um `DELETE` lento de 10 milhões de linhas.
 
-## Does partitioning make queries faster?
-- **Partition elimination:** if the `WHERE` filters on the partitioning column, SQL skips the other partitions.
-- If the query does **not** filter on that column, it touches every partition. It can get **slower**.
-- Microsoft says partitioning **rarely speeds up OLTP**. Its main value is **manageability**: fast load and archive, per-partition rebuild and compression, partition-level locks.
+## O particionamento torna as consultas mais rápidas?
+- **Eliminação da partição:** se o `WHERE` filtra na coluna de particionamento, SQL ignora as outras partições.
+- Se a consulta faz o filtro **E** nessa coluna, toca cada partição. Pode obter **mais lento**.
+- A Microsoft diz que o particionamento **raramente acelera OLTP**. Seu valor principal é **capacidade de gestão**: carga rápida e arquivo, reconstrução por partição e compressão, bloqueios de nível de partição.
 
-## Data compression types
-| Type | Works on | Use |
+## Tipos Data compression
+| Tipo | Funciona em | Utilização |
 |------|----------|-----|
-| **ROW** | Rowstore tables and indexes | Stores fixed-length types in less space. Low CPU. Good OLTP default. |
-| **PAGE** | Rowstore | ROW + **prefix + dictionary** compression. Bigger saving, more CPU. Large, read-heavy tables. |
-| **COLUMNSTORE** | Columnstore indexes | Always on. Analytics. |
-| **COLUMNSTORE_ARCHIVE** | Columnstore indexes | Smallest size, slower reads. **Cold, historical** data. |
-| **XML compression** | `xml` columns | SQL Server 2022+, SQL Database, MI. |
+| **ROW** | Tabelas e índices Rowstore | Armazena tipos de comprimento fixo em menos espaço. Baixo CPU. Bom OLTP padrão. |
+| **PAGE** | Rowstore | Compressão ROW + **prefixo + dicionário**. Maior economia, mais CPU. Tabelas grandes e pesadas. |
+| **COLUMNSTORE** | Columnstore índices | Always on. Análise. |
+| **COLUMNSTORE_ARCHIVE** | Columnstore índices | Menor tamanho, leitura mais lenta. Dados **Frio, histórico**. |
+| **compressão XML** | colunas `xml` | SQL Server 2022+, SQL Database, MI. |
 
-Key rules:
-- You can set compression **per partition** (PAGE for old months, ROW for this month).
-- **Nonclustered indexes don't inherit** the table's compression. Set each one.
-- ROW/PAGE do **not** compress off-row LOB data. Use `COMPRESS()` or XML compression.
-- A heap set to PAGE only compresses new pages on bulk load, `INSERT ... WITH (TABLOCK)` or rebuild.
-- You can rebuild with `ONLINE = ON`. Do one partition at a time to limit extra space.
-- Columnstore in DTU tiers needs **Standard S3 or higher**.
-- After SPLIT, both partitions keep the old setting. After MERGE, the result takes the setting of the partition it merges into.
+Regras-chave:
+- Você pode definir compressão **por partição** (PAGE para meses antigos, ROW para este mês).
+- **Nonclustered indexes não herda** a compressão da tabela. Definir cada um.
+- ROW / PAGE do **E** comprime os dados LOB fora da linha. Use a compressão `COMPRESS()` ou XML.
+- Um heap ajustado para PAGE apenas comprime novas páginas em carga a granel, `INSERT ... WITH (TABLOCK)` ou reconstrução.
+- Você pode reconstruir com `ONLINE = ON`. Faça uma partição de cada vez para limitar o espaço extra.
+- Columnstore em níveis DTU precisa de **Padrão S3 ou superior**.
+- Depois de SPLIT, ambas as partições mantêm a configuração antiga. Após MERGE, o resultado leva a configuração da partição em que se funde.
 
 ```sql
 EXEC sys.sp_estimate_data_compression_savings
@@ -106,88 +106,88 @@ ALTER TABLE dbo.Orders REBUILD PARTITION = ALL
 WITH (DATA_COMPRESSION = PAGE ON PARTITIONS (1 TO 3),
       DATA_COMPRESSION = ROW  ON PARTITIONS (4), ONLINE = ON);
 ```
-Always **estimate first** with `sp_estimate_data_compression_savings`. If the estimate grows, don't compress.
+Sempre **primeiro estimativa** com `sp_estimate_data_compression_savings`. Se a estimativa crescer, não comprima.
 
-**Example:** A bank's 5-year transaction history is rarely read. Its columnstore partitions for old years use COLUMNSTORE_ARCHIVE to save space.
+**Exemplo:** O histórico de transações de 5 anos de um banco raramente é lido. Suas partições columnstore para anos antigos usam o COLUMNSTORE_ARCHIVE para economizar espaço.
 
-## Sharding: what it is
-**Sharding** is **scale out**: rows of the same table design are spread over many separate databases (**shards**). The **shard key** (often `TenantID` or `CustomerID`) decides where each row lives.
-- **Scale up** = a bigger single database.
-- **Scale out** = more databases.
+## Sharding: o que é
+**Sharding** é **escala out**: linhas do mesmo design de tabela estão espalhadas por muitas bancos de dados separadas (**shards**). O **Chave shard** (muitas vezes `TenantID` ou `CustomerID`) decide onde cada linha vive.
+- **Escala acima** = a bigger single database.
+- **Escale fora** = more databases.
 
-## Try simpler options first
-| Need | Best fit |
+## Tente opções mais simples primeiro
+| Necessidade | Melhor ajuste |
 |------|----------|
-| Database outgrowing 4 TB | **Hyperscale** (128 TB), no app changes |
-| More read capacity | Read scale-out or Hyperscale named replicas |
-| Many small databases with uneven load | Elastic pool |
-| Throughput or size beyond any single database | **Sharding** |
-| Tenants need physical isolation | Database per tenant (a form of sharding) |
-| Data must stay in different countries | Shard by region |
+| Banco de dados outgrowing 4 TB | **Hyperscale** (128 TB), sem alterações no aplicativo |
+| Mais capacidade de leitura | Read scale-out ou Hyperscale com o nome de réplicas |
+| Muitas pequenas bancos de dados com carga irregular | Elastic pool |
+| throughput ou tamanho além de qualquer banco de dados único | **Sharding** |
+| Os inquilinos precisam de isolamento físico | Banco de dados por inquilino (uma forma de sharding) |
+| Dados devem permanecer em diferentes países | Shard por região |
 
-Sharding adds work: routing, cross-shard queries, rebalancing, schema changes on N databases. Recommend it only when needed. If you sharded only because of size, think about moving into **Hyperscale**.
+Sharding adiciona trabalho: roteamento, consultas shard cruzadas, reequilíbrio, alterações de esquema em bancos de dados N. Recomende-o apenas quando necessário. Se você fraturou apenas por causa do tamanho, pense em se mudar para o **Hyperscale**.
 
-## Choosing a shard key
-- In **every** sharded table, ideally the **first column of the primary key**.
-- **High cardinality** (many distinct values) and **even spread**, so no shard is "hot".
-- Matches the **most common query**, so most queries hit one shard.
-- **Stable.** Changing it means moving the row.
-- Supported types in the Elastic Database client library: int, bigint, GUID, varbinary, datetime, timespan, datetimeoffset.
+## Escolhendo uma chave shard
+- In **Cada** tabela de sharded, idealmente o **primeira coluna da chave primária**.
+- **Alta cardinalidade** (muitos valores distintos) e **mesmo espalhar**, portanto nenhum shard é "quente".
+- Corresponde ao **Consulta mais comum**, então a maioria das consultas atinge um shard.
+- **Estável.** Mudar significa mover a linha.
+- Tipos suportados na biblioteca de clientes do Elastic Database: int, bigint, GUID, varbinary, datetime, timespan, datetimeoffset.
 
-## Sharding strategies
-| Strategy | How | Good | Bad |
+## Estratégias Sharding
+| Estratégia | Como | Bom | Ruim |
 |----------|-----|------|-----|
-| **Range** | Value ranges (IDs 1–1M → Shard A) | Simple; range queries stay on one shard | **Hot spots** if new data always lands in the newest range |
-| **Hash** | Hash of the key (`UserID % 4`) | Even load, no hot spots | **Range queries are hard**, data is scattered |
-| **Lookup (directory)** | A mapping table says where each key lives | Very flexible; move one tenant easily | Extra lookup step; the map must stay consistent |
+| **Gama** | Intervalos de valor (IDs 1–1M → Shard a) | Simples; consultas de alcance permanecem em um shard | **pontos quentes** se novos dados sempre chegam na faixa mais nova |
+| **Hash** | Hash da chave (`UserID % 4`) | Mesmo carga, sem pontos quentes | **As consultas de alcance são difíceis**, os dados são dispersos |
+| **Lookup (diretório)** | Uma tabela de mapeamento diz onde cada chave vive | Muito flexível; mova um inquilino facilmente | Passo lookup extra; o mapa deve permanecer consistente |
 
-The Elastic Database client library has only **list** and **range** shard maps. For hash, the app computes a bucket and maps buckets with a list or range map.
+A biblioteca de cliente do Elastic Database tem apenas mapas **lista** e **gama** shard. Para hash, o aplicativo calcula um balde e mapeia baldes com uma lista ou mapa de alcance.
 
-**Example:** A photo app stores users by `UserID % 8` (hash). Load is even. But "all users who joined between ID 1000 and 2000" must ask all 8 shards.
+**Exemplo:** Um aplicativo de foto armazena usuários por `UserID % 8` (hash). Carga é uniforme. Mas "todos os usuários que se juntaram entre ID 1000 e 2000" devem perguntar a todos os 8 shards.
 
-## Multi-tenant patterns (SaaS)
-| Pattern | Isolation | Cost per tenant | Scale |
+## Padrões multilocatários (SaaS)
+| Padrão | Isolamento | Custo por inquilino | Escala |
 |---------|-----------|-----------------|-------|
-| Standalone app + single DB per tenant | Highest | Highest | 1–100s |
-| **Database per tenant** | High | Low with **elastic pools** | Up to 100,000s |
-| **Sharded multi-tenant DBs** | Low | **Lowest** | Up to millions |
-| Hybrid | Mixed | Mixed | Very high |
+| Aplicativo autônomo + único DB por inquilino | Mais Alta | Mais Alta | 1–100s |
+| **Banco por tenant** | Alta | Baixo com **elastic pools** | Centenas de milhares |
+| **Sharded multi-tenant DBs** | Baixa | **Mais Baixa** | Até milhões |
+| híbrido | Misto | Misto | Muito alta |
 
-- Database per tenant = **list** mapping (one key → one database). Easy per-tenant restore.
-- Multi-tenant shards = **range** mapping. Needs a tenant ID in every table and **row-level security**.
-- You **can't restore one tenant** from a multi-tenant database. Move it out with split-merge or your own ETL.
+- Database per tenant = **lista** (uma chave de mapeamento → um banco de dados). Fácil restauração por inquilino.
+- Multi-tenant shards = **gama** Precisa de um inquilino ID Em cada tabela e **row-level security**.
+- Você **Não pode restaurar um inquilino** de um banco de dados multi-tenant. Mova-o com split-merge ou seu próprio ETL.
 
-## Elastic Database tools (SQL Database only)
-| Tool | Purpose | Status |
+## Ferramentas de banco de dados elásticas (somente SQL Database)
+| Ferramenta | Finalidade | Status |
 |------|---------|--------|
-| **Elastic Database client library** | Builds the shard map; **data-dependent routing** (`OpenConnectionForKey`) | Supported |
-| **Shard map manager** | Global shard map database + a local map in each shard | Part of the library |
-| **Split-merge tool** | Moves **shardlets** (all data for one key) between shards | Legacy (built on retired Cloud Services) |
-| **Elastic query** | Read-only T-SQL across databases via external tables | Preview. Horizontal (`SHARD_MAP_MANAGER`) mode **ends 31 Mar 2027** |
-| **Elastic jobs** | Run T-SQL on many databases on a schedule | GA |
-| **Elastic transactions** | Distributed transactions across SQL databases | Supported |
+| **Elastic banco de dados biblioteca cliente** | Constrói o mapa shard; **roteamento dependente de dados** (`OpenConnectionForKey`) | Apoiado |
+| **Shard map manager** | Banco de dados global de mapas shard + um mapa local em cada shard | Parte da biblioteca |
+| **Ferramenta Split-merge** | Move **shardlet** (todos os dados para uma chave) entre shards | (construído em serviços de nuvem aposentados) |
+| **Elastic query** | Read-only T-SQL em bancos de dados através de tabelas externas | Pré-visualização. Horizontal (`SHARD_MAP_MANAGER`) modo **Termina 31 Mar 2027** |
+| **Elastic jobs** | Executar T-SQL em muitos bancos de dados em um cronograma | GA |
+| **transações elásticas** | Transações distribuídas em bancos de dados SQL | Apoiado |
 
-- Shard map methods change **metadata only**. They never move data.
-- Elastic query: read-only, **SQL authentication only**, one offline shard fails the whole query.
-- Elastic jobs: target a **server** or **pool** and new shards are picked up automatically. Use a **user-assigned managed identity** (system-assigned is not supported). Job database S1 or higher, **not Hyperscale**. Scripts must be safe to re-run.
-- On **Managed Instance**, use cross-database queries or linked servers instead of these tools.
+- Os métodos do mapa Shard mudam **apenas metadados**. Eles nunca movem dados.
+- Elastic query: read-only, **Somente SQL authentication**, um shard offline falha toda a consulta.
+- Elastic jobs: alvo um **servidor** ou **piscina** e novo shards são pegos automaticamente. Use um **user-assigned managed identity** (sistema atribuído não é suportado). Job banco de dados S1 ou superior, **não Hyperscale**. Scripts devem ser seguros para re-executar.
+- No **Managed Instance**, use consultas de banco de dados cruzado ou servidores vinculados em vez dessas ferramentas.
 
-## Remember for the exam
-- Dates → **RANGE RIGHT**. N boundaries = N + 1 partitions.
-- "Remove a month of data instantly" → **SWITCH out** or `TRUNCATE ... WITH (PARTITIONS)`, not DELETE.
-- "Old partitions on cheaper storage" → filegroups on **VM or MI**. Not possible in SQL Database.
-- SWITCH fails → check target empty, same filegroup, aligned indexes, **same compression**.
-- Cold columnstore → **COLUMNSTORE_ARCHIVE**. Estimate first → `sp_estimate_data_compression_savings`.
-- "50 TB, minimal app changes" → **Hyperscale**, not sharding.
-- "Thousands of tenants, isolation, per-tenant restore, low cost" → **database per tenant in elastic pools**.
-- "Millions of tiny tenants, lowest cost" → **sharded multi-tenant + RLS**.
-- "Route a connection to the right shard" → **Elastic Database client library**.
-- "Same schema change on all shards, including future ones" → **elastic job** targeting the server or pool.
+## Para lembrar na prova
+- Datas → **RANGE RIGHT**. N boundaries = N + 1 partitions.
+- "Remover um mês de dados instantaneamente" → **SWITCH fora** ou `TRUNCATE ... WITH (PARTITIONS)`, não DELETE.
+- "Partições antigas no armazenamento mais barato" → filegroups em **VM ou MI**. Não é possível em SQL Database.
+- SWITCH falha → verificação alvo vazio, mesmo grupo de arquivos, índices alinhados, **mesma compressão**.
+- Frio columnstore → **COLUMNSTORE_ARCHIVE**. Estimativa primeiro → `sp_estimate_data_compression_savings`.
+- "50 TB, mudanças mínimas de aplicativos" → **Hyperscale**, não sharding.
+- "Milhares de inquilinos, isolamento, restauração por inquilino, baixo custo" → **banco de dados por inquilino em elastic pools**.
+- "Milhões de pequenos inquilinos, o menor custo" → **sharded multi-tenant + RLS**.
+- "Roteie uma conexão com o shard direito " → **Elastic banco de dados biblioteca cliente**.
+- "A mesma mudança de esquema em todos os shards, incluindo os futuros" → **elastic job** visando o servidor ou a piscina.
 
-## Quick check
-1. A monthly partition switch fails. The archive table is empty and on the same filegroup. The source partition uses PAGE compression; the archive table uses none. What is wrong?
-   <details><summary>Answer</summary>Compression must match between source and target. Rebuild the archive table with PAGE.</details>
-2. Which shard strategy avoids hot spots but makes range queries expensive?
-   <details><summary>Answer</summary>Hash sharding. It spreads rows evenly, so a range is scattered over all shards.</details>
-3. You want to keep old order partitions on cheaper disks. Can you do this in Azure SQL Database?
-   <details><summary>Answer</summary>No. SQL Database has only the PRIMARY filegroup. Use a VM or Managed Instance.</details>
+## Teste rápido
+1. Um interruptor de partição mensal falha. A tabela de arquivo está vazia e no mesmo grupo de arquivos. A partição de origem usa PAGE compression; a tabela de arquivo não usa nenhum. O que há de errado?
+   <details><summary>Resposta</summary>A compressão deve corresponder entre a fonte e o alvo. Reconstruir a tabela de arquivo com PAGE.</details>
+2. Qual estratégia shard evita pontos quentes, mas torna as consultas de alcance caras?
+   <details><summary>Resposta</summary>Hash sharding. Ele se espalha linhas uniformemente, então um intervalo é espalhado por todo o shards.</details>
+3. Você quer manter partições de pedidos antigos em discos mais baratos. Você pode fazer isso em Azure SQL Database?
+   <details><summary>Resposta</summary>No. SQL Database tem somente o grupo de arquivos PRIMARY. Use um VM ou Managed Instance.</details>

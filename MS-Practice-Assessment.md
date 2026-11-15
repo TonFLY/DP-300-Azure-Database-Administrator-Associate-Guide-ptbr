@@ -1,35 +1,35 @@
-# DP-300 — Microsoft Learn Practice Assessment Questions
+# DP-300 — Questões da avaliação prática do Microsoft Learn
 
-**79 questions** from Microsoft's official practice test (109 in total, 50 per attempt).
-Answers and explanations are Microsoft's. ⚠️ = you got it wrong in an earlier attempt.
+**79 questões** da avaliação prática oficial da Microsoft (109 no total, 50 por tentativa).
+As respostas e explicações são da Microsoft. ⚠️ indica que você errou a questão em uma tentativa anterior.
 
-## Plan and implement data platform resources (17)
+## Planejar e implementar recursos da plataforma de dados (17)
 
 ### Q1
 
-**Question:**
-You have an on-premises Microsoft SQL Server 2019 instance that uses FileTable.
+**Questão:**
+Você tem uma instância on-premises Microsoft SQL Server 2019 que usa FileTable.
 
-You need to migrate the instance to Azure. The solution must support the existing application code.
+Você precisa migrar a instância para o Azure. A solução deve suportar o código do aplicativo existente.
 
-What should you use?
+O que você deve usar?
 
-**Options:**
+**Alternativas:**
 - **A.** Azure SQL Database HyperScale
 - **B.** Azure SQL Database serverless
 - **C.** Azure SQL Managed Instance
 - **D.** SQL Server on Azure Virtual Machines
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-SQL Server on Azure Virtual Machines supports FileTable. It can be used to migrate the instance to Azure and support the existing application code.
+SQL Server on Azure Virtual Machines suporta FileTable. Ele pode ser usado para migrar a instância para o Azure e suportar o código do aplicativo existente.
 
-Azure SQL Database serverless and Azure SQL Database Hyperscale are tiers of Azure SQL Database that do not support FileTable. Azure SQL Managed Instance does not support FileTable.
+Azure SQL Database serverless e Azure SQL Database Hyperscale são camadas de Azure SQL Database que não suportam FileTable. Azure SQL Managed Instance não suporta FileTable.
 
-[Explore Azure SQL Database Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/prepare-to-maintain-sql-databases-azure/5-explore-azure-sql-database-managed-instance?source=learn)  
-[Compare the database engine features of SQL Database and SQL Managed Instance - Azure SQL Database & SQL Managed Instance | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/features-comparison?view=azuresql)
+[Explorar Azure SQL Database Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/prepare-to-maintain-sql-databases-azure/5-explore-azure-sql-database-managed-instance?source=learn)  
+[Compare as características do motor de banco de dados de SQL Database e SQL Managed Instance - Azure SQL Database & SQL Managed Instance | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/features-comparison?view=azuresql)
 
 </details>
 
@@ -37,30 +37,30 @@ Azure SQL Database serverless and Azure SQL Database Hyperscale are tiers of Azu
 
 ### Q2
 
-**Question:**
-You have an Azure SQL Database that is only used to process data for three hours a day. Currently, the database has the Standard S3 (100 DTU) service tier configured.
+**Questão:**
+Você tem um Azure SQL Database que só é usado para processar dados por três horas por dia. Atualmente, o banco de dados tem o nível de serviço padrão S3 (100 DTU) configurado.
 
-You need to recommend a solution that will increase the performance without increasing the cost.
+Você precisa recomendar uma solução que aumente o desempenho sem aumentar o custo.
 
-Which database service tier do you recommend?
+Qual nível de serviço de banco de dados você recomenda?
 
-**Options:**
+**Alternativas:**
 - **A.** Premium DTU
 - **B.** Business Critical vCore
 - **C.** Hyperscale vCore
 - **D.** General Purpose serverless vCore
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-By choosing the vCore serverless service tier, the database will be active only during the daily schedule, and the amount of vCores can be configured dynamically to handle the workload.
+Ao escolher o nível de serviço vCore serverless, o banco de dados estará ativo apenas durante a programação diária, e a quantidade de vCores pode ser configurada dinamicamente para lidar com a carga de trabalho.
 
-The Premium, Hyperscale, and Business Critical service tiers will be a more expensive solution.
+Os níveis de serviço Premium, Hyperscale e Business Critical serão uma solução mais cara.
 
-[What is the Hyperscale service tier? - Azure SQL Database - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/service-tier-hyperscale?view=azuresql)
+[O que é o Hyperscale nível de serviço? - Azure SQL Database - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/service-tier-hyperscale?view=azuresql)
 
-[Understand SQL database hyperscale - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/deploy-paas-solutions-with-azure-sql/5-understand-sql-database-hyperscale)
+[Entender SQL database hyperscale - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/deploy-paas-solutions-with-azure-sql/5-understand-sql-database-hyperscale)
 
 </details>
 
@@ -68,10 +68,10 @@ The Premium, Hyperscale, and Business Critical service tiers will be a more expe
 
 ### Q3
 
-**Question:**
-You plan to deploy an Azure SQL Database that will include a table named Table1. Table1 will include the following fields:
+**Questão:**
+Você planeja implantar um Azure SQL Database que incluirá uma tabela chamada Table1. Table1 incluirá os seguintes campos:
 
-**Options:**
+**Alternativas:**
 - **A.** StockItemTransactionID (Int)
 - **B.** StockItemID (Int)
 - **C.** TransactionTypeID (Int)
@@ -79,35 +79,35 @@ You plan to deploy an Azure SQL Database that will include a table named Table1.
 - **E.** InvoiceID (Int)
 - **F.** SupplierID (Int)
 - **G.** PurchaseOrderID (Int)
-- **H.** TransactionOccurredWhen (Datetime)
-- **I.** Quantity (Int)
+- **H.** TransactionOccurredWhen (Data)
+- Quantidade **I.** (Int)
 - **J.** LastEditedBy (Int)
-- **K.** LastEditedWhen (Datetime)
+- **K.** LastEditedWhen (Data)
 
-You need to recommend a partitioning method for the table. The solution must meet the following requirements:
-- **L.** The data must be kept for 2 years.
-- **M.** All data older than two years must be removed once a month.
-- **N.** Performance of data removal operations must be maximized
+Você precisa recomendar um método de particionamento para a tabela. A solução deve atender aos seguintes requisitos:
+- **L.** Os dados devem ser mantidos por 2 anos.
+- **M.** Todos os dados com mais de dois anos devem ser removidos uma vez por mês.
+- **N.** O desempenho das operações de remoção de dados deve ser maximizado
 
-Which three actions should you perform? Each correct answer presents part of the solution.
-- **O.** Create a partition function for each month.
-- **P.** Create a partition function for each year.
-- **Q.** Create a partition scheme for filegroups for each year.
-- **R.** Create a partition scheme for the PRIMARY filegroup.
-- **S.** Create the table by using the partition scheme on the StockItemTransactionID column.
-- **T.** Create the table by using the partition scheme on the TransactionOccurredWhen column.
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução.
+- **O.** Criar a partition function para cada mês.
+- **P.** Crie um partition function para cada ano.
+- **Q.** Crie um partition scheme para grupos de arquivos para cada ano.
+- **R.** Crie um partition scheme para o grupo de arquivos PRIMARY.
+- **S.** Crie a tabela usando o partition scheme na coluna StockItemTransactionID.
+- **T.** Crie a tabela usando o partition scheme na coluna TransactionOccurredWhen.
 
-**✅ Answer:** O, R, T
+**✅ Resposta:** O, R, T
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-The data must be removed each month so it will be more efficient to create a partition function for each month. You can only use the PRIMARY filegroup in Azure SQL Database, and the data should be partitioned on datetime.
+Os dados devem ser removidos a cada mês para que seja mais eficiente criar um partition function para cada mês. Você só pode usar o grupo de arquivos PRIMARY no Azure SQL Database, e os dados devem ser particionados na data.
 
-Also, because the data must be removed each month, it will be less efficient to create a partition for each year. You cannot create filegroups in Azure SQL Database.
+Além disso, como os dados devem ser removidos todos os meses, será menos eficiente criar uma partição para cada ano. Você não pode criar grupos de arquivos no Azure SQL Database.
 
-[Create partitioned tables and indexes - SQL Server, Azure SQL Database, Azure SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/partitions/create-partitioned-tables-and-indexes?view=azuresqldb-current)
+[Criar tabelas e índices particionados - SQL Server, Azure SQL Database, Azure SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/partitions/create-partitioned-tables-and-indexes?view=azuresqldb-current)
 
-[Explore performance and security - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/deploy-iaas-solutions-with-azure-sql/4-explore-performance-and-security?ns-enrollment-type=learningpath&amp;ns-enrollment-id=learn.wwl.plan-implement-data-platform-resources)
+[Explorar desempenho e segurança - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/deploy-iaas-solutions-with-azure-sql/4-explore-performance-and-security?ns-enrollment-type=learningpath&amp;ns-enrollment-id=learn.wwl.plan-implement-data-platform-resources)
 
 </details>
 
@@ -115,30 +115,30 @@ Also, because the data must be removed each month, it will be less efficient to 
 
 ### Q4
 
-**Question:**
-You have several databases in an Azure SQL Managed Instance that uses the General Purpose vCore service tier.
+**Questão:**
+Você tem vários bancos de dados em um Azure SQL Managed Instance que usa o nível de serviço General Purpose vCore.
 
-You discover high latency in some of the database files.
+Você descobre alta latência em alguns dos arquivos de banco de dados.
 
-What should you do to reduce latency?
+O que fazer para reduzir a latência?
 
-**Options:**
-- **A.** Add more files to the database.
-- **B.** Add more vCores to the instance.
-- **C.** Change the service tier.
-- **D.** Increase the file size.
+**Alternativas:**
+- **A.** Adicione mais arquivos ao banco de dados.
+- **B.** Adicione mais vCores à instância.
+- **C.** Mude o nível de serviço.
+- **D.** Aumente o tamanho do arquivo.
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should increase the file size to improve performance. If you have a file that is up to 128 GB, then you can have up to 500 IOPS. If you change the file size to 1 TB, then you can have up to 5,000 IOPS.
+Você deve aumentar o tamanho do arquivo para melhorar o desempenho. Se você tiver um arquivo que é até 128 GB, então você pode ter até 500 IOPS. Se você alterar o tamanho do arquivo para 1 TB, então você pode ser até 5,000 IOPS.
 
-You should not add more vCores to the instance in the General Purpose tier, as this will not change the available IOPS. Adding more files to the database also does not help, as the number of available IOPS is calculated per file size, not by the number of files. Changing the service tier will change the type of CPU, the maximum file size, and the amount of memory reserved per CPU.
+Você não deve adicionar mais vCores à instância no nível General Purpose, pois isso não alterará o IOPS disponível. Adicionar mais arquivos ao banco de dados também não ajuda, pois o número de IOPS disponível é calculado por tamanho do arquivo, não pelo número de arquivos. A alteração do nível de serviço mudará o tipo de CPU, o tamanho máximo do arquivo e a quantidade de memória reservada por CPU.
 
-[Resource limits - Azure SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/managed-instance/resource-limits?view=azuresql)
+[Limites de recursos - Azure SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/managed-instance/resource-limits?view=azuresql)
 
-[Deploy PaaS solutions with Azure SQL - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/deploy-paas-solutions-with-azure-sql/)
+[Implantar soluções PaaS com Azure SQL - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/deploy-paas-solutions-with-azure-sql/)
 
 </details>
 
@@ -146,24 +146,24 @@ You should not add more vCores to the instance in the General Purpose tier, as t
 
 ### Q5
 
-**Question:**
-Your organization is facing performance issues with a large table in an Azure SQL Database due to frequent read and write operations.  
+**Questão:**
+Sua organização está enfrentando problemas de desempenho com uma tabela grande em um Azure SQL Database devido a operações frequentes de leitura e escrita.  
   
-You need to optimize the table's performance by improving query efficiency and reducing storage usage.  
+Você precisa otimizar o desempenho da tabela, melhorando a eficiência da consulta e reduzindo o uso de armazenamento.  
   
-What should you do?
+O que você deve fazer?
 
-**Options:**
-- **A.** Apply page-level compression to the table.
-- **B.** Create a clustered index on the table.
-- **C.** Enable row-level compression for the table.
-- **D.** Partition the table based on date.
+**Alternativas:**
+- **A.** Aplique a compressão no nível da página à tabela.
+- **B.** Crie um clustered index na tabela.
+- **C.** Ativar compressão de nível de linha para a tabela.
+- **D.** Partição da tabela com base na data.
 
-**✅ Answer:** C
+**✅ Resposta:** C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Row-level compression optimizes storage by reducing the size of data stored and improves query performance by minimizing I/O operations, making it the most suitable solution for tables with frequent read and write operations. Creating a clustered index enhances query performance but does not address storage optimization. Page-level compression effectively reduces storage but introduces higher CPU overhead, making it less suitable for frequent updates. Partitioning based on date improves query performance for specific scenarios but does not inherently reduce storage requirements.  
+A compressão no nível da linha otimiza o armazenamento reduzindo o tamanho dos dados armazenados e melhora o desempenho da consulta minimizando as operações de E/S, tornando-a a solução mais adequada para tabelas com operações frequentes de leitura e gravação. Criar um clustered index aprimora o desempenho da consulta, mas não aborda a otimização do armazenamento. A compactação no nível da página reduz efetivamente o armazenamento, mas introduz uma sobrecarga maior do CPU, tornando-o menos adequado para atualizações frequentes. A partição baseada na data melhora o desempenho da consulta para cenários específicos, mas não reduz inerentemente os requisitos de armazenamento.  
   
 [Tune and maintain indexes - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/evaluate-performance-improvements/3-tune-and-maintain-indexes)  
 [Explore database maintenance checks - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/configure-databases-for-optimal-performance/2-explore-database-maintenance-checks)
@@ -174,29 +174,29 @@ Row-level compression optimizes storage by reducing the size of data stored and 
 
 ### Q6
 
-**Question:**
-You plan to deploy a SQL Server on an Azure Virtual Machines instance running on a Windows Server operating system.
+**Questão:**
+Você planeja implantar um SQL Server em uma instância Azure Virtual Machines em execução em um sistema operacional Windows Server.
 
-You need to configure storage for the virtual machine. The solution must ensure the highest performance for the data files.
+Você precisa configurar o armazenamento para a máquina virtual. A solução deve garantir o mais alto desempenho para os arquivos de dados.
 
-Which two actions should you perform? Each correct answer presents part of the solution.
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução.
 
-**Options:**
-- **A.** Set host caching to none.
-- **B.** Set host caching to read-only.
-- **C.** Set host caching to read/write.
-- **D.** Stripe multiple disks by using Storage Spaces.
-- **E.** Use Write Accelerator disks.
+**Alternativas:**
+- **A.** Defina o cache do host para nenhum.
+- **B.** Definir cache host para read-only.
+- **C.** Defina o cache do host para ler/escrever.
+- **D.** Desligue vários discos usando espaços de armazenamento.
+- **E.** Use discos de aceleração de gravação.
 
-**✅ Answer:** B, D
+**✅ Resposta:** B, D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should stripe multiple disks, as it will increase IOPS, as well as set host caching to read-only, as data files perform best by using this type of host caching.
+Você deve remover vários discos, uma vez que aumentará o IOPS, bem como definir o cache do host para read-only, pois os arquivos de dados funcionam melhor usando esse tipo de cache do host.
 
-Setting host caching to none means that reads will not be cached, setting host caching to read/write will degrade performance and lead to data loss. Write Accelerator Disks should be used for transaction log disks.
+A configuração do cache do host para nenhum significa que as leituras não serão armazenadas em cache, a configuração do cache do host de ler / escrever degradará o desempenho e levará à perda de dados. Os discos do acelerador de gravação devem ser usados para discos de log de transação.
 
-[Storage: Performance best practices & guidelines - SQL Server on Azure VMs - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/performance-guidelines-best-practices-storage?source=recommendations&amp;view=azuresql)
+[Armazenamento: Melhores práticas e diretrizes de desempenho - SQL Server on Azure VMs - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/performance-guidelines-best-practices-storage?source=recommendations&amp;view=azuresql)
 
 [Optimize database storage - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-sql-server-resources-optimal-performance/4-optimize-database-storage)
 
@@ -206,34 +206,34 @@ Setting host caching to none means that reads will not be cached, setting host c
 
 ### Q7
 
-**Question:**
-You are deploying a SQL Server on Azure Virtual Machines instance that will be used as a development environment. You will develop two small databases, one of which will have in-memory tables.
+**Questão:**
+Você está implantando uma instância SQL Server on Azure Virtual Machines que será usada como um ambiente de desenvolvimento. Você desenvolverá dois pequenos bancos de dados, um dos quais terá tabelas na memória.
 
-You need to choose the most suitable virtual machine type for the deployment.
+Você precisa escolher o tipo de máquina virtual mais adequado para a implantação.
 
-What should you choose?
+O que você deve escolher?
 
-**Options:**
-- **A.** compute optimized
+**Alternativas:**
+- **A.** computação otimizada
 - **B.** general purpose
-- **C.** GPU Optimized
-- **D.** memory optimized
+- **C.** GPU Otimizado
+- **D.** memória otimizada
 
-**✅ Answer:** B
+**✅ Resposta:** B
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-General purpose virtual machine sizes provide a balanced CPU-to-memory ratio. This is ideal for testing and development, small to medium databases, and low to medium traffic web servers.
+Os tamanhos de máquinas virtuais General purpose fornecem uma relação CPU -para-memória equilibrada. Isso é ideal para testes e desenvolvimento, bancos de dados pequenos a médios e servidores web de baixo a médio tráfego.
 
-Compute optimized virtual machine sizes have a high CPU-to-memory ratio. This is good for medium traffic web servers, network appliances, batch processes, and application servers.
+Tamanhos de máquinas virtuais otimizadas para computação têm uma alta relação CPU -para memória. Isso é bom para servidores web de tráfego médio, eletrodomésticos de rede, processos em lote e servidores de aplicativos.
 
-Memory optimized virtual machine sizes offer a high memory-to-CPU ratio that is used for relational database servers, medium to large caches, and in-memory analytics.
+Os tamanhos de máquina virtual otimizados para memória oferecem uma alta relação memória-para-CPU que é usada para servidores de banco de dados relacionais, caches médios a grandes e análises na memória.
 
-GPU optimized virtual machine sizes are specialized virtual machines available with single, multiple, or fractional GPUs. These sizes are designed for compute-intensive, graphics-intensive, and visualization workloads.
+Os tamanhos de máquinas virtuais otimizadas GPU são máquinas virtuais especializadas disponíveis com GPUs único, múltiplo ou fracionário. Esses tamanhos são projetados para cargas de trabalho intensivas em computação, gráficas e visualização.
 
-[Azure VM sizes - General purpose - Azure Virtual Machines - Training | Microsoft Learn](https://learn.microsoft.com/azure/virtual-machines/sizes-general)
+[Azure VM tamanhos - General purpose - Azure Virtual Machines - Training | Microsoft Learn](https://learn.microsoft.com/azure/virtual-machines/sizes-general)
 
-[Prepare to maintain SQL databases on Azure - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/prepare-to-maintain-sql-databases-azure/)
+[Prepare-se para manter SQL databases on Azure - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/prepare-to-maintain-sql-databases-azure/)
 
 </details>
 
@@ -241,34 +241,34 @@ GPU optimized virtual machine sizes are specialized virtual machines available w
 
 ### Q8
 
-**Question:**
-You are deploying a SQL Server on Azure Virtual Machines instance for a production environment. One of the databases in this instance has in-memory tables.
+**Questão:**
+Você está implantando uma instância SQL Server on Azure Virtual Machines para um ambiente de produção. Uma das bancos de dados neste caso tem tabelas na memória.
 
-You need to choose the most suitable virtual machine type for the deployment.
+Você precisa escolher o tipo de máquina virtual mais adequado para a implantação.
 
-What should you choose?
+O que você deve escolher?
 
-**Options:**
-- **A.** compute optimized
+**Alternativas:**
+- **A.** computação otimizada
 - **B.** general purpose
-- **C.** GPU Optimized
-- **D.** memory optimized
+- **C.** GPU Otimizado
+- **D.** memória otimizada
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Memory optimized virtual machine sizes offer a high memory-to-CPU ratio that is good for relational database servers, medium to large caches, and in-memory analytics.
+Os tamanhos de máquina virtual otimizados para memória oferecem uma alta relação memória-para-CPU que é boa para servidores de banco de dados relacionais, caches médios a grandes e análises na memória.
 
-General purpose virtual machines provide a balanced CPU-to-memory ratio. These are best for testing and development, small to medium databases, and low to medium traffic web servers.
+As máquinas virtuais General purpose fornecem uma relação CPU-para-memória equilibrada. Estes são melhores para testes e desenvolvimento, bancos de dados pequenos a médios e servidores web de tráfego baixo a médio.
 
-Compute optimized virtual machines have a high CPU-to-memory ratio. These are used for medium traffic web servers, network appliances, batch processes, and application servers.
+As máquinas virtuais otimizadas para computação têm uma alta relação CPU -para memória. Estas são usadas para servidores web de tráfego médio, eletrodomésticos de rede, processos em lote e servidores de aplicativos.
 
-GPU optimized virtual machine sizes are specialized virtual machines available with single, multiple, or fractional GPUs. These sizes are designed for compute-intensive, graphics-intensive, and visualization workloads.
+Os tamanhos de máquinas virtuais otimizadas GPU são máquinas virtuais especializadas disponíveis com GPUs único, múltiplo ou fracionário. Esses tamanhos são projetados para cargas de trabalho intensivas em computação, gráficas e visualização.
 
-[Azure VM sizes - Memory - Azure Virtual Machines - Training | Microsoft Learn](https://learn.microsoft.com/azure/virtual-machines/sizes-memory)
+[Azure VM tamanhos - Memória - Azure Virtual Machines - Training | Microsoft Learn](https://learn.microsoft.com/azure/virtual-machines/sizes-memory)
 
-[Prepare to maintain SQL databases on Azure - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/prepare-to-maintain-sql-databases-azure/)
+[Prepare-se para manter SQL databases on Azure - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/prepare-to-maintain-sql-databases-azure/)
 
 </details>
 
@@ -276,30 +276,30 @@ GPU optimized virtual machine sizes are specialized virtual machines available w
 
 ### Q9
 
-**Question:**
-You are planning a migration from on-premises Microsoft SQL Server to Azure using Azure Database Migration Service.
+**Questão:**
+Você está planejando uma migração de on-premises Microsoft SQL Server para Azure usando o Azure Database Migration Service.
 
-You need to keep databases online during the migration.
+Você precisa manter bancos de dados on-line durante a migração.
 
-Which two services can you use? Each correct answer presents a complete solution.
+Quais dois serviços você pode usar? Cada resposta correta apresenta uma solução completa.
 
-**Options:**
+**Alternativas:**
 - **A.** Azure Cosmos DB
 - **B.** Azure SQL Database
 - **C.** Azure SQL Managed Instance
 - **D.** SQL Server on Azure Virtual Machines
 
-**✅ Answer:** C, D
+**✅ Resposta:** C, D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-SQL Server on Azure Virtual Machines and Azure SQL Managed Instance both support online migration.
+SQL Server on Azure Virtual Machines e Azure SQL Managed Instance apoiam a migração online.
 
-Azure SQL Database does not support online migration and Azure CosmosDB is not a relational database.
+O Azure SQL Database não suporta migração online e o Azure CosmosDB não é um banco de dados relacional.
 
-[Supported database migration scenarios - Azure Database Migration Service - Training | Microsoft Learn](https://learn.microsoft.com/azure/dms/resource-scenario-status)
+[Cenários de migração de banco de dados suportados - Azure Database Migration Service - Training | Microsoft Learn](https://learn.microsoft.com/azure/dms/resource-scenario-status)
 
-[Migrate SQL workloads to Azure SQL Databases - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/migrate-sql-workloads-azure-sql-databases/)
+[Migrar SQL cargas de trabalho para Azure SQL Databases - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/migrate-sql-workloads-azure-sql-databases/)
 
 </details>
 
@@ -307,32 +307,32 @@ Azure SQL Database does not support online migration and Azure CosmosDB is not a
 
 ### Q10
 
-**Question:**
-You have an on-premises database that uses Transparent Data Encryption (TDE).
+**Questão:**
+Você tem um banco de dados on-premises que usa Transparent Data Encryption (TDE).
 
-You plan to migrate the database to an Azure SQL Managed Instance named Instance1. 
+Você planeja migrar o banco de dados para um Azure SQL Managed Instance chamado Instance1. 
 
-You export the TDE certificate to a file. 
+Você exporta o certificado TDE para um arquivo. 
 
-You need to ensure that you can restore the database to Instance1.
+Você precisa garantir que você pode restaurar o banco de dados para Instance1.
 
-Where should you upload the certificate?
+Onde você deve fazer o upload do certificado?
 
-**Options:**
-- **A.** a Recovery Services vault
-- **B.** an Azure key vault
+**Alternativas:**
+- **A.** um cofre de serviços de recuperação
+- **B.** Azure key vault
 - **C.** Instance1
 - **D.** Azure Blob Storage
 
-**✅ Answer:** C
+**✅ Resposta:** C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-The certificate should be uploaded to the managed instance, as the certificate should not be stored in either a Recovery Services vault or a key vault for the managed instance to have access.
+O certificado deve ser carregado para o managed instance, pois o certificado não deve ser armazenado em um cofre de serviços de recuperação ou um cofre chave para o managed instance ter acesso.
 
-[Migrate TDE certificate - managed instance - Azure SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/managed-instance/tde-certificate-migrate?view=azuresql&amp;tabs=azure-powershell)
+[Migrar TDE certificado - managed instance - Azure SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/managed-instance/tde-certificate-migrate?view=azuresql&amp;tabs=azure-powershell)
 
-[Migrate SQL workloads to Azure Managed Instances - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/migrate-sql-workloads-azure-managed-instances/)
+[Migrar SQL workloads to Azure Managed Instances - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/migrate-sql-workloads-azure-managed-instances/)
 
 </details>
 
@@ -340,26 +340,26 @@ The certificate should be uploaded to the managed instance, as the certificate s
 
 ### Q11
 
-**Question:**
-You have 20 on-premises Microsoft SQL Server instances.
+**Questão:**
+Você tem 20 instâncias on-premises Microsoft SQL Server.
 
-You need to migrate the instances to Azure. The solution must support auditing at the server level.
+Você precisa migrar as instâncias para o Azure. A solução deve suportar a auditoria no nível do servidor.
 
-Which two services can you use? Each correct answer presents a complete solution.
+Quais dois serviços você pode usar? Cada resposta correta apresenta uma solução completa.
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Azure SQL Managed Instance; SQL Server on Azure Virtual Machines
+**✅ Resposta:** Azure SQL Managed Instance; SQL Server on Azure Virtual Machines
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-SQL Server on Azure Virtual Machines and Azure SQL Managed Instance support SQL Server Audit and can be used.
+SQL Server on Azure Virtual Machines e Azure SQL Managed Instance suportam SQL Server Audit e podem ser usados.
 
-Azure SQL Database Serverless serverless is a compute tier of Azure SQL Database that does not support SQL Server Audit. Azure SQL Database Elastic PoolElastic pool is a shared database offering of Azure SQL Database that doesn’t support SQL Server Audit. Azure SQL Database HyperScale Hyperscale is a service tier of Azure SQL Database that does not support SQL Server Audit.
+Azure SQL Database Serverless serverless é uma camada de computação de Azure SQL Database que não suporta SQL Server Audit. Azure SQL Database Elastic PoolElastic O pool é uma oferta de banco de dados compartilhada de Azure SQL Database que não suporta SQL Server Audit. Azure SQL Database HyperScale Hyperscale é um nível de serviço de Azure SQL Database que não suporta SQL Server Audit.
 
-Explore Azure SQL Database Managed Instance - Training | Microsoft Learn
+Explorar Azure SQL Database Managed Instance - Training | Microsoft Learn
 
-T-SQL differences between SQL Server & Azure SQL Managed Instance - Azure SQL Managed Instance | Microsoft LearnSQL Server Audit (Database Engine) - SQL Server | Microsoft Learn
+Diferenças de T-SQL entre SQL Server e Azure SQL Managed Instance - Azure SQL Managed Instance | Microsoft Learn, e SQL Server Audit (Database Engine) - SQL Server | Microsoft Learn
 
 </details>
 
@@ -367,30 +367,30 @@ T-SQL differences between SQL Server & Azure SQL Managed Instance - Azure SQL Ma
 
 ### Q12
 
-**Question:**
-You are building a multi-tenant app that will use an Azure SQL Database.
+**Questão:**
+Você está construindo um aplicativo multi-tenant que usará um Azure SQL Database.
 
-You need to partition the database. The solution must meet the following requirements:
+Você precisa dividir o banco de dados. A solução deve atender aos seguintes requisitos:
 
-Improve scalability.
-Reduce contention.
-Optimize performance.
-Isolate each tenant’s data.
-What should you use?
+Melhorar a escalabilidade.
+Reduza a contenção.
+Otimize o desempenho.
+Isolar os dados de cada inquilino.
+O que você deve usar?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** a list shard map only
+**✅ Resposta:** uma lista shard mapa apenas
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Using only a list shard map is the correct solution because each tenant’s data will be stored in a separate database.
+Usando apenas uma lista shard mapa é a solução correta, porque os dados de cada inquilino serão armazenados em um banco de dados separado.
 
-A range shard map will allow data from multiple tenants to be in stored in the same database.
+Um mapa de alcance shard permitirá que os dados de vários inquilinos sejam armazenados no mesmo banco de dados.
 
-Explore performance and security - Training | Microsoft Learn
+Explorar desempenho e segurança - Treinamento | Microsoft Learn
 
-Data partitioning strategies - Azure Architecture Center - Training | Microsoft Learn
+Estratégias de data partitioning - Azure Architecture Center - Treinamento | Microsoft Learn
 
 </details>
 
@@ -398,30 +398,30 @@ Data partitioning strategies - Azure Architecture Center - Training | Microsoft 
 
 ### Q13
 
-**Question:**
-You have an on-premises instance of Microsoft SQL Server 2019 that uses a SQL common language runtime (CLR) stored procedure to access a local file share on the server.
+**Questão:**
+Você tem uma instância on-premises do Microsoft SQL Server 2019 que usa um procedimento armazenado SQL (CLR) para acessar um compartilhamento de arquivos local no servidor.
 
-You need to migrate the instance to Azure.
+Você precisa migrar a instância para o Azure.
 
-To which Azure service should you migrate the instance?
+Para qual serviço do Azure você deve migrar a instância?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** SQL Server on Azure Virtual Machines
+**✅ Resposta:** SQL Server on Azure Virtual Machines
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-SQL Server on Azure Virtual Machine supports SQL CLR objects. The objects can access files shares, disks, and folders.
+SQL Server em Azure Virtual Machine suporta objetos SQL CLR. Os objetos podem acessar arquivos compartilhamentos, discos e pastas.
 
-Azure SQL Database serverless is a compute tier for Azure SQL Database that does not support SQL CLR objects.
+Azure SQL Database serverless é uma camada de computação para Azure SQL Database que não suporta objetos SQL CLR.
 
-Azure SQL Database Hyperscale is a service tier of Azure SQL Database that does not support SQL CLR objects.
+Azure SQL Database Hyperscale é um nível de serviço do Azure SQL Database que não suporta objetos SQL CLR.
 
-Azure SQL Managed Instance does not support SQL CLR objects that access file shares or folders of the operating system.
+O Azure SQL Managed Instance não suporta objetos SQL CLR que acessam compartilhamentos de arquivos ou pastas do sistema operacional.
 
-Compare the database engine features of SQL Database and SQL Managed Instance - Azure SQL Database & SQL Managed Instance - Training | Microsoft Learn
+Compare as características do motor de banco de dados de SQL Database e SQL Managed Instance - Azure SQL Database & SQL Managed Instance - Training | Microsoft Learn
 
-T-SQL differences between SQL Server & Azure SQL Managed Instance - Azure SQL Managed Instance - Training | Microsoft Learn
+T-SQL Diferenças entre SQL Server & Azure SQL Managed Instance - Azure SQL Managed Instance - Training | Microsoft Learn
 
 </details>
 
@@ -429,24 +429,24 @@ T-SQL differences between SQL Server & Azure SQL Managed Instance - Azure SQL Ma
 
 ### Q14
 
-**Question:**
-You plan to migrate a 40-TB OLTP database to Azure SQL Database.
+**Questão:**
+Você planeja migrar um banco de dados 40- TB OLTP para Azure SQL Database.
 
-Which service tier should you recommend for the database?
+Qual nível de serviço você deve recomendar para o banco de dados?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Hyperscale vCore service tier
+**✅ Resposta:** Nível de serviço Hyperscale vCore
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should recommend the Hyperscale vCore service tier, as it supports database sizes of up to 100 TB.
+Você deve recomendar o nível de serviço Hyperscale vCore, pois ele suporta tamanhos de banco de dados de até 100 TB.
 
-The General Purpose and Business Critical vCore service tier and the DTU Premium service tier only support a database size of up to 4 TB.
+O nível de serviço General Purpose e Business Critical vCore e o nível de serviço DTU Premium suportam apenas um tamanho de banco de dados de até 4 TB.
 
-What is the Hyperscale service tier? - Azure SQL Database - Training | Microsoft Learn
+O que é o Hyperscale nível de serviço? - Azure SQL Database - Training | Microsoft Learn
 
-Understand SQL database hyperscale - Training | Microsoft Learn
+Entender SQL database hyperscale - Training | Microsoft Learn
 
 </details>
 
@@ -454,30 +454,30 @@ Understand SQL database hyperscale - Training | Microsoft Learn
 
 ### Q15
 
-**Question:**
-You have a resource group named RG1 that contains a General Purpose service tier Azure SQL Managed Instance named Instance1.
+**Questão:**
+Você tem um grupo de recursos chamado RG1 que contém um nível de serviço General Purpose Azure SQL Managed Instance chamado Instance1.
 
-You need to change the service tier of Instance1 to Business Critical.
+Você precisa mudar o nível de serviço do Instance1 para Business Critical.
 
-Which command should you run?
+Qual comando você deve executar?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Set-AzSqlInstance -Name Instance1 -ResourceGroupName RG1 -Edition BusinessCritical
+**✅ Resposta:** Set-AzSqlInstance -Name Instance1 -ResourceGroupName RG1 -Edition BusinessCritical
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Set-AzSqlInstance -Name Instance1 -ResourceGroupName RG1 -Edition BusinessCritical is correct. This will set the edition to Business Critical.
+Set-AzSqlInstance -Name Instance1 -ResourceGroupName RG1 -Edition BusinessCritical é o comando correto. Ele define a edição como Business Critical.
 
-Set-AzSqlElasticPool -Edition BusinessCritical -Name mydb -ServerName Instance1 -ResourceGroupName RG1 will set the edition of an Azure SQL Database elastic pool to Business Critical.
+Set-AzSqlElasticPool -Edition BusinessCritical -Name mydb -ServerName Instance1 -ResourceGroupName RG1 definirá a edição de um Azure SQL Database elastic pool para Business Critical.
 
-Set-AzSqlInstance -Name Instance1 -ResourceGroupName RG1 -Edition GeneralPurpose will set the edition to General Purpose.
+Set-AzSqlInstance -Name Instance1 -ResourceGroupName RG1 -Edition GeneralPurpose definirá a edição para General Purpose.
 
-Set-AzSqlDatabase -ResourceGroupName RG1 -Name mydb -ServerName Instance1 -Edition BusinessCritical will set the edition of an Azure SQL Database to Business Critical.
+Set-AzSqlDatabase -ResourceGroupName RG1 -Name mydb -ServerName Instance1 -Edition BusinessCritical definirá a edição de um Azure SQL Database para Business Critical.
 
 Set-AzSqlInstance (Az.Sql) - Training | Microsoft Learn
 
-Prepare to maintain SQL databases on Azure - Training | Microsoft Learn
+Prepare-se para manter SQL databases on Azure - Training | Microsoft Learn
 
 </details>
 
@@ -485,23 +485,23 @@ Prepare to maintain SQL databases on Azure - Training | Microsoft Learn
 
 ### Q16
 
-**Question:**
-Your organization uses Azure SQL Database to store transactional data. The database contains large tables with frequent inserts, updates, and deletes, and performance analysis shows frequent table scans that are increasing I/O operations and slowing down OLTP workloads.
+**Questão:**
+Sua organização usa o Azure SQL Database para armazenar dados transacionais. O banco de dados contém tabelas grandes com inserções, atualizações e exclusões frequentes, e a análise de desempenho mostra varreduras de tabela frequentes que estão aumentando as operações de E/S e diminuindo as cargas de trabalho do OLTP.
 
-You need to improve query performance and reduce I/O operations while maintaining data integrity.
+Você precisa melhorar o desempenho da consulta e reduzir as operações de E/S, mantendo a integridade dos dados.
 
-Each correct answer presents part of the solution. Which two actions should you perform?
+Cada resposta correta apresenta parte da solução. Que duas ações você deve realizar?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Create nonclustered indexes.; Enable row compression.
+**✅ Resposta:** Criar nonclustered indexes.; Habilitar row compression.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Creating nonclustered indexes enhances query performance by enabling efficient lookups for specific rows, which reduces the need for full table scans and minimizes I/O operations. Row compression decreases the size of stored data, leading to fewer pages being read during queries and improved I/O performance. Columnstore compression is not suitable for this scenario because it is designed for rarely accessed data and can increase CPU usage for tables with high read and write activity. Rebuilding indexes does not specifically address the performance issues described, as it focuses on maintaining index structure rather than optimizing query execution.
+A criação do nonclustered indexes melhora o desempenho da consulta, permitindo pesquisas eficientes para linhas específicas, o que reduz a necessidade de varreduras completas de tabela e minimiza as operações de E/S. O Row compression diminui o tamanho dos dados armazenados, levando a menos páginas sendo lidas durante consultas e melhor desempenho de E/S. Columnstore compression não é adequado para esse cenário porque foi projetado para dados raramente acessados e pode aumentar o uso do CPU para tabelas com alta atividade de leitura e gravação.
 
 Design indexes - Training | Microsoft Learn
-Describe intelligent query processing - Training | Microsoft Learn
+Descreva intelligent query processing - Training | Microsoft Learn
 
 </details>
 
@@ -509,56 +509,56 @@ Describe intelligent query processing - Training | Microsoft Learn
 
 ### Q17
 
-**Question:**
-You have an on-premises Microsoft SQL Server 2019 instance.
+**Questão:**
+Você tem uma instância on-premises Microsoft SQL Server 2019.
 
-You need to migrate the instance to an Azure SQL Managed Instance. The solution must minimize downtime.
+Você precisa migrar a instância para um Azure SQL Managed Instance. A solução deve minimizar o tempo de inatividade.
 
-What should you do first?
+O que você deve fazer primeiro?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Create an Azure SQL Managed Instance with premium series hardware. Create full and log backups with WITH CHECKSUM. Store the backups in an SMB network share.
+**✅ Resposta:** Crie um Azure SQL Managed Instance com hardware de série premium. Crie backups completo e log com WITH CHECKSUM. Armazene o backups em uma partilha de rede SMB.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Premium hardware must be used for an online migration. The backups must also be taken with CHECKSUM enabled.
+O hardware Premium deve ser usado para uma migração on-line. O backups também deve ser tomado com o CHECKSUM ativado.
 
-Standard hardware cannot be used for an online migration and storing the backups in Blob storage creates an Azure snapshot of the database files.
+O hardware padrão não pode ser usado para uma migração on-line e armazenar o backups no Blob storage cria um Azure snapshot dos arquivos de banco de dados.
 
-Tutorial: Migrate SQL Server online to SQL Managed Instance - Azure Database Migration Service - Training | Microsoft Learn
+Tutorial: Migrar SQL Server online para SQL Managed Instance - Azure Database Migration Service - Training | Microsoft Learn
 
 </details>
 
 ---
 
-## Implement a secure environment (18)
+## Implementar um ambiente seguro (18)
 
 ### Q18
 
-**Question:**
-You create a stored procedure that runs dynamic SQL code to select data from a table named Sales. 
+**Questão:**
+Você cria um procedimento armazenado que executa código SQL dinâmico para selecionar dados de uma tabela chamada Vendas. 
 
-All users have execute permissions to the stored procedure. 
+Todos os usuários têm permissões de execução para o procedimento armazenado. 
 
-What should you do to ensure that the users can run the procedure without errors?
+O que você deve fazer para garantir que os usuários possam executar o procedimento sem erros?
 
-**Options:**
-- **A.** Add a WITH RECOMPILE clause to the stored procedure.
-- **B.** Add an EXECUTE AS [owner] clause to the stored procedure.
-- **C.** Add the SELECT permission to the Sales table for the users.
+**Alternativas:**
+- **A.** Adicione uma cláusula WITH RECOMPILE ao procedimento armazenado.
+- **B.** Adicione uma cláusula EXECUTE AS [proprietário] ao procedimento armazenado.
+- **C.** Adicione a permissão SELECT à tabela de vendas para os usuários.
 
-**✅ Answer:** C
+**✅ Resposta:** C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should add the SELECT permission to the Sales table because executing dynamic SQL code requires that the caller has all the necessary permissions to the objects that are called in the code.
+Você deve adicionar a permissão SELECT à tabela de vendas porque a execução do código SQL dinâmico requer que o chamador tenha todas as permissões necessárias para os objetos que são chamados no código.
 
-Using the EXECUTE AS [owner] clause or the WITH RECOMPILE clause does not ensure that the caller has all the necessary permissions to the objects that are called in the code.
+Usar a cláusula EXECUTE AS [proprietário] ou a cláusula WITH RECOMPILE não garante que o chamador tenha todas as permissões necessárias para os objetos que são chamados no código.
 
 [EXECUTE AS (Transact-SQL) - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/t-sql/statements/execute-as-transact-sql?view=sql-server-ver16)
 
-[Configure database authentication and authorization - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-database-authentication-authorization/)
+[Configurar autenticação e autorização do banco de dados - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-database-authentication-authorization/)
 
 </details>
 
@@ -566,32 +566,32 @@ Using the EXECUTE AS [owner] clause or the WITH RECOMPILE clause does not ensure
 
 ### Q19
 
-**Question:**
-You have an app that stores data for multiple tenants using Azure SQL Database elastic pools. Each tenant has a database. 
+**Questão:**
+Você tem um aplicativo que armazena dados para vários inquilinos usando Azure SQL Database elastic pools. Cada inquilino tem um banco de dados. 
 
-You need to configure an authentication solution for the app. The solution must meet the following requirements:
+Você precisa configurar uma solução de autenticação para o aplicativo. A solução deve atender aos seguintes requisitos:
 
-**Options:**
-- **A.** Ensure that users can only access the database of their respective tenant.
-- **B.** Ensure databases can be moved to a dedicated instance.
-- **C.** Minimize administrative effort.
+**Alternativas:**
+- **A.** Certifique-se de que os usuários só podem acessar o banco de dados de seus respectivos inquilinos.
+- **B.** Certifique-se de que os bancos de dados podem ser movidos para uma instância dedicada.
+- **C.** Minimizar o esforço administrativo.
 
-What should you include in the solution?
-- **D.** contained database users
-- **E.** database roles
-- **F.** server roles
+O que você deve incluir na solução?
+- **D.** usuários de banco de dados contido
+- **E.** funções de banco de dados
+- **F.** funções do servidor
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Contained database users enable databases to be moved without recreating logins.
+Os usuários de banco de dados contidos permitem que os bancos de dados sejam movidos sem recriar o logins.
 
-Server roles manage permissions at the server level only, and database roles manage permissions within a database.
+As funções de servidor gerenciam permissões apenas no nível do servidor e as funções de banco de dados gerenciam permissões dentro de um banco de dados.
 
-[Contained user access to contained databases - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/security/contained-database-users-making-your-database-portable?view=sql-server-ver16)
+[Contained user acesso a bancos de dados confinadas - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/security/contained-database-users-making-your-database-portable?view=sql-server-ver16)
 
-[Configure database authentication and authorization - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-database-authentication-authorization/)
+[Configurar autenticação e autorização do banco de dados - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-database-authentication-authorization/)
 
 </details>
 
@@ -599,30 +599,30 @@ Server roles manage permissions at the server level only, and database roles man
 
 ### Q20
 
-**Question:**
-You have an Azure SQL server that hosts 10 Azure SQL Databases.
+**Questão:**
+Você tem um servidor Azure SQL que hospeda 10 Azure SQL Databases.
 
-You create an app named App1 with a system assigned managed identity.
+Você cria um aplicativo chamado App1 com um sistema atribuído managed identity.
 
-You need to ensure that App1 has read access to each database. by using the managed identity of App1.
+Você precisa garantir que o App1 tenha acesso de leitura a cada banco de dados. usando o managed identity do App1.
 
-Which three actions should you perform? Each correct answer presents part of the solution.
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução.
 
-**Options:**
-- **A.** Assign the database user the db\_reader role for each database.
-- **B.** Assign the database user the db\_reader role for the master database.
-- **C.** Create a login for App1 from an external provider.
-- **D.** Create a login for App1 that uses a password.
-- **E.** Create a user in each database for the App1 login.
-- **F.** Create a user in the master database for the App1 login.
+**Alternativas:**
+- **A.** Atribua ao usuário do banco de dados a função de leitor db \_ para cada banco de dados.
+- **B.** Atribua ao usuário do banco de dados a função de leitor db \_ para o banco de dados mestre.
+- **C.** Criar um login para App1 de um provedor externo.
+- **D.** Crie um login para App1 que use uma senha.
+- **E.** Crie um usuário em cada banco de dados para o App1 login.
+- **F.** Crie um usuário no banco de dados mestre para o App1 login.
 
-**✅ Answer:** A, C, E
+**✅ Resposta:** A, C, E
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-A managed identity requires that a login be created from an external provider, each database requires a user for the login, and assigning the database user the db\_reader role for each database will allow read access to the user databases.
+A managed identity exige que a login ser criado a partir de um provedor externo, cada banco de dados requer um usuário para o logine atribuindo ao usuário da banco de dados o db\_A função de leitor para cada banco de dados permitirá o acesso de leitura às bancos de dados do usuário.
 
-A managed identity cannot use Windows authentication. The app does not require a user in the master database and assigning the database user the db\_reader role for the master database will allow the user read access to the master database, but not read access to the user databases.
+A managed identity não pode usar Windows authentication. O aplicativo não requer um usuário no banco de dados mestre e atribui ao usuário do banco de dados o db\_O papel do leitor para o banco de dados mestre permitirá que o usuário leia o acesso ao banco de dados mestre, mas não leia o acesso aos bancos de dados do usuário.
 
 [Describe Security Principals - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-database-authentication-authorization/4-describe-security-principals)
 
@@ -632,32 +632,32 @@ A managed identity cannot use Windows authentication. The app does not require a
 
 ### Q21
 
-**Question:**
-You have an Azure SQL Database named db1 that includes two custom roles named db1\_readers and db2\_writers. You have a Microsoft Entra group named dbadmin.
+**Questão:**
+Você tem um Azure SQL Database chamado db1 que inclui dois papéis personalizados chamados leitores db1 \_ e escritores db2 \_. Você tem um grupo Microsoft Entra chamado dbadmin.
 
-You need to ensure that the members of the dbadmin group can manage the membership of db1\_readers and db1\_writers. The solution must follow the principle of least privilege.
+Você precisa garantir que os membros do grupo dbadmin possam gerenciar a associação de leitores db1 \_ e escritores db1 \_. A solução deve seguir o princípio do menor privilégio.
 
-Which two actions should you perform? Each correct answer presents part of the solution.
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução.
 
-**Options:**
-- **A.** Assign the database user the db\_accessadmin role for the db1 database.
-- **B.** Assign the database user the db\_securityadmin role for the db1 database.
-- **C.** Assign the database user the loginmanager role for the master database.
-- **D.** Assign the database user the sysadmin role for the master database.
-- **E.** Create a login and a database user in db1 for the dbadmin group.
-- **F.** Create a login and a database user in the master database for the dbadmin group.
+**Alternativas:**
+- **A.** Atribua ao usuário do banco de dados a função accessadmin db \_ para o banco de dados db1.
+- **B.** Atribua ao usuário do banco de dados a função securityadmin db \_ para o banco de dados db1.
+- **C.** Atribua ao usuário do banco de dados o papel de gerenciador de login para o banco de dados mestre.
+- **D.** Atribua ao usuário do banco de dados a função sysadmin para o banco de dados mestre.
+- **E.** Crie um login e um usuário de banco de dados no db1 para o grupo dbadmin.
+- **F.** Crie um login e um usuário de banco de dados no banco de dados mestre para o grupo dbadmin.
 
-**✅ Answer:** B, E
+**✅ Resposta:** B, E
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should create a login and a database user in db1 for the dbadmin group, because members of the dbadmin group need a user in the db1 database. Members of the db\_securityadmin role can modify role membership for custom roles.
+Você deve criar um login e um usuário de banco de dados no db1 para o grupo dbadmin, porque os membros do grupo dbadmin precisam de um usuário no banco de dados db1. Os membros da função securityadmin db \_ podem modificar a associação de funções para funções personalizadas.
 
-The remaining options are incorrect. Members of the dbadmin group do not need server level permissions. Members of the sysadmin role can perform any activity on the instance. Members of the db\_accessadmin role can add and remove access to the database. Members of the loginmanager role can create and delete logins in the virtual master database.
+As opções restantes estão incorretas. Os membros do grupo dbadmin não precisam de permissões de nível de servidor. Os membros da função sysadmin podem realizar qualquer atividade na instância. Os membros da função accessadmin do db \_ podem adicionar e remover o acesso ao banco de dados. Os membros da função loginmanager podem criar e excluir logins no banco de dados mestre virtual.
 
-https://learn.microsoft.com/sql/relational-databases/security/authentication-access/database-level-roles?view=sql-server-ver16[Database-Level Roles - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/en-us/sql/relational-databases/security/authentication-access/database-level-roles?view=sql-server-ver16)
+https://learn.microsoft.com/sql/relational-databases/security/authentication-access/database-level-roles?view=sql-server-ver16[Funções de nível de banco de dados - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/en-us/sql/relational-databases/security/authentication-access/database-level-roles?view=sql-server-ver16)
 
-[Configure database authentication and authorization - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-database-authentication-authorization/)
+[Configurar autenticação e autorização do banco de dados - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-database-authentication-authorization/)
 
 </details>
 
@@ -665,30 +665,30 @@ https://learn.microsoft.com/sql/relational-databases/security/authentication-acc
 
 ### Q22
 
-**Question:**
-You have an Azure SQL database named db1 that contains a table named Sales.
+**Questão:**
+Você tem um banco de dados do Azure SQL Database chamado db1 que contém uma tabela chamada Vendas.
 
-You need to encrypt data in a column named CreditCard in the Sales table.
+Você precisa criptografar dados em uma coluna chamada CreditCard na tabela de vendas.
 
-Which two actions should you perform before you can encrypt the data? Each correct answer presents part of the solution.
+Quais ações você deve executar antes de criptografar os dados? Cada resposta correta apresenta parte da solução.
 
-**Options:**
-- **A.** Create a certificate in the db1 database.
-- **B.** Create a certificate in the master database.
-- **C.** Create a symmetric key encrypted by a certificate.
-- **D.** Create an asymmetric key encrypted by a certificate.
+**Alternativas:**
+- **A.** Crie um certificado no banco de dados db1.
+- **B.** Crie um certificado no banco de dados mestre.
+- **C.** Crie uma chave simétrica criptografada por um certificado.
+- **D.** Crie uma chave assimétrica criptografada por um certificado.
 
-**✅ Answer:** A, C
+**✅ Resposta:** A, C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-The certificate created in db1 will be used to encrypt a symmetric key, which, in turn, will be used to protect data in the CreditCard column in the Sales table. The column containing encrypted data must be varbinary column.
+O certificado criado em db1 será usado para criptografar uma chave simétrica, que, por sua vez, será usada para proteger os dados na coluna CreditCard na tabela de vendas. A coluna contendo dados criptografados deve ser coluna varbinária.
 
-A symmetric key, not an asymmetric key, is required for this operation. Creating the certificate in the master database would not work, as the certificate that is needed for encryption must be created in the user database.  
+A chave simétrica, não uma chave assimétrica, é necessária para esta operação. Criar o certificado no banco de dados mestre não funcionaria, pois o certificado necessário para criptografia deve ser criado no banco de dados do usuário.  
 
-[Encrypt a Column of Data - SQL Server & Azure Synapse Analytics & Azure SQL Database & SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/security/encryption/encrypt-a-column-of-data?view=sql-server-ver16)
+[Criptografar uma coluna de dados - SQL Server & Azure Synapse Analytics & Azure SQL Database & SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/security/encryption/encrypt-a-column-of-data?view=sql-server-ver16)
 
-[Protect data in-transit and at rest - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/protect-data-transit-rest/)
+[Proteger dados em trânsito e em repouso - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/protect-data-transit-rest/)
 
 </details>
 
@@ -696,32 +696,32 @@ A symmetric key, not an asymmetric key, is required for this operation. Creating
 
 ### Q23
 
-**Question:**
-You have an Azure SQL Database named db1.
+**Questão:**
+Você tem um Azure SQL Database chamado db1.
 
-You need to ensure that all the data in db1 is encrypted at rest.
+Você precisa garantir que todos os dados no db1 estejam criptografados em repouso.
 
-What should you use?
+O que você deve usar?
 
-**Options:**
+**Alternativas:**
 - **A.** Always Encrypted
 - **B.** Azure SQL auditing
 - **C.** Microsoft Defender for SQL
 - **D.** Transparent Data Encryption (TDE)
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-TDE is the Azure SQL Database feature that encrypts data at rest. All the data saved to a disk is encrypted.
+TDE é o recurso Azure SQL Database que criptografa dados em repouso. Todos os dados salvos em um disco são criptografados.
 
-Auditing is not used for performing data encryption at rest, it is used for gathering diagnostic information.
+A auditoria não é usada para executar a criptografia de dados em repouso, ela é usada para coletar informações de diagnóstico.
 
-Defender for SQL is used to mitigate potential database vulnerabilities and detect anomalous activities.
+Defender for SQL é usado para mitigar possíveis vulnerabilidades de banco de dados e detectar atividades anômalas.
 
-Always Encrypted protects data that is in use or in transit.
+O Always Encrypted protege os dados que estão em uso ou em trânsito.
 
-[Explore Transparent Data Encryption - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/protect-data-transit-rest/2-explore-transparent-data-encryption)
+[Explorar Transparent Data Encryption - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/protect-data-transit-rest/2-explore-transparent-data-encryption)
 
 </details>
 
@@ -729,31 +729,31 @@ Always Encrypted protects data that is in use or in transit.
 
 ### Q24
 
-**Question:**
-In an Azure SQL database, you have a table that contains a column named Column1. Column1 stores credit card CVV data.
+**Questão:**
+Em um Azure SQL database, você tem uma tabela que contém uma coluna chamada Column1. Column1 armazena dados de cartão de crédito CVV.
 
-You need to configure Column1 to meet the following requirements:
+Você precisa configurar o Column1 para atender aos seguintes requisitos:
 
-**Options:**
-- **A.** The data in the column must be protected at rest.
-- **B.** The data in the column must be protected when in use.
-- **C.** Database administrators must be prevented from viewing the contents of Column1.
+**Alternativas:**
+- **A.** Os dados na coluna devem ser protegidos em repouso.
+- **B.** Os dados na coluna devem ser protegidos quando em uso.
+- **C.** Os administradores de banco de dados devem ser impedidos de visualizar o conteúdo do Column1.
 
-Which two features can you use? Each correct answer presents a complete solution.
-- **D.** Always Encrypted Deterministic encryption
-- **E.** Always Encrypted Randomized encryption
-- **F.** Column-level encryption using symmetric keys
+Quais duas características você pode usar? Cada resposta correta apresenta uma solução completa.
+- **D.** Criptografia determinística Always Encrypted
+- **E.** Criptografia aleatória Always Encrypted
+- **F.** Cript encriptação a nível de coluna utilizando chaves simétricas
 - **G.** dynamic data masking
 
-**✅ Answer:** D, E
+**✅ Resposta:** D, E
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should use Always Encrypted (Randomized encryption or Deterministic encryption), because this ensures that the administrators are unable to view and decrypt data. 
+Você deve usar Always Encrypted (criptografia aleatória ou criptografia determinística), porque isso garante que os administradores são incapazes de visualizar e descriptografar dados. 
 
-Encryption with symmetric keys will allow the administrators to access the data. Dynamic data masking does not protect data at rest or in use.
+A criptografia com chaves simétricas permitirá que os administradores acessem os dados. O Dynamic data masking não protege os dados em repouso ou em uso.
 
-[Explain object encryption and secure enclaves - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/protect-data-transit-rest/4-explain-object-encryption-secure-enclaves)
+[Explicar a criptografia de objeto e secure enclaves - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/protect-data-transit-rest/4-explain-object-encryption-secure-enclaves)
 
 </details>
 
@@ -761,34 +761,34 @@ Encryption with symmetric keys will allow the administrators to access the data.
 
 ### Q25
 
-**Question:**
-You have an Azure SQL Database that contains a table named Employee. The table has columns that are masked by using dynamic data masking. 
+**Questão:**
+Você tem um Azure SQL Database que contém uma tabela chamada Funcionário. A tabela tem colunas que são mascaradas usando dynamic data masking. 
 
-When a user copies the Employee table by using the SELECT INTO command, the data is masked in a new table. The user must see the unmasked data in the new table. 
+Quando um usuário copia a tabela Empregado usando o comando SELECT INTO, os dados são mascarados em uma nova tabela. O usuário deve ver os dados desmascarados na nova tabela. 
 
-You need to grant the appropriate permissions to the user. The solution must follow the principle of least privilege.
+Você precisa conceder as permissões apropriadas ao usuário. A solução deve seguir o princípio do menor privilégio.
 
-What should you grant to the user?
+O que você deve conceder ao usuário?
 
-**Options:**
-- **A.** the ALTER ANY MASK permission
-- **B.** the SELECT permission for the new table
-- **C.** the UNMASK permission for the Employee table
-- **D.** the UNMASK permission for the new table
+**Alternativas:**
+- **A.** a permissão ALTER ANY MASK
+- **B.** a permissão SELECT para a nova tabela
+- **C.** a permissão UNMASK para a tabela de Empregado
+- **D.** a permissão UNMASK para a nova tabela
 
-**✅ Answer:** C
+**✅ Resposta:** C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should grant the UNMASK permission to the user for the Employee table because data must be unmasked before copying it to the new table.
+Você deve conceder a permissão UNMASK ao usuário para a tabela de funcionários porque os dados devem ser desmascarados antes de copiá-los para a nova tabela.
 
-Granting the UNMASK permission to the user for the new table does not allow the user to see the unmasked data in the new table, as the data cannot be unmasked after it is copied to the new table.
+A concessão da permissão UNMASK ao usuário para a nova tabela não permite que o usuário veja os dados desmascarados na nova tabela, pois os dados não podem ser desmascarados depois de serem copiados para a nova tabela.
 
-The ALTER ANY MASK permission is dedicated to the security officer as it allows that management of dynamic data masking, and the SELECT permission does not make masked data readable.
+A permissão do ALTER ANY MASK é dedicada ao oficial de segurança, pois permite que o gerenciamento do dynamic data masking e a permissão SELECT não torne os dados mascarados legíveis.
 
 [Dynamic Data Masking - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/security/dynamic-data-masking?view=sql-server-ver16)
 
-[Implement compliance controls for sensitive data - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/implement-compliance-controls-sensitive-data/)
+[Implementar controles de conformidade para dados confidenciais - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/implement-compliance-controls-sensitive-data/)
 
 </details>
 
@@ -796,35 +796,35 @@ The ALTER ANY MASK permission is dedicated to the security officer as it allows 
 
 ### Q26
 
-**Question:**
-You have an Azure SQL managed instance Azure SQL Managed Instance that hosts a database.   
+**Questão:**
+Você tem um Azure SQL managed instance Azure SQL Managed Instance que hospeda um banco de dados.   
   
-The database contains a column named Column1 that stores confidential information.
+O banco de dados contém uma coluna chamada Column1 que armazena informações confidenciais.
 
-You need to audit access to Column1. The solution must meet the following requirements:
+Você precisa auditar o acesso ao Column1. A solução deve atender aos seguintes requisitos:
 
-**Options:**
-- **A.** Retain audit data for at least eighteen years.
-- **B.** Minimize administrative effort.
+**Alternativas:**
+- **A.** Manter os dados de auditoria por pelo menos dezoito anos.
+- **B.** Minimizar o esforço administrativo.
 
-Which three actions should you perform? Each correct answer presents part of the solution.
-- **C.** Apply a sensitivity classification to the column.
-- **D.** Configure a Log Analytics audit log destination.
-- **E.** Configure a Storage audit log destination.
-- **F.** Enable Always Encrypted for the column.
-- **G.** Enable Azure SQL Auditing.
-- **H.** Enable Transparent Data Encryption (TDE).
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução.
+- **C.** Aplique uma classificação de sensibilidade à coluna.
+- **D.** Configure um destino de log de auditoria Log Analytics.
+- **E.** Configure um destino de log de auditoria de armazenamento.
+- **F.** Habilitar Always Encrypted para a coluna.
+- **G.** Habilitar Azure SQL Auditing.
+- **H.** Habilitar Transparent Data Encryption (TDE).
 
-**✅ Answer:** C, E, G
+**✅ Resposta:** C, E, G
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Azure SQL Auditing needs to be enabled to monitor access. A storage account allows unlimited retention. The column needs a classification label so that access is audited.
+Azure SQL Auditing precisa estar habilitado para monitorar o acesso. Uma conta de armazenamento permite retenção ilimitada. A coluna precisa de um rótulo de classificação para que o acesso seja auditado.
 
-Log Analytics has a maximum retention limit of seven years, Always Encrypted is used to protect data in use or in transit, and TDE encrypts data files.
+Log Analytics tem um limite máximo de retenção de sete anos, Always Encrypted é usado para proteger dados em uso ou em trânsito e TDE criptografa arquivos de dados.
 
 [Explore server and database audit - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/implement-compliance-controls-sensitive-data/3-explore-server-and-database-audit)  
-[Get started with Azure SQL Managed Instance auditing](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/auditing-configure?view=azuresql)
+[Comece com a auditoria Azure SQL Managed Instance](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/auditing-configure?view=azuresql)
 
 </details>
 
@@ -832,30 +832,30 @@ Log Analytics has a maximum retention limit of seven years, Always Encrypted is 
 
 ### Q27
 
-**Question:**
-You have an Azure SQL Database named db1 that contains a table. The table contains a column that stores email addresses.
+**Questão:**
+Você tem um Azure SQL Database chamado db1 que contém uma tabela. A tabela contém uma coluna que armazena endereços de email.
 
-You need to ensure that reporting users can only view email addresses in a format of aXXX@XXX.com. The solution must minimize the impact on other users.
+Você precisa garantir que os usuários que relatam só podem visualizar endereços de e-mail em um formato de aXXX@XXX.com. A solução deve minimizar o impacto sobre outros usuários.
 
-What should you configure?
+O que você deve configurar?
 
-**Options:**
+**Alternativas:**
 - **A.** Always Encrypted
-- **B.** column encryption
+- **B.** criptografia de coluna
 - **C.** dynamic data masking
 - **D.** row-level security (RLS)
 
-**✅ Answer:** C
+**✅ Resposta:** C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Dynamic data masking will enable users to only see masked values instead of email addresses.
+O Dynamic data masking permitirá que os usuários vejam apenas valores mascarados em vez de endereços de e-mail.
 
-Always Encrypted protects data in use or in transit. RLS controls access to rows in a table, and column encryption will encrypt the data in the column, which can hinder users’ ability to view the data.
+Always Encrypted protege os dados em uso ou em trânsito. RLS O acesso a linhas em uma tabela e a criptografia de coluna criptografará os dados na coluna, o que pode dificultar a capacidade dos usuários de visualizar os dados.
 
 [Dynamic Data Masking - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/security/dynamic-data-masking?view=sql-server-ver16)
 
-[Implement compliance controls for sensitive data - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/implement-compliance-controls-sensitive-data/)
+[Implementar controles de conformidade para dados confidenciais - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/implement-compliance-controls-sensitive-data/)
 
 </details>
 
@@ -863,27 +863,27 @@ Always Encrypted protects data in use or in transit. RLS controls access to rows
 
 ### Q28
 
-**Question:**
-You have a Microsoft SQL Server database named SalesDB hosted on an Azure virtual machine. SalesDB is part of an Always On availability group that uses a listener named SalesAGListener and contains a table named dbo.Orders.
+**Questão:**
+Você tem um banco de dados Microsoft SQL Server chamado SalesDB hospedado em um Azure virtual machine. SalesDB faz parte de um Always On availability group que usa um listener chamado SalesAGListener e contém uma tabela chamada dbo.Orders.
 
-An Azure Functions app uses the Azure SQL trigger binding to process inserts and updates from dbo.Orders, but the function fails to fire.
+Um aplicativo Azure Functions usa a ligação de gatilho Azure SQL para processar inserções e atualizações do dbo.Orders, mas a função não dispara.
 
-You need to configure SalesDB so that the function is triggered when committed changes occur in dbo.Orders. The solution must use a two-day retention period and automatic cleanup.
+Você precisa configurar o SalesDB para que a função seja acionada quando ocorrerem alterações comprometidas no dbo.Orders. A solução deve usar um período de retenção de dois dias e limpeza automática.
 
-What T-SQL code should you run?
+Qual código T-SQL você deve executar?
 
-**Options:**
+**Alternativas:**
 - **A.** ALTER DATABASE [SalesDB]  
 SET CHANGE\_TRACKING = ON  
 (CHANGE\_RETENTION = 2 DAYS, AUTO\_CLEANUP = ON);  
 ALTER TABLE dbo.Orders  
-ENABLE CHANGE\_TRACKING;
-- **B.** EXEC sys.sp\_cdc\_enable\_db;  
-EXEC sys.sp\_cdc\_enable\_table  
+ENABLE CHANGE \_ TRACKING;
+- **B.** EXEC sys.sp \_ cdc \_ habilitar \_ db;  
+EXEC sys.sp \_ cdc \_ ativar a tabela \_  
   @source\_schema = 'dbo',  
   @source\_name = 'Orders',  
   @role\_name = NULL,  
-  @capture\_instance = 'dbo\_Orders',  
+  @capture\_instance = 'dbo\_«Ordens»,  
   @supports\_net\_changes = 1;
 - **C.** CREATE EVENT STREAMING GROUP MyOrderStream  
 WITH (  
@@ -893,18 +893,18 @@ WITH (
 );  
 ALTER EVENT STREAMING GROUP MyOrderStream  
 ADD TABLE dbo.Orders;
-- **D.** CREATE TRIGGER dbo.  MyOrderStream ON dbo.Orders  
+- **D.** CREATE TRIGGER dbo. MyOrderStream ON dbo.Orders  
 AFTER INSERT  
 AS  
 BEGIN  
     SET NOCOUNT ON;  
     DECLARE @payload NVARCHAR(MAX) = (  
         SELECT \*  
-        FROM inserted  
+        FROM inserido  
         FOR JSON AUTO  
     );  
     DECLARE @response NVARCHAR(MAX);  
-    EXEC sys.sp\_invoke\_external\_rest\_endpoint  
+    EXEC sys.sp \_ invocar \_ externo \_ resto \_ endpoint  
         @url = N'https://&lt;your-function&gt; ',  
         @method = 'POST',  
         @headers = N'{"Content-Type":"application/json"}',  
@@ -912,26 +912,26 @@ BEGIN
         @response = @response OUTPUT;  
 END;
 
-**✅ Answer:** A
+**✅ Resposta:** A
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-**Objective:**
+**Objectivo:**
 
-2.3 Implement compliance controls for sensitive data
+2.3 Implementar controles de conformidade para dados confidenciais
 
-**What This Item Tests:**
+**O que este item testa:**
 
-Implement change data tracking
+Implementar o rastreamento de dados de mudança
 
-**Additional Reading:**  
+**Leitura adicional:**  
 
-- [Replication, change tracking, & change data capture - Always On availability groups](https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/replicate-track-change-data-capture-always-on-availability?view=sql-server-ver17#change-tracking)
-- [Track data changes (SQL Server)](https://learn.microsoft.com/en-us/sql/relational-databases/track-changes/track-data-changes-sql-server?view=sql-server-ver17)
+- [Replicação, change tracking, & change data capture - Always On availability groups](https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/replicate-track-change-data-capture-always-on-availability?view=sql-server-ver17#change-tracking)
+- [Alterações de dados da faixa (SQL Server)](https://learn.microsoft.com/en-us/sql/relational-databases/track-changes/track-data-changes-sql-server?view=sql-server-ver17)
 
-**Rationale:**
+**Racionale:**
 
-Azure SQL trigger bindings rely on SQL Server Change Tracking, so enabling change tracking at the database level with a two-day retention period and automatic cleanup, and then enabling change tracking on dbo.Orders, enables the function to detect committed changes. Change data capture (CDC) uses log scanning and capture tables and is not the mechanism used by Azure SQL trigger bindings, event streaming groups send table changes to external streaming targets rather than enabling change detection within SQL Server, and system-versioned temporal tables store row history but do not provide the change tracking metadata required by the trigger binding.
+Azure SQL As ligações de gatilho dependem de SQL Server Change Tracking, assim permitindo change tracking ao nível do banco de dados com um período de retenção de dois dias e limpeza automática, e então permitindo change tracking E-mail dbo.Orders, permite que a função detecte mudanças comprometidas. Change data capture (CDC) usa tabelas de digitalização e captura de logs e não é o mecanismo usado por Azure SQL grupos de transmissão de eventos enviam mudanças de tabela para alvos de streaming externos, em vez de permitir a detecção de mudanças dentro SQL Servere tabelas temporais versionadas pelo sistema armazenam o histórico da linha, mas não fornecem change tracking metadados exigidos pela ligação de gatilho.
 
 </details>
 
@@ -939,26 +939,26 @@ Azure SQL trigger bindings rely on SQL Server Change Tracking, so enabling chang
 
 ### Q29
 
-**Question:**
-You have an Azure SQL Database named db1.
+**Questão:**
+Você tem um Azure SQL Database chamado db1.
 
-You need to provide access to db1 for a Microsoft Entra ID user .
+Você precisa fornecer acesso ao db1 para um usuário Microsoft Entra ID.
 
-What should you do?
+O que você deve fazer?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** In db1, run the CREATE USER statement with the FROM EXTERNAL PROVIDER option.
+**✅ Resposta:** Em db1, corra o CREATE USER declaração com a FROM EXTERNAL PROVIDER opção.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should use the CREATE USER statement with FROM EXTERNAL PROVIDER option in db1, as this user should have access to this database.
+Você deve usar a declaração CREATE USER com a opção FROM EXTERNAL PROVIDER em db1, pois esse usuário deve ter acesso a esse banco de dados.
 
-Using the CREATE USER statement with the FROM LOGIN or WITH PASSWORD option creates a login in the master database. By default, the login does not have any access to the databases.
+Usando a instrução CREATE USER com a opção FROM LOGIN ou WITH PASSWORD cria um login na banco de dados mestre. Por padrão, o login não tem acesso às bancos de dados.
 
 CREATE USER (Transact-SQL) - SQL Server - Training | Microsoft Learn
 
-Configure database authentication and authorization - Training | Microsoft Learn
+Configurar autenticação e autorização do banco de dados - Treinamento | Microsoft Learn
 
 </details>
 
@@ -966,26 +966,26 @@ Configure database authentication and authorization - Training | Microsoft Learn
 
 ### Q30
 
-**Question:**
-You have an Azure SQL Database named db1.
+**Questão:**
+Você tem um Azure SQL Database chamado db1.
 
-You create a user named User1 in the master database.
+Você cria um usuário chamado User1 no banco de dados mestre.
 
-You need to ensure that User1 can create databases. The solution must follow the principle of least privilege.
+Você precisa garantir que o User1 possa criar bancos de dados. A solução deve seguir o princípio do menor privilégio.
 
-Which role should you assign to User1?
+Qual papel você deve atribuir ao User1?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** dbmanager
+**✅ Resposta:** dbmanager
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should assign dbmanager, as members of this role can create databases.
+Você deve atribuir dbmanager, como membros deste papel pode criar bancos de dados.
 
-Members of the loginmanager role can create and delete users, but they cannot create databases. Members of the db_ddladmin role can run any DDL statements. Members of the db_owner role can perform all activities at the database scope.
+Os membros do papel de gerenciador de login podem criar e excluir usuários, mas não podem criar bancos de dados. Os membros do papel db_ddladmin podem executar quaisquer declarações DDL. Os membros do papel db_owner podem realizar todas as atividades no escopo do banco de dados.
 
-Configure database authentication and authorization - Training | Microsoft Learn
+Configurar autenticação e autorização do banco de dados - Treinamento | Microsoft Learn
 
 </details>
 
@@ -993,26 +993,26 @@ Configure database authentication and authorization - Training | Microsoft Learn
 
 ### Q31 ⚠️
 
-**Question:**
-You have a database named db1 in an Azure SQL managed instance named Instance1.
+**Questão:**
+Você tem um banco de dados chamado db1 em um Azure SQL managed instance chamado Instance1.
 
-You need to encrypt db1 by using Transparent Data Encryption (TDE).
+Você precisa criptografar db1 usando Transparent Data Encryption (TDE).
 
-Which three actions should you perform before you can start the encryption? Each correct answer present part of the solution.
+Quais ações você deve executar antes de iniciar a criptografia? Cada resposta correta apresenta parte da solução.
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Create a certificate in the master database.; Create a database encryption key in db1.; Create a master key in the master database.
+**✅ Resposta:** Criar um certificado no banco de dados mestre; Criar uma chave de criptografia de banco de dados no db1; Criar uma chave mestre no banco de dados mestre.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-The procedure of preparing the database to use TDE is first to create a master key and a certificate in the master database, and then to create a database encryption key in the db1.
+O procedimento de preparação do banco de dados para usar o TDE é primeiro criar uma chave mestra e um certificado no banco de dados mestra e, em seguida, criar uma chave de criptografia de banco de dados no db1.
 
-You should not create a certificate or an asymmetric key in db1, as TDE can only use certificates created in the master database.
+Você não deve criar um certificado ou uma chave assimétrica no db1, já que o TDE só pode usar certificados criados no banco de dados mestre.
 
 Transparent data encryption (TDE) - SQL Server - Training | Microsoft Learn
 
-Protect data in-transit and at rest - Training | Microsoft Learn
+Proteger dados em trânsito e em repouso - Treinamento | Microsoft Learn
 
 </details>
 
@@ -1020,26 +1020,26 @@ Protect data in-transit and at rest - Training | Microsoft Learn
 
 ### Q32
 
-**Question:**
-You have an Azure SQL Database named db1. The database is a contained database.
+**Questão:**
+Você tem um Azure SQL Database chamado db1. O banco de dados é um banco de dados contido.
 
-You need to update an existing firewall rule to change the range of IP addresses from which the database is accessible.
+Você precisa atualizar uma regra de firewall existente para alterar o intervalo de endereços IP a partir do qual o banco de dados está acessível.
 
-What should you run?
+O que você deve correr?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** sp_set_database_firewall_rule in the db1 context
+**✅ Resposta:** sp_set_database_firewall_rule no contexto db1
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should run sp_set_database_firewall_rule from the db1 database because the database is a contained database, so the firewall rule change must be applied directly to this database. The procedure updates the existing rule based on its name.
+Você deve executar o sp_set_database_firewall_rule a partir do banco de dados db1 porque o banco de dados é um banco de dados contido, portanto, a alteração da regra de firewall deve ser aplicada diretamente a este banco de dados. O procedimento atualiza a regra existente com base em seu nome.
 
-The rules need to be changed for the db1 database, not the master, so running sp_set_database_firewall_rule from the master database is incorrect. You do not need to change the server firewall rule by running sp_set_firewall_rule. Users trying to access db1 will be redirected directly to the database. Running sp_delete_database_firewall_rule from db1 deletes the firewall rule.
+As regras precisam ser alteradas para o banco de dados db1, não o mestre, portanto, a execução do sp_set_database_firewall_rule do banco de dados mestre está incorreta. Você não precisa alterar a regra do firewall do servidor executando sp_set_firewall_rule. Os usuários que tentam acessar o db1 serão redirecionados diretamente para o banco de dados. A execução do sp_delete_database_firewall_rule do db1 exclui a regra do firewall.
 
 sp_set_database_firewall_rule - Azure SQL Database - Training | Microsoft Learn
 
-Protect data in-transit and at rest - Training | Microsoft Learn
+Proteger dados em trânsito e em repouso - Treinamento | Microsoft Learn
 
 </details>
 
@@ -1047,26 +1047,26 @@ Protect data in-transit and at rest - Training | Microsoft Learn
 
 ### Q33 ⚠️
 
-**Question:**
-You have an Azure SQL Database named db1 that contains a table named Sales.
+**Questão:**
+Você tem um Azure SQL Database chamado db1 que contém uma tabela chamada Vendas.
 
-You need to implement change tracking for Sales.
+Você precisa implementar o change tracking para Vendas.
 
-What should you do first?
+O que você deve fazer primeiro?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Enable change tracking for db1.
+**✅ Resposta:** Habilitar change tracking para db1.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should enable change tracking at the database level first, then you can enable change tracking for each table.
+Você deve ativar o change tracking no nível do banco de dados primeiro, então você pode habilitar o change tracking para cada tabela.
 
-Change tracking must be enabled at the database level before it can be enabled for the Sales table. Creating a master key in the master database and creating a certificate in db1 are not needed for change tracking.
+Change tracking deve estar habilitado no nível da banco de dados antes que possa ser habilitado para a tabela de vendas. Criar uma chave mestra na banco de dados master e criar um certificado em db1 não são necessários para change tracking.
 
-Enable and Disable Change Tracking - SQL Server - Training | Microsoft Learn
+Ativar e Desativar Change Tracking - SQL Server - Training | Microsoft Learn
 
-Implement compliance controls for sensitive data - Training | Microsoft Learn
+Implementar controles de conformidade para dados confidenciais - Treinamento | Microsoft Learn
 
 </details>
 
@@ -1074,23 +1074,23 @@ Implement compliance controls for sensitive data - Training | Microsoft Learn
 
 ### Q34
 
-**Question:**
-An organization uses Azure SQL Database to store sensitive customer information.
+**Questão:**
+Uma organização usa o Azure SQL Database para armazenar informações confidenciais do cliente.
 
-You need to limit exposure of sensitive data in query results for non-privileged users, while still allowing authorized users to view the full data. The solution must be transparent to the application and require minimal changes to existing queries.
+Você precisa limitar a exposição de dados sensíveis em resultados de consulta para usuários não privilegiados, enquanto ainda permite que os usuários autorizados visualizem os dados completos. A solução deve ser transparente para o aplicativo e exigir mudanças mínimas nas consultas existentes.
 
-Which feature should you use?
+Qual característica você deve usar?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Dynamic Data Masking
+**✅ Resposta:** Dynamic Data Masking
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Dynamic Data Masking is the most suitable solution because it ensures that unauthorized users see masked data while authorized users can view unmasked data, directly addressing the requirement. Always Encrypted enhances security by encrypting sensitive data but does not provide the capability to dynamically mask data for unauthorized users. Row-level security focuses on controlling access to specific rows based on user roles but does not include functionality for masking sensitive data. Auditing is designed to track and monitor access to data but does not prevent unauthorized users from viewing sensitive information.
+Dynamic Data Masking é a solução mais adequada porque garante que os usuários não autorizados vejam dados mascarados enquanto os usuários autorizados podem visualizar dados desmascarados, atendendo diretamente ao requisito. Always Encrypted aumenta a segurança criptografando dados confidenciais, mas não fornece a capacidade de mascarar dados dinamicamente para usuários não autorizados. Row-level security A auditoria é projetada para rastrear e monitorar o acesso a dados, mas não impede que usuários não autorizados visualizem informações confidenciais.
 
 Explore data classification - Training | Microsoft Learn
-Explain object encryption and secure enclaves - Training | Microsoft Learn
+Explicar a criptografia de objeto e secure enclaves - Training | Microsoft Learn
 
 </details>
 
@@ -1098,52 +1098,52 @@ Explain object encryption and secure enclaves - Training | Microsoft Learn
 
 ### Q35
 
-**Question:**
-Your organization uses Microsoft Azure SQL Database to store sensitive customer data, including financial and personal information.
+**Questão:**
+Sua organização usa o Microsoft Azure SQL Database para armazenar dados confidenciais de clientes, incluindo informações financeiras e pessoais.
 
-You need to classify and label sensitive data in the database for compliance.
+Você precisa classificar e rotular dados sensíveis no banco de dados para conformidade.
 
-Each correct answer presents part of the solution. Which two actions should you perform?
+Cada resposta correta apresenta parte da solução. Que duas ações você deve realizar?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Classify columns and apply sensitivity labels.; Use Data Discovery & Classification.
+**✅ Resposta:** Classificar colunas e aplicar rótulos de sensibilidade.; Use Data Discovery & Classification.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-To classify and label sensitive data for compliance, it is necessary to use the Data Discovery & Classification feature to identify sensitive columns and apply sensitivity labels to ensure proper classification. Encrypting database columns with Always Encrypted and enabling Transparent Data Encryption are security measures that protect data but do not address the specific requirement of classification and labeling.
+Para classificar e rotular dados sensíveis para conformidade, é necessário usar o recurso Descoberta e Classificação de Dados para identificar colunas sensíveis e aplicar rótulos de sensibilidade para garantir a classificação adequada. Criptografar colunas de banco de dados com Always Encrypted e habilitar Transparent Data Encryption são medidas de segurança que protegem os dados, mas não atendem aos requisitos específicos de classificação e rotulagem.
 
-Implement Microsoft Purview - Training | Microsoft Learn
-Design Azure SQL Database for cloud-native applications - Training | Microsoft Learn
+Implementar Microsoft Purview - Training | Microsoft Learn
+Projetar Azure SQL Database para aplicativos cloud-native - Treinamento | Microsoft Learn
 
 </details>
 
 ---
 
-## Monitor, configure, and optimize database resources (16)
+## Monitorar, configurar e otimizar recursos de banco de dados (16)
 
 ### Q36
 
-**Question:**
-You need to configure Extended Events monitoring to capture an event when a new database is added to an Azure SQL Managed Instance.
+**Questão:**
+Você precisa configurar o monitoramento Extended Events para capturar um evento quando um novo banco de dados é adicionado a um Azure SQL Managed Instance.
 
-Which event category should you use?
+Qual categoria de evento você deve usar?
 
-**Options:**
+**Alternativas:**
 - **A.** admin
-- **B.** analytic
+- **B.** Analítica
 - **C.** debug
-- **D.** operational
+- **D.** operacional
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Operational events are used for analyzing and diagnosing a problem or occurrence. They can be used to trigger tools or tasks based on the problem or occurrence. An example of an operational event is when a database is added or removed from the server.
+Eventos operacionais são usados para analisar e diagnosticar um problema ou ocorrência. Eles podem ser usados para acionar ferramentas ou tarefas com base no problema ou ocorrência. Um exemplo de evento operacional é quando um banco de dados é adicionado ou removido do servidor.
 
-An admin event indicates a problem within a well-defined set of actions an administrator can take, analytic events describe program operations and are typically used in performance investigations, and debug events are used solely by developers to diagnose a problem for debugging.
+Um evento de administrador indica um problema dentro de um conjunto bem definido de ações que um administrador pode tomar, eventos analíticos descrevem as operações do programa e são normalmente usados em investigações de desempenho, e eventos de depuração são usados apenas por desenvolvedores para diagnosticar um problema para depuração.
 
-[SQL Server Extended Events Packages - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/extended-events/sql-server-extended-events-packages?view=sql-server-ver16)
+[SQL Server Extended Events Pacotes - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/extended-events/sql-server-extended-events-packages?view=sql-server-ver16)
 
 [Describe performance monitoring - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/describe-performance-monitoring/)
 
@@ -1153,24 +1153,24 @@ An admin event indicates a problem within a well-defined set of actions an admin
 
 ### Q37
 
-**Question:**
-You need to set up a baseline for performance monitoring of an Azure SQL Database. 
+**Questão:**
+Você precisa configurar uma linha de base para o monitoramento de desempenho de um Azure SQL Database. 
 
-Which dynamic management view should you query to get the baseline performance data?
+Qual visão dinâmica de gerenciamento você deve consultar para obter os dados de desempenho da linha de base?
 
-**Options:**
-- **A.** sys.dm\_db\_wait\_stats
-- **B.** sys.dm\_exec\_query\_stats
-- **C.** sys.dm\_exec\_sessions\_wait\_stats
-- **D.** sys.dm\_os\_waiting\_tasks
+**Alternativas:**
+- **A.** sys.dm \_ db \_ esperar \_ estatísticas
+- **B.** sys.dm \_ exec \_ consulta \_ estatísticas
+- **C.** sys.dm \_ exec \_ sessões \_ esperar \_ estatísticas
+- **D.** sys.dm \_ os \_ à espera de tarefas \_
 
-**✅ Answer:** A
+**✅ Resposta:** A
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-sys.dm\_db\_wait\_stats returns information about all the waits encountered in the database. This allows you to see the baseline performance data.
+sys.dm \_ db \_ espera \_ estatísticas retorna informações sobre todas as esperas encontradas no banco de dados. Isso permite que você veja os dados de desempenho da linha de base.
 
-sys.dm\_os\_waiting\_tasks is related to current connections and sessions. This view does not store any historical waits, so it should not be used to create the performance baseline. sys.dm\_exec\_sessions\_wait\_stats is used to find the wait statistics for a particular session. sys.dm\_exec\_query\_stats returns aggregate performance statistics for cached query plans in Microsoft SQL Server.
+sys.dm\_os\_esperando\_Esta visão não armazena nenhuma espera histórica, por isso não deve ser usada para criar a linha de base de desempenho. sys.dm\_exec\_sessões\_Espera\_As estatísticas são usadas para encontrar as estatísticas de espera para uma sessão específica. sys.dm\_exec\_consulta\_Estatísticas retorna estatísticas de desempenho agregado para planos de consulta em cache na Microsoft SQL Server.
 
 [sys.dm_db_wait_stats (Azure SQL Database) - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/system-dynamic-management-views/sys-dm-db-wait-stats-azure-sql-database?view=azuresqldb-current)
 
@@ -1182,30 +1182,30 @@ sys.dm\_os\_waiting\_tasks is related to current connections and sessions. This 
 
 ### Q38
 
-**Question:**
-You plan to use Query Store in an Azure SQL Managed Instance. 
+**Questão:**
+Você planeja usar Query Store em um Azure SQL Managed Instance. 
 
-You need to ensure that you can manually force execution plans for regressed queries. The solution must follow the principle of least privilege. 
+Você precisa garantir que você possa forçar manualmente os planos de execução para consultas regredidas. A solução deve seguir o princípio do menor privilégio. 
 
-To which database role should you be assigned?
+Para qual função de banco de dados você deve ser atribuído?
 
-**Options:**
-- **A.** db\_accessadmin
-- **B.** db\_ddladmin
-- **C.** db\_owner
-- **D.** db\_securityadmin
+**Alternativas:**
+- **A.** db \_ accessadmin
+- **B.** db \_ ddldadmin
+- **C.** proprietário db \_
+- **D.** db \_ securityadmin
 
-**✅ Answer:** C
+**✅ Resposta:** C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-As a member of the db\_owner fixed database role, you can perform all configuration and maintenance activities on the database., while following the principle of least privilege.
+Como membro da função de banco de dados fixo proprietário do db \_, você pode executar todas as atividades de configuração e manutenção no banco de dados.
 
-Members of the db\_ddladmin role can run any DDL commands for a database. Members of this role can potentially elevate their privileges by manipulating code that may be executed under high privileges, and their actions should be monitored. A member of the db\_accessadmin fixed database role can add or remove access to the database for Windows logins, Windows groups, and Microsoft SQL Server logins. Members of the db\_securityadmin role can modify role membership for custom roles only and manage permissions.
+Membros do db\_O papel do dddadmin pode executar qualquer DDL Os membros desse papel podem potencialmente elevar seus privilégios manipulando código que pode ser executado sob altos privilégios, e suas ações devem ser monitoradas. Um membro do db\_função de banco de dados fixo accessadmin pode adicionar ou remover o acesso ao banco de dados para Windows logins, grupos Windows e Microsoft SQL Server logins. Membros do db\_O papel do securityadmin pode modificar a associação de funções apenas para funções personalizadas e gerenciar permissões.
 
-[Database-Level Roles - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/security/authentication-access/database-level-roles?view=sql-server-ver16)
+[Funções de nível de banco de dados - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/security/authentication-access/database-level-roles?view=sql-server-ver16)
 
-[Configure database authentication and authorization - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-database-authentication-authorization/)
+[Configurar autenticação e autorização do banco de dados - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-database-authentication-authorization/)
 
 </details>
 
@@ -1213,28 +1213,28 @@ Members of the db\_ddladmin role can run any DDL commands for a database. Member
 
 ### Q39
 
-**Question:**
-You have an Azure SQL managed instance.
+**Questão:**
+Você tem um Azure SQL managed instance.
 
-You discover a high number of blocking queries during peak business hours.
+Você descobre um alto número de consultas de bloqueio durante o horário comercial de pico.
 
-You need to investigate the root cause of the blocking queries.
+Você precisa investigar a causa raiz das consultas de bloqueio.
 
-Which two dynamic management views should you query? Each correct answer presents a complete solution.
+Quais duas visões dinâmicas de gerenciamento você deve consultar? Cada resposta correta apresenta uma solução completa.
 
-**Options:**
-- **A.** sys.dm\_exec\_query\_stats
-- **B.** sys.dm\_exec\_requests
-- **C.** sys.dm\_exec\_sessions\_wait\_stats
-- **D.** sys.dm\_os\_waiting\_tasks
+**Alternativas:**
+- **A.** sys.dm \_ exec \_ consulta \_ estatísticas
+- **B.** sys.dm \_ exec \_ pedidos
+- **C.** sys.dm \_ exec \_ sessões \_ esperar \_ estatísticas
+- **D.** sys.dm \_ os \_ à espera de tarefas \_
 
-**✅ Answer:** B, D
+**✅ Resposta:** B, D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should query the sys.dm\_exec\_requests view to get the blocking session ID information. This view returns information about each request that is executing in Microsoft SQL Server. You should also use sys.dm\_os\_waiting\_tasks because the information is related to current connections and sessions. There is blocking session ID information that can be used to identify the root of the issue.
+Você deve consultar o sys.dm \_ exec \_ requests view para obter a sessão de bloqueio ID informações. Esta visão retorna informações sobre cada pedido que está sendo executado no Microsoft SQL Server. Você também deve usar sys.dm \_ os \_ esperando tarefas \_ porque as informações estão relacionadas às conexões e sessões atuais. Há sessão de bloqueio ID informações que podem ser usadas para identificar a raiz da questão.
 
-The sys.dm\_exec\_sessions\_wait\_stats view presents historical information about the waits that occurred on the server, and the sys.dm\_exec\_query\_stats view returns aggregate performance statistics for cached query plans in SQL Server.
+O sys.dm\_exec\_sessões\_Espera\_view estatísticas apresenta informações históricas sobre as esperas que ocorreram no servidor, e o sys.dm\_exec\_consulta\_stats view retorna estatísticas de desempenho agregado para planos de consulta em cache em SQL Server.
 
 [sys.dm_exec_requests (Transact-SQL) - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/system-dynamic-management-views/sys-dm-exec-requests-transact-sql?view=sql-server-ver16)
 
@@ -1248,28 +1248,28 @@ The sys.dm\_exec\_sessions\_wait\_stats view presents historical information abo
 
 ### Q40
 
-**Question:**
-You need to find all indexes that have high fragmentation.
+**Questão:**
+Você precisa encontrar todos os índices que têm alta fragmentação.
 
-Which two dynamic management views should you query? Each answer presents a part of the solution.
+Quais duas visões dinâmicas de gerenciamento você deve consultar? Cada resposta apresenta uma parte da solução.
 
-**Options:**
-- **A.** sys.dm\_db\_column\_store\_row\_group\_physical\_stats
-- **B.** sys.dm\_db\_index\_operational\_stats
-- **C.** sys.dm\_db\_index\_physical\_stats
-- **D.** sys.dm\_db\_index\_usage\_stats
+**Alternativas:**
+- **A.** sys.dm \_ db \_ coluna \_ loja \_ linha \_ grupo \_ física \_ estatísticas
+- **B.** sys.dm \_ db \_ índice \_ operacional \_ estatísticas
+- **C.** sys.dm \_ db \_ índice \_ estatísticas físicas \_
+- **D.** sys.dm \_ db \_ índice \_ uso \_ estatísticas
 
-**✅ Answer:** A, C
+**✅ Resposta:** A, C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should query the sys.dm\_db\_index\_physical\_stats view, as it returns size and fragmentation information for the data and indexes of the specified table or view in Microsoft SQL Server. For an index, one row is returned for each level of the B-tree in each partition. For a heap, one row is returned for the IN\_ROW\_DATA allocation unit of each partition. You should also query the sys.dm\_db\_column\_store\_row\_group\_physical\_stats view because it provides current rowgroup-level information about all the columnstore indexes in the current database. Based on the information, you can calculate the index fragmentation.
+Você deve consultar o sys.dm\_db\_índice\_físico\_view estatísticas, à medida que retorna informações de tamanho e fragmentação para os dados e índices da tabela especificada ou view na Microsoft SQL Server. Para um índice, uma linha é devolvida para cada nível da árvore B em cada partição. Para um heap, uma linha é retornada para o IN\_ROW\_Unidade de alocação DATA de cada partição. Você também deve consultar o sys.dm\_db\_coluna\_loja\_linha\_grupo\_físico\_view stats view porque fornece informações atuais de nível de grupo de linha sobre todas as columnstore Com base nas informações, você pode calcular a fragmentação do índice.
 
-The sys.dm\_db\_index\_usage\_stats view returns counts of different types of index operations and the time each type of operation was last performed, and the sys.dm\_db\_index\_operational\_stats view returns current lower-level I/O, locking, latching, and access method activity for each partition of a table or index in the database.
+O sys.dm\_db\_índice\_utilização\_estatísticas ver retorna contagens de diferentes tipos de operações de índice e o tempo em que cada tipo de operação foi realizada pela última vez, e o sys.dm\_db\_índice\_operacional\_A visualização de estatísticas retorna a atividade atual de nível inferior de E/S, bloqueio, travamento e método de acesso para cada partição de uma tabela ou índice no banco de dados.
 
 [sys.dm_db_index_physical_stats (Transact-SQL) - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/system-dynamic-management-views/sys-dm-db-index-physical-stats-transact-sql?view=sql-server-ver16)
 
-[Configure databases for optimal performance - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-databases-for-optimal-performance/)
+[Configurar bancos de dados para otimizar o desempenho - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-databases-for-optimal-performance/)
 
 </details>
 
@@ -1277,32 +1277,32 @@ The sys.dm\_db\_index\_usage\_stats view returns counts of different types of in
 
 ### Q41 ⚠️
 
-**Question:**
-You have an Azure SQL Managed Instance that contains databases.
+**Questão:**
+Você tem um Azure SQL Managed Instance que contém bancos de dados.
 
-One of the databases experiences excessive blocking.
+Uma das bancos de dados experimenta bloqueio excessivo.
 
-You need to identify which session is causing the blocking.
+Você precisa identificar qual sessão está causando o bloqueio.
 
-Which dynamic management view should you query?
+Qual visão de gestão dinâmica você deve consultar?
 
-**Options:**
-- **A.** sys.dm\_exec\_query\_stats
-- **B.** sys.dm\_exec\_requests
-- **C.** sys.dm\_exec\_session\_wait\_stats
-- **D.** sys.dm\_exec\_sessions
+**Alternativas:**
+- **A.** sys.dm \_ exec \_ consulta \_ estatísticas
+- **B.** sys.dm \_ exec \_ pedidos
+- **C.** sys.dm \_ exec \_ sessão \_ esperar \_ estatísticas
+- **D.** sys.dm \_ exec \_ sessões
 
-**✅ Answer:** B
+**✅ Resposta:** B
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-sys.dm\_exec\_requests returns information about each request that is executing in Microsoft SQL Server. One of the columns exposed by this view is blocking\_session\_id.
+sys.dm \_ exec \_ requests devolve informações sobre cada pedido que está sendo executado no Microsoft SQL Server. Uma das colunas expostas por esta visão é o bloqueio da sessão \_ \_ id.
 
-sys.dm\_exec\_sessions returns one row per authenticated session in SQL Server. This view does not return information about blocking issues.
+sys.dm \_ exec \_ sessões retorna uma linha por sessão autenticada em SQL Server. Esta visão não retorna informações sobre problemas de bloqueio.
 
-sys.dm\_exec\_query\_stats returns aggregate performance statistics for cached plans in SQL Server.
+sys.dm \_ exec \_ consulta \_ estatísticas retorna estatísticas de desempenho agregado para planos em cache em SQL Server.
 
-sys.dm\_exec\_session\_waits returns information about all the waits encountered by threads that are executed for each session.
+sys.dm \_ exec \_ sessão \_ espera retorna informações sobre todas as esperas encontradas por threads que são executados para cada sessão.
 
 [sys.dm_exec_requests (Transact-SQL) - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/system-dynamic-management-views/sys-dm-exec-requests-transact-sql?view=sql-server-ver16)
 
@@ -1312,28 +1312,28 @@ sys.dm\_exec\_session\_waits returns information about all the waits encountered
 
 ### Q42
 
-**Question:**
-You have an Azure SQL database.
+**Questão:**
+Você tem um Azure SQL database.
 
-You need to troubleshoot blocking and deadlocking performance issues.
+Você precisa solucionar problemas de bloqueio e de desempenho.
 
-What feature should you use?
+Qual característica você deve usar?
 
-**Options:**
-- **A.** an Azure SQL Database ledger
+**Alternativas:**
+- **A.** e Azure SQL Database livro-razão
 - **B.** Extended Events
 - **C.** Microsoft Defender for SQL
 - **D.** Query Store
 
-**✅ Answer:** B
+**✅ Resposta:** B
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Extended Events can capture blocking and deadlocking metrics that can be used to investigate and troubleshoot the performance issues.
+O Extended Events pode capturar métricas de bloqueio e bloqueio que podem ser usadas para investigar e solucionar problemas de desempenho.
 
-Query Store does not capture blocking and deadlocking metrics, Azure SQL Defender surfaces database vulnerabilities, and an Azure SQL Database ledger incrementally captures the state of the database.
+O Query Store não captura métricas de bloqueio e bloqueio, o Azure SQL Defender apresenta vulnerabilidades no banco de dados e um livro-razão Azure SQL Database captura incrementalmente o estado do banco de dados.
 
-[Explore extended events - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/describe-performance-monitoring/5-explore-extended-events)
+[Explorar extended events - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/describe-performance-monitoring/5-explore-extended-events)
 
 </details>
 
@@ -1341,32 +1341,32 @@ Query Store does not capture blocking and deadlocking metrics, Azure SQL Defende
 
 ### Q43 ⚠️
 
-**Question:**
-You have an Azure SQL managed instance that hosts two databases named db1 and db2.
+**Questão:**
+Você tem um Azure SQL managed instance que hospeda duas bancos de dados chamadas db1 e db2.
 
-You need to limit usage of db1 sessions to a maximum of 30 percent of the available CPU.
+Você precisa limitar o uso de sessões db1 a um máximo de 30% do CPU disponível.
 
-Which three actions should you perform? Each correct answer presents part of the solution.
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução.
 
-**Options:**
-- **A.** Configure the Max Degree of Parallelism.
-- **B.** Create a resource pool.
-- **C.** Create a workload group.
-- **D.** Create an Extended Events session.
-- **E.** Enable Automatic Database Tuning.
-- **F.** Enable Resource Governor.
+**Alternativas:**
+- **A.** Configure o grau máximo de paralelismo.
+- **B.** Crie um pool de recursos.
+- **C.** Crie um grupo de carga de trabalho.
+- **D.** Crie uma sessão Extended Events.
+- **E.** Habilitar ajuste automático de banco de dados.
+- **F.** Habilitar Resource Governor.
 
-**✅ Answer:** B, C, F
+**✅ Resposta:** B, C, F
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Resource Governor needs to be enabled, a resource pool needs to be created, and a workload group needs to be created to limit db1 to a maximum of 30 percent.
+Resource Governor precisa ser ativado, um pool de recursos precisa ser criado e um grupo de carga de trabalho precisa ser criado para limitar o db1 a um máximo de 30%.
 
-Automatic Database Tuning is used to notify you whenever a potential performance issue is detected and lets you apply corrective actions. Extended Events is a lightweight performance monitoring system. Max Degree of Parallelism limits the number of processors to use in a parallel plan execution.
+A Sintonização Automática de Banco de Dados é usada para notificá-lo sempre que um problema de desempenho potencial for detectado e permitir que você aplique ações corretivas. Extended Events é um sistema de monitoramento de desempenho leve. O Max Degree of Parallelism limita o número de processadores a serem usados em uma execução de plano paralelo.
 
 [Resource Governor - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/resource-governor/resource-governor?view=sql-server-ver15)
 
-[Configure SQL Server resources for optimal performance - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-sql-server-resources-optimal-performance/)
+[Configurar SQL Server resources for optimal performance - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-sql-server-resources-optimal-performance/)
 
 </details>
 
@@ -1374,34 +1374,34 @@ Automatic Database Tuning is used to notify you whenever a potential performance
 
 ### Q44
 
-**Question:**
-You have an Azure SQL Managed Instance that contains a database named DB1. The database compatibility level for DB1 is 150.
+**Questão:**
+Você tem um Azure SQL Managed Instance que contém um banco de dados chamado DB1. O nível de compatibilidade do banco de dados para DB1 é 150.
 
-Queries that use table variables are performing poorly. You identify that the issue is caused by incorrect cardinality estimations.
+As consultas que usam variáveis de tabela estão com mau desempenho. Você identifica que o problema é causado por estimativas incorretas de cardinalidade.
 
-You need to configure an option to ensure that the database engine defines the cardinality estimate when the query is executed, and the actual row count is known.
+Você precisa configurar uma opção para garantir que o mecanismo de banco de dados defina a estimativa de cardinalidade quando a consulta é executada e a contagem de linhas real é conhecida.
 
-Which option should you configure?
+Qual opção você deve configurar?
 
-**Options:**
+**Alternativas:**
 - **A.** DEFERRED\_COMPILATION\_TV
-- **B.** ELEVATE\_ONLINE
+- **B.** ELEVATE \_ ONLINE
 - **C.** INTERLEAVED\_EXECUTION\_TVF
-- **D.** TSQL\_SCALAR\_UDF\_INLINING
+- **D.** TSQL \_ SCALAR \_ UDF \_ INLINING
 
-**✅ Answer:** A
+**✅ Resposta:** A
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should use the DEFERRED\_COMPILATION\_TV option because it enables or disables table variable compilation.
+Você deve usar a opção DEFERRED \_ COMPILATION \_ TV porque permite ou desabilita a compilação de variáveis de tabela.
 
-The INTERLEAVED\_EXECUTION\_TVF option enables or disables interleaved execution for multi-statement table-valued functions.
+A opção INTERLEAVED \_ EXECUTION \_ TVF permite ou desativa a execução intercalada para funções com valor de tabela de vários estados.
 
-The TSQL\_SCALAR\_UDF\_INLINING option enables or disables the T-SQL Scalar UDF inlining.
+A opção TSQL \_ SCALAR \_ UDF \_ INLINING permite ou desativa o T-SQL Scalar UDF inlining.
 
-The ELEVATE\_ONLINE option causes the engine to automatically elevate supported operations online.
+A opção ELEVATE \_ ONLINE faz com que o motor eleve automaticamente as operações suportadas online.
 
-[ALTER DATABASE SCOPED CONFIGURATION - SQL Server (Transact-SQL) - Training | Microsoft Learn](https://learn.microsoft.com/sql/t-sql/statements/alter-database-scoped-configuration-transact-sql?view=sql-server-ver16)
+[ALTER DATABASE SCOPED CONFIGURATION - SQL Server (Transact-SQL) - Training | Microsoft Learn](https://learn.microsoft.com/sql/t-sql/statements/alter-database-scoped-configuration-transact-sql?view=sql-server-ver16)
 
 </details>
 
@@ -1409,32 +1409,32 @@ The ELEVATE\_ONLINE option causes the engine to automatically elevate supported 
 
 ### Q45
 
-**Question:**
-You have an Azure SQL Database that uses Query Store.
+**Questão:**
+Você tem um Azure SQL Database que usa Query Store.
 
-You notice poor performance for a report caused by the execution plan and the report parameters.
+Você percebe um desempenho ruim para um relatório causado pelo plano de execução e pelos parâmetros do relatório.
 
-You need to improve the performance of the report. The solution must minimize administrative effort.
+Você precisa melhorar o desempenho do relatório. A solução deve minimizar o esforço administrativo.
 
-What should you do?
+O que você deve fazer?
 
-**Options:**
-- **A.** Disable parameter sniffing.
-- **B.** Enable snapshot isolation.
-- **C.** Execute the DBCC FREEPROCCACHE command.
-- **D.** Force the most efficient execution plan.
+**Alternativas:**
+- **A.** Desativar parameter sniffing.
+- **B.** Habilitar snapshot isolation.
+- **C.** Execute o comando DBCC FREEPROCCACHE.
+- **D.** Forçar o plano de execução mais eficiente.
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Forcing the plan that is the most efficient for most the executions will improve report performance.
+Forçar o plano que é o mais eficiente para a maioria das execuções melhorará o desempenho do relatório.
 
-Disabling parameter sniffing will ignore any parameters and not choose the most efficient plan. DBCC FREEPROCCACHE will remove all plans from the cache.
+A desativação do parameter sniffing ignorará quaisquer parâmetros e não escolherá o plano mais eficiente. O DBCC FREEPROCCACHE removerá todos os planos do cache.
 
-Snapshot isolation is used to enable concurrent execution of transactions.
+Snapshot isolation é usado para permitir a execução simultânea de transações.
 
-[Monitor performance by using the Query Store - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/performance/monitoring-performance-by-using-the-query-store?view=sql-server-ver16#Regressed)
+[Monitorando o desempenho usando o Query Store - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/performance/monitoring-performance-by-using-the-query-store?view=sql-server-ver16#Regressed)
 
 [Evaluate performance improvements - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/evaluate-performance-improvements/)
 
@@ -1444,24 +1444,24 @@ Snapshot isolation is used to enable concurrent execution of transactions.
 
 ### Q46 ⚠️
 
-**Question:**
-You plan to configure Extended Events monitoring to gather information about queries.
+**Questão:**
+Você planeja configurar o monitoramento Extended Events para coletar informações sobre consultas.
 
-You need to add information about the session_id to all events.
+Você precisa adicionar informações sobre o session_id a todos os eventos.
 
-What should you configure for the extended event session?
+O que você deve configurar para a sessão estendida do evento?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** action
+**✅ Resposta:** Ação
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-An action is a programmatic response or series of responses to an event. Actions are bound to an event, and each event may have a unique set of actions. Actions are global fields. Configuring an action allows you to add the required information to all events.
+Uma ação é uma resposta programática ou uma série de respostas a um evento. As ações estão vinculadas a um evento e cada evento pode ter um conjunto único de ações. As ações são campos globais. A configuração de uma ação permite adicionar as informações necessárias a todos os eventos.
 
-Targets process events, predicates are a set of logical rules used to evaluate events when they are processed, and a package is a container for Microsoft SQL Server Extended Events objects.
+Os predicados são um conjunto de regras lógicas usadas para avaliar eventos quando eles são processados, e um pacote é um recipiente para objetos Microsoft SQL Server Extended Events.
 
-SQL Server Extended Events Packages - SQL Server - Training | Microsoft Learn
+SQL Server Extended Events Pacotes - SQL Server - Training | Microsoft Learn
 
 Describe performance monitoring - Training | Microsoft Learn
 
@@ -1471,16 +1471,16 @@ Describe performance monitoring - Training | Microsoft Learn
 
 ### Q47 ⚠️
 
-**Question:**
-You have a SQL Server 2019 instance.
+**Questão:**
+Você tem uma instância SQL Server 2019.
 
-You need to enable Extended Events to monitor deadlocks.
+Você precisa habilitar Extended Events para monitorar deadlocks.
 
-Which T-SQL Statement should you run?
+Qual declaração T-SQL você deve executar?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** 
+**✅ Resposta:** 
 ```sql
 CREATE EVENT SESSION deadlocks
 ON SERVER
@@ -1494,15 +1494,15 @@ WITH (MAX_MEMORY=4MB, MAX_DISPATCH_LATENCY = 3 SECONDS);
 GO
 ```
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-The event_file target will enable historical troubleshooting.
+O alvo event_file permitirá a solução de problemas históricos.
 
-The event counter target merely counts how many times each specified event occurs and the histogram target counts occurrences of different types of items.
+O alvo contador de eventos conta quantas vezes cada evento especificado ocorre e o alvo do histograma conta ocorrências de diferentes tipos de itens.
 
-Targets for Extended Events in SQL Server - SQL Server - Training | Microsoft Learn
+Alvos para Extended Events E- SQL Server - SQL Server - Training | Microsoft Learn
 
-Explore extended events - Training | Microsoft Learn
+Explorar extended events - Training | Microsoft Learn
 
 </details>
 
@@ -1510,37 +1510,37 @@ Explore extended events - Training | Microsoft Learn
 
 ### Q48 ⚠️
 
-**Question:**
-You have a Microsoft SQL Server instance installed on an Azure virtual machine named SQLVM1.
+**Questão:**
+Você tem uma instância do Microsoft SQL Server instalada em um Azure virtual machine chamado SQLVM1.
 
-You need to analyze SQL Server engine counters, such as buffer cache and batch requests per second.
+Você precisa analisar os contadores de motores SQL Server, como cache de buffer e solicitações de lote por segundo.
 
-What should you use to collect these metrics?
+O que você deve usar para coletar essas métricas?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Windows Performance Monitor (PerfMon) on SQLVM1
+**✅ Resposta:** Windows Performance Monitor (PerfMon) em SQLVM1
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Objective:
+Objectivo:
 
-3.1 Monitor resource activity and performance
+3.1 Monitorar a atividade e o desempenho dos recursos
 
-What This Item Tests:
+O que este item testa:
 
-Determine sources for performance metrics
+Determinar fontes para métricas de desempenho
 
-Additional Reading:
+Leitura adicional:
 
-Describe performance monitoring tools
-Summary
-Monitor database performance
-Monitor and performance tuning in Azure SQL Database and Azure SQL Managed Instance
+Descrever ferramentas de monitoramento de desempenho
+Resumo
+desempenho do banco de dados do monitor
+Monitor e ajuste de desempenho em Azure SQL Database e Azure SQL Managed Instance
 Monitor Azure SQL Managed Instance
-Rationale:
+Racionale:
 
-Windows Performance Monitor (PerfMon) on SQLVM1 can collect SQL Server engine counters, such as the buffer cache hit ratio and batch requests per second, because it accesses SQL Server performance objects exposed through the Windows performance counter subsystem on the virtual machine host. Azure Monitor metrics for the Microsoft.Compute/virtualMachines resource expose only infrastructure metrics, such as CPU, disk, and network usage, rather than SQL Server engine counters. Query Performance Insight applies to Azure SQL Database rather than SQL Server on a virtual machine. The Azure Activity log records control-plane operations in Azure rather than database engine performance metrics.
+Windows Performance Monitor (PerfMon) em SQLVM1 pode coletar SQL Server contadores de motores, como a taxa de sucesso do cache de buffer e solicitações por segundo, porque ele acessa SQL Server objetos de desempenho expostos através do subsistema de contador de desempenho do Windows no host da máquina virtual. Azure Monitor metrics para a Microsoft.Compute/virtualMachines recursos expor apenas métricas de infraestrutura, tais como CPUuso de disco e rede, em vez de SQL Server Contadores de motores. Query Performance Insight aplica-se a Azure SQL Database em vez de SQL Server O registro de atividades do Azure registra operações de controle de avião no Azure, em vez de métricas de desempenho do motor de banco de dados.
 
 </details>
 
@@ -1548,22 +1548,22 @@ Windows Performance Monitor (PerfMon) on SQLVM1 can collect SQL Server engine co
 
 ### Q49
 
-**Question:**
-Your organization uses Azure SQL Database with Query Store enabled to monitor query performance.
+**Questão:**
+Sua organização usa Azure SQL Database com Query Store habilitado para monitorar o desempenho da consulta.
 
-You need to configure Query Store to capture queries with significant resource consumption while minimizing storage usage.
+Você precisa configurar o Query Store para capturar consultas com consumo significativo de recursos, minimizando o uso de armazenamento.
 
-Which two actions should you perform? Each correct answer presents part of the solution. Choose 2.
+Quais ações você deve realizar? Cada resposta correta apresenta parte da solução. Escolha 2.
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Enable size-based cleanup mode.; Set query capture mode to automatic.
+**✅ Resposta:** Ativar o modo de limpeza baseado em tamanho.; Defina o modo de captura de consulta como automático.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Turning off Query Store prevents query monitoring, which contradicts the goal of capturing queries with significant resource consumption. Enabling size-based cleanup mode ensures that less relevant data is automatically removed when storage limits are approached, helping to minimize storage usage while retaining critical information. Setting query capture mode to all queries results in excessive data collection, which increases storage usage and does not align with the goal of minimizing storage usage. Setting query capture mode to automatic focuses on capturing queries with significant resource consumption, aligning with the goal of monitoring performance while reducing unnecessary data collection.
+Desativar o Query Store evita o monitoramento de consultas, o que contradiz o objetivo de capturar consultas com consumo significativo de recursos. A ativação do modo de limpeza baseado em tamanho garante que os dados menos relevantes sejam removidos automaticamente quando os limites de armazenamento são abordados, ajudando a minimizar o uso de armazenamento, mantendo informações críticas. Definir o modo de captura de consultas para todas as consultas resulta em coleta excessiva de dados, o que aumenta o uso de armazenamento e não se alinha com o objetivo de minimizar o uso de armazenamento.
 
-Monitor performance by using the Query Store
+Desempenho do monitor usando o Query Store
 
 </details>
 
@@ -1571,28 +1571,28 @@ Monitor performance by using the Query Store
 
 ### Q50 ⚠️
 
-**Question:**
-You have a database in an Azure SQL Managed Instance.
+**Questão:**
+Você tem um banco de dados em um Azure SQL Managed Instance.
 
-You need to control the MAXDOP configuration at the workload level. The solution must minimize administrative and development effort.
+Você precisa controlar a configuração MAXDOP no nível da carga de trabalho. A solução deve minimizar o esforço administrativo e de desenvolvimento.
 
-What should you do?
+O que você deve fazer?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** In Resource Governor, set the MAX_DOP workload group configuration.
+**✅ Resposta:** Em Resource Governor, defina a configuração do grupo de carga de trabalho MAX_DOP.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Configure the MAX_DOP workload group configuration in Resource Governor to be able to control the degree of parallelism per defined workload. This option can be set in the CREATE WORKLOAD GROUP statement.
+Configure a configuração do grupo de carga de trabalho MAX_DOP no Resource Governor para poder controlar o grau de paralelismo por carga de trabalho definida. Esta opção pode ser definida na declaração CREATE WORKLOAD GROUP.
 
-The ALTER DATABASE SCOPED CONFIGURATION statement manages the settings per database and not per workload. Using the MAXDOP hint on the query level requires code changes, and you cannot control the workload. Using the sp_configure stored procedure changes the settings at the server level, and you cannot control the workload.
+A declaração ALTER DATABASE SCOPED CONFIGURATION gerencia as configurações por banco de dados e não por carga de trabalho. Usando a dica MAXDOP no nível de consulta requer alterações de código, e você não pode controlar a carga de trabalho. Usando o procedimento armazenado sp_configure altera as configurações no nível do servidor, e você não pode gerenciar a carga de trabalho.
 
 ALTER DATABASE SCOPED CONFIGURATION - SQL Server (Transact-SQL) - Training | Microsoft Learn
 
 CREATE WORKLOAD GROUP (Transact-SQL) - SQL Server - Training | Microsoft Learn
 
-Configure databases for optimal performance - Training | Microsoft Learn
+Configurar bancos de dados para otimizar o desempenho - Treinamento | Microsoft Learn
 
 </details>
 
@@ -1600,58 +1600,58 @@ Configure databases for optimal performance - Training | Microsoft Learn
 
 ### Q51
 
-**Question:**
-You run the DBCC CHECKDB command for a production database. The command shows errors in several nonclustered indexes.
+**Questão:**
+Você executa o comando DBCC CHECKDB para um banco de dados de produção. O comando mostra erros em vários nonclustered indexes.
 
-You need to repair the indexes and ensure the integrity of the database after the operation has complete.
+Você precisa reparar os índices e garantir a integridade do banco de dados após a operação ter sido concluída.
 
-Which parameter should you specify in the DBCC CHECKDB command?
+Qual parâmetro você deve especificar no comando DBCC CHECKDB?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** REPAIR_REBUILD
+**✅ Resposta:** REPAIR_REBUILD
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Adding the REPAIR_REBUILD option to the DBCC CHECKDB command performs repairs that have no possibility of data loss. This option may include quick repairs, such as repairing missing rows in nonclustered indexes, and more time-consuming repairs, such as rebuilding an index.
+Adicionar a opção REPAIR_REBUILD ao comando DBCC CHECKDB executa reparos que não têm possibilidade de perda de dados. Esta opção pode incluir reparos rápidos, como reparar linhas ausentes no nonclustered indexes e reparos mais demorados, como reconstruir um índice.
 
-The REPAIR_FAST option maintains syntax for backward compatibility only. No repair actions are performed. The REPAIR_ALLOW_DATA_LOSS option can introduce some data loss in the database.
+A opção REPAIR_FAST mantém a sintaxe apenas para compatibilidade com versões anteriores. Nenhuma ação de reparo é executada. A opção REPAIR_ALLOW_DATA_LOSS pode introduzir alguma perda de dados no banco de dados.
 
 DBCC CHECKDB (Transact-SQL) - SQL Server - Training | Microsoft Learn
 
-Configure databases for optimal performance - Training | Microsoft Learn
+Configurar bancos de dados para otimizar o desempenho - Treinamento | Microsoft Learn
 
 </details>
 
 ---
 
-## Configure and manage automation of tasks (13)
+## Configurar e gerenciar a automação de tarefas (13)
 
 ### Q52
 
-**Question:**
-You have an Azure SQL managed instance.
+**Questão:**
+Você tem um Azure SQL managed instance.
 
-You need to ensure that you receive a notification when a SQL Server Agent job fails.
+Você precisa garantir que você receba uma notificação quando um SQL Server Agent job falhar.
 
-Which three actions should you perform? Each correct answer presents part of the solution.
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução.
 
-**Options:**
-- **A.** Create a Database Mail account.
-- **B.** Create a Database Mail profile.
-- **C.** Create a SQL Server Agent proxy.
-- **D.** Create a SQL Server credential.
-- **E.** Enable Database Mail.
+**Alternativas:**
+- **A.** Crie uma conta Database Mail.
+- **B.** Crie um perfil Database Mail.
+- **C.** Crie um SQL Server Agent proxy.
+- **D.** Crie uma credencial SQL Server.
+- **E.** Habilitar Database Mail.
 
-**✅ Answer:** A, B, E
+**✅ Resposta:** A, B, E
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-To ensure that you receive a notification when a SQL Server Agent job fails, Database Mail needs to be enabled, a Database Mail account needs to be created, and a Database Mail profile needs to be created.
+Para garantir que você receba uma notificação quando um SQL Server Agent job falhar, o Database Mail precisa ser ativado, uma conta Database Mail precisa ser criada e um perfil Database Mail precisa ser criado.
 
-A SQL Server credential and a SQL Server Agent proxy are not required.
+Uma credencial SQL Server e um SQL Server Agent proxy não são necessários.
 
-[Describe task status notifications - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/schedule-tasks-using-sql-server-agent/3-describe-task-status-notifications?ns-enrollment-type=learningpath&amp;ns-enrollment-id=learn.wwl.automate-tasks-sql-server)[Configure SQL Server Agent mail to use Database Mail - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/database-mail/configure-sql-server-agent-mail-to-use-database-mail?view=sql-server-ver16)
+[Describe task status notifications - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/schedule-tasks-using-sql-server-agent/3-describe-task-status-notifications?ns-enrollment-type=learningpath&amp;ns-enrollment-id=learn.wwl.automate-tasks-sql-server)[Configurar SQL Server Agent para usar Database Mail - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/relational-databases/database-mail/configure-sql-server-agent-mail-to-use-database-mail?view=sql-server-ver16)
 
 </details>
 
@@ -1659,30 +1659,30 @@ A SQL Server credential and a SQL Server Agent proxy are not required.
 
 ### Q53
 
-**Question:**
-You deploy a SQL Server on Azure Virtual Machines instance. 
+**Questão:**
+Você implanta uma instância SQL Server on Azure Virtual Machines. 
 
-You need to ensure that automated patching is enabled.
+Você precisa garantir que o automated patching esteja ativado.
 
-Which two cmdlets should you run? Each correct answer presents part of the solution.
+Quais dois cmdlets você deve executar? Cada resposta correta apresenta parte da solução.
 
-**Options:**
+**Alternativas:**
 - **A.** New-AzVMConfig
 - **B.** New-AzVMSqlServerAutoPatchingConfig
 - **C.** Set-AzVMSqlServerExtension
 - **D.** Set-AzVMCustomScriptExtension
 
-**✅ Answer:** B, C
+**✅ Resposta:** B, C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-The New-AzVMSqlServerAutoPatchingConfig cmdlet allows you to create a configuration object for automatic patching on a virtual machine, and the Set-AzVMSqlServerExtension cmdlet establishes a maintenance window for a SQL Server on Azure Virtual Machines instance. Automated updates can only be installed during this maintenance window.
+O cmdlet New-AzVMSqlServerAutoPatchingConfig permite que você crie um objeto de configuração para automatic patching em uma máquina virtual, e o cmdlet Set-AzVMSqlServerExtension estabelece uma janela de manutenção para uma instância SQL Server on Azure Virtual Machines. Atualizações automatizadas só podem ser instaladas durante esta janela de manutenção.
 
-Set-AzVMCustomScriptExtensionUpdate  Adds a custom script extension to a virtual machine., and the New-AzVMConfig cmdlet creates a configurable local virtual machine object for Azure.
+Set-AzVMCustomScriptExtensionUpdate  Adiciona uma extensão de script personalizado a uma máquina virtual., e o New-AzVMConfig O cmdlet cria um objeto de máquina virtual local configurável para o Azure.
 
-[Set-AzVMSqlServerExtension (Az.Compute) - Training | Microsoft Learn](https://learn.microsoft.com/powershell/module/az.compute/set-azvmsqlserverextension?view=azps-9.2.0)
+[Set-AzVMSqlServerExtension (Az.Compute) - Training | Microsoft Learn](https://learn.microsoft.com/powershell/module/az.compute/set-azvmsqlserverextension?view=azps-9.2.0)
 
-[Automate deployment of database resources - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-automatic-deployment-azure-sql-database/)
+[Automatizar a implantação de recursos de banco de dados - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-automatic-deployment-azure-sql-database/)
 
 </details>
 
@@ -1690,30 +1690,30 @@ Set-AzVMCustomScriptExtensionUpdate  Adds a custom script extension to a virtu
 
 ### Q54
 
-**Question:**
-You have a bacpac file from an existing Microsoft SQL Server database. You copy the file to an Azure Storage account. 
+**Questão:**
+Você tem um arquivo bacpac de um banco de dados Microsoft SQL Server existente. Você copia o arquivo para uma conta Azure Storage. 
 
-You need to apply the bacpac file to an existing Azure SQL Database.
+Você precisa aplicar o arquivo bacpac a um Azure SQL Database existente.
 
-Which command should you run?
+Qual comando você deve executar?
 
-**Options:**
-- **A.** az sql db create
-- **B.** az sql db import
-- **C.** az sql db restore
+**Alternativas:**
+- **A.** sql db create
+- **B.** sql db import
+- **C.** az sql db restaurar
 - **D.** az sql db update
 
-**✅ Answer:** B
+**✅ Resposta:** B
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You can use the az sql db import command to import the database from the bacpac file. The database must be created before the bacpac file is imported.
+Você pode usar o comando az sql db import para importar o banco de dados do arquivo bacpac. O banco de dados deve ser criado antes que o arquivo bacpac seja importado.
 
-The az sql db restore command creates a new database from backup, and the az sql db update command updates the existing database.
+O comando az sql db restaure cria um novo banco de dados a partir do backup, e o comando az sQL db update atualiza o banco de dados existente.
 
-[az sql db - Training | Microsoft Learn](https://learn.microsoft.com/cli/azure/sql/db?view=azure-cli-latest#az-sql-db-create)
+[az sql db - Training | Microsoft Learn](https://learn.microsoft.com/cli/azure/sql/db?view=azure-cli-latest#az-sql-db-create)
 
-[Automate deployment of database resources - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-automatic-deployment-azure-sql-database/)
+[Automatizar a implantação de recursos de banco de dados - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-automatic-deployment-azure-sql-database/)
 
 </details>
 
@@ -1721,31 +1721,31 @@ The az sql db restore command creates a new database from backup, and the az sql
 
 ### Q55
 
-**Question:**
-You have an Azure subscription.
+**Questão:**
+Você tem uma assinatura do Azure.
 
-You plan to deploy 100 Azure SQL Databases.
+Você planeja implantar 100 Azure SQL Databases.
 
-You need to automate the deployment. The solution must be parameterizable, repeatable, and be able to be versioned in source control.
+Você precisa automatizar a implantação. A solução deve ser parametrizável, repetível e ser capaz de ser versionada no controle da fonte.
 
-Which three components can you use? Each correct answer presents a complete solution.
+Quais componentes você pode usar? Cada resposta correta apresenta uma solução completa.
 
-**Options:**
+**Alternativas:**
 - **A.** Azure Cloud Shell
 - **B.** Azure Policy
-- **C.** Azure PowerShell scripts
-- **D.** Azure Resource Manager (ARM) templates
-- **E.** Bicep templates
+- **C.** scripts Azure PowerShell
+- **D.** Modelos Azure Resource Manager (ARM)
+- **E.** Modelos Bicep
 
-**✅ Answer:** C, D, E
+**✅ Resposta:** C, D, E
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-ARM templates, Bicep templates, and PowerShell scripts can all be parameterized and versioned.
+Modelos ARM, modelos Bicep e scripts PowerShell podem ser parametrizados e versionados.
 
-Cloud Shell is an interactive, authenticated, browser-accessible shell, and Azure Policy helps to enforce organizational standards and to assess compliance at-scale.
+O Cloud Shell é um shell interativo, autenticado e acessível ao navegador, e o Azure Policy ajuda a impor padrões organizacionais e avaliar a conformidade em escala.
 
-[Automate deployment by using Azure Resource Manager templates and Bicep - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-automatic-deployment-azure-sql-database/3-automate-deployment-using-azure-resource-manager-bicep?ns-enrollment-type=learningpath&ns-enrollment-id=learn.wwl.automate-tasks-sql-server)
+[Automatize a implantação usando Azure Resource Manager templates e Bicep - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/configure-automatic-deployment-azure-sql-database/3-automate-deployment-using-azure-resource-manager-bicep?ns-enrollment-type=learningpath&ns-enrollment-id=learn.wwl.automate-tasks-sql-server)
 
 </details>
 
@@ -1753,30 +1753,30 @@ Cloud Shell is an interactive, authenticated, browser-accessible shell, and Azur
 
 ### Q56
 
-**Question:**
-You have an Elastic Job agent that will run tasks on an Azure SQL Database elastic pool. 
+**Questão:**
+Você tem um Elastic Job agent que executará tarefas em um Azure SQL Database elastic pool. 
 
-You create an elastic job. 
+Você cria um elastic job. 
 
-You need to ensure that the job runs every hour.
+Você precisa garantir que o job funcione a cada hora.
 
-Which cmdlet should you run?
+Qual cmdlet você deve executar?
 
-**Options:**
+**Alternativas:**
 - **A.** Set-AzSqlDatabase
 - **B.** Set-AzSqlElasticJob
 - **C.** Set-AzSqlElasticJobStep
 - **D.** Set-AzSqlElasticPool
 
-**✅ Answer:** B
+**✅ Resposta:** B
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Using the Set-AzSqlElasticJob cmdlet updates the elastic job properties. You can set the interval, as well as the start and end date of the job.
+Usando o cmdlet Set-AzSqlElasticJob atualiza as propriedades elastic job. Você pode definir o intervalo, bem como a data de início e fim do job.
 
-The Set-AzSqlElasticJobStep cmdlet updates the elastic job steps. You cannot modify the schedule at the step level. The Set-AzSqlElasticPool cmdlet modifies the properties of an Azure SQL Database elastic pool, and the Set-AzSqlDatabase cmdlet sets the properties of a database or moves an existing database into an elastic pool.
+O cmdlet Set-AzSqlElasticJobStep atualiza as etapas elastic job. Você não pode modificar o cronograma no nível do passo. O cmdlet Seth- Set-AzSqlElasticPool modifica as propriedades de um Azure SQL Database elastic pool, e o cmdlet Set - Set-AzSqlDatabase define as propriedades de um banco de dados ou move um banco de dados existente em um elastic pool.
 
-[Set-AzSqlElasticJob (Az.Sql) - Training | Microsoft Learn](https://learn.microsoft.com/powershell/module/az.sql/set-azsqlelasticjob?view=azps-9.2.0)
+[Set-AzSqlElasticJob (Az.Sql) - Training | Microsoft Learn](https://learn.microsoft.com/powershell/module/az.sql/set-azsqlelasticjob?view=azps-9.2.0)
 
 [Manage Azure PaaS tasks using automation - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/manage-azure-paas-resources-using-automated-methods/)
 
@@ -1786,28 +1786,28 @@ The Set-AzSqlElasticJobStep cmdlet updates the elastic job steps. You cannot mod
 
 ### Q57
 
-**Question:**
-You have an Azure subscription that includes 20 Azure SQL logical servers.
+**Questão:**
+Você tem uma assinatura do Azure que inclui 20 servidores lógicos Azure SQL.
 
-You need to automate management tasks using an Azure Automation runbook.
+Você precisa automatizar tarefas de gerenciamento usando um Azure Automation runbook.
 
-What should you do first?
+O que você deve fazer primeiro?
 
-**Options:**
-- **A.** Create an Azure Automation account.
-- **B.** Create an Azure Automation credential.
-- **C.** Create an Azure Automation runbook schedule.
-- **D.** Deploy an Azure Automation hybrid runbook runner.
+**Alternativas:**
+- **A.** Crie uma conta Azure Automation.
+- **B.** Crie uma credencial Azure Automation.
+- **C.** Crie um calendário Azure Automation runbook.
+- **D.** Implantar um Azure Automation híbrido runbook corredor.
 
-**✅ Answer:** A
+**✅ Resposta:** A
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-To automate management tasks by using an Azure Automation runbook, you first need to create an Azure Automation account.
+Para automatizar tarefas de gerenciamento usando um Azure Automation runbook, primeiro você precisa criar uma conta Azure Automation.
 
-You cannot create a credential or a schedule without first creating an Azure Automation account, and you do not need a hybrid runbook runner.
+Você não pode criar uma credencial ou um cronograma sem primeiro criar uma conta Azure Automation, e você não precisa de um corredor híbrido runbook.
 
-[Build an automation runbook - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/manage-azure-paas-resources-using-automated-methods/4-build-automation-runbook)
+[Construa uma automação runbook - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/manage-azure-paas-resources-using-automated-methods/4-build-automation-runbook)
 
 </details>
 
@@ -1815,27 +1815,27 @@ You cannot create a credential or a schedule without first creating an Azure Aut
 
 ### Q58
 
-**Question:**
-Your company uses Azure SQL Database elastic pools to manage resources for tenant databases.  
+**Questão:**
+Sua empresa usa o Azure SQL Database elastic pools para gerenciar recursos para bancos de dados de inquilinos.  
   
-You use elastic jobs and need to ensure a scheduled job targets specific databases within the pool.  
+Você usa o elastic jobs e precisa garantir que um job agendado tenha como alvo bancos de dados específicos dentro da piscina.  
   
-What should you use?
+O que você deve usar?
 
-**Options:**
-- **A.** Create separate elastic pools.
-- **B.** Define a target group.
-- **C.** Manually execute the job.
-- **D.** Run the job on the entire pool.
+**Alternativas:**
+- **A.** Criar separado elastic pools.
+- **B.** Defina um target group.
+- **C.** Execute manualmente o job.
+- **D.** Passe o job em toda a piscina.
 
-**✅ Answer:** B
+**✅ Resposta:** B
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Defining a target group allows precise control over job execution by including or excluding specific databases, making it the most effective solution for this scenario. Creating separate elastic pools unnecessarily increases complexity and cost, which is not aligned with the goal of efficient resource management. Manually executing the job is inefficient and unsuitable for scheduled or recurring tasks. Running the job on the entire pool does not fulfill the requirement to target specific databases, as it lacks the necessary selectivity.  
+A definição de um target group permite um controle preciso sobre a execução do job, incluindo ou excluindo bancos de dados específicos, tornando-o a solução mais eficaz para esse cenário. A criação de elastic pools separado aumenta desnecessariamente a complexidade e o custo, o que não está alinhado com o objetivo de gerenciamento eficiente de recursos. A execução manual do job é ineficiente e inadequada para tarefas agendadas ou recorrentes. A execução do job em toda a piscina não atende à necessidade de atingir bancos de dados específicos, pois não possui a seletividade necessária.  
   
-[Explore Elastic jobs - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/manage-azure-paas-resources-using-automated-methods/2-explore-elastic-jobs)  
-[Design Azure SQL Database for cloud-native applications - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/prepare-to-maintain-sql-databases-azure/4-design-azure-sql-database-for-cloud-native-applications)
+[Explorar Elastic jobs - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/manage-azure-paas-resources-using-automated-methods/2-explore-elastic-jobs)  
+[Projetar Azure SQL Database para aplicativos cloud-native - Treinamento | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/prepare-to-maintain-sql-databases-azure/4-design-azure-sql-database-for-cloud-native-applications)
 
 </details>
 
@@ -1843,28 +1843,28 @@ Defining a target group allows precise control over job execution by including o
 
 ### Q59
 
-**Question:**
-Your company has multiple Azure SQL Databases across different regions.  
+**Questão:**
+Sua empresa tem vários Azure SQL Databases em diferentes regiões.  
   
-You need to automate the execution of T-SQL statements across all databases.  
+Você precisa automatizar a execução de declarações T-SQL em todos os bancos de dados.  
   
-Which three actions should you perform? Each correct answer presents part of the solution. Choose 3.
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução. Escolha 3.
 
-**Options:**
-- **A.** Create an elastic job agent.
-- **B.** Define job steps.
-- **C.** Execute T-SQL statements manually.
-- **D.** Schedule the elastic job.
-- **E.** Use graphical runbooks.
+**Alternativas:**
+- **A.** Crie um elastic job agent.
+- **B.** Defina os passos job.
+- **C.** Execute as instruções T-SQL manualmente.
+- **D.** Agende o elastic job.
+- **E.** Use gráfico runbooks.
 
-**✅ Answer:** A, B, D
+**✅ Resposta:** A, B, D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Creating an elastic job agent is essential for automating the execution of T-SQL statements across multiple databases, addressing the need for scalability and efficiency. Defining job steps ensures that the tasks to be performed are clearly specified, making the automation process well-structured. Scheduling the elastic job guarantees that tasks are executed automatically at regular intervals, aligning with the automation goal. Executing T-SQL statements manually contradicts the automation objective, as it requires human effort and lacks scalability. Graphical runbooks are not designed for this purpose, making them unsuitable for the scenario.  
+Criando um elastic job agent é essencial para automatizar a execução de T-SQL declarações em vários bancos de dados, abordando a necessidade de escalabilidade e eficiência. Definindo job As etapas garantem que as tarefas a serem executadas sejam claramente especificadas, tornando o processo de automação bem estruturado. elastic job garante que as tarefas são executadas automaticamente em intervalos regulares, alinhando-se com o objetivo de automação. Executar T-SQL declarações contradiz manualmente o objetivo de automação, pois requer esforço humano e falta escalabilidade. Gráfico runbooks não são projetados para esse fim, tornando-os inadequados para o cenário.  
   
-[Understand Azure Automation - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/manage-azure-paas-resources-using-automated-methods/3-understand-azure-automation)  
-[Automate deployment by using PowerShell - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/configure-automatic-deployment-azure-sql-database/4-automate-deployment-using-powershell)
+[Entender Azure Automation - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/manage-azure-paas-resources-using-automated-methods/3-understand-azure-automation)  
+[Automatize a implantação usando PowerShell - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/configure-automatic-deployment-azure-sql-database/4-automate-deployment-using-powershell)
 
 </details>
 
@@ -1872,29 +1872,29 @@ Creating an elastic job agent is essential for automating the execution of T-SQL
 
 ### Q60
 
-**Question:**
-Your organization uses Azure SQL Database for critical applications. The database performance is affected by outdated indexes and stale data.  
+**Questão:**
+Sua organização usa Azure SQL Database para aplicações críticas. O desempenho do banco de dados é afetado por índices desatualizados e dados obsoletos.  
   
-You need to automate database maintenance tasks to improve performance.  
+Você precisa automatizar tarefas de manutenção de banco de dados para melhorar o desempenho.  
   
-Which three actions should you perform? Each correct answer presents part of the solution. Choose 3.
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução. Escolha 3.
 
-**Options:**
-- **A.** Create a PowerShell runbook.
-- **B.** Enable managed identities.
-- **C.** Manually trigger the runbook.
-- **D.** Schedule the runbook.
+**Alternativas:**
+- **A.** Crie um PowerShell runbook.
+- **B.** Habilitar managed identities.
+- **C.** Acione manualmente o runbook.
+- **D.** Agende o runbook.
 - **E.** Use Logic Apps.
 
-**✅ Answer:** A, B, D
+**✅ Resposta:** A, B, D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Creating a PowerShell runbook is essential for automating database maintenance tasks, addressing the need for improved performance. Scheduling the runbook ensures these tasks are executed regularly without manual intervention, aligning with the automation goal. Enabling managed identities provides secure and simplified authentication for accessing Azure resources, which is critical for maintaining security during automation. Manually triggering the runbook contradicts the automation objective, as it requires human intervention. While Logic Apps can automate workflows, they are not the optimal choice for this specific task, making them less suitable for the scenario.  
+Criando a PowerShell runbook é essencial para automatizar tarefas de manutenção de banco de dados, abordando a necessidade de um melhor desempenho. runbook essas tarefas são executadas regularmente sem intervenção manual, alinhando-se com o objetivo de automação. managed identities fornece autenticação segura e simplificada para acessar os recursos do Azure, o que é fundamental para manter a segurança durante a automação. runbook contradiz o objetivo de automação, pois requer intervenção humana. Enquanto Logic Apps podem automatizar fluxos de trabalho, eles não são a escolha ideal para esta tarefa específica, tornando-os menos adequados para o cenário.  
   
-[Understand Azure Automation - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/manage-azure-paas-resources-using-automated-methods/3-understand-azure-automation)  
-[Automate deployment by using PowerShell - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/configure-automatic-deployment-azure-sql-database/4-automate-deployment-using-powershell)  
-[Add authentication to manage Azure resources](https://learn.microsoft.com/en-us/azure/automation/learn/automation-tutorial-runbook-textual#add-authentication-to-manage-azure-resources)
+[Entender Azure Automation - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/manage-azure-paas-resources-using-automated-methods/3-understand-azure-automation)  
+[Automatize a implantação usando PowerShell - Training | Microsoft Learn](https://learn.microsoft.com/en-us/training/modules/configure-automatic-deployment-azure-sql-database/4-automate-deployment-using-powershell)  
+[Adicionar autenticação para gerenciar recursos do Azure](https://learn.microsoft.com/en-us/azure/automation/learn/automation-tutorial-runbook-textual#add-authentication-to-manage-azure-resources)
 
 </details>
 
@@ -1902,26 +1902,26 @@ Creating a PowerShell runbook is essential for automating database maintenance t
 
 ### Q61
 
-**Question:**
-You have an Azure subscription that contains a resource group named RG1.
+**Questão:**
+Você tem uma assinatura do Azure que contém um grupo de recursos chamado RG1.
 
-You need to create an Azure SQL Managed Instance in RG1 by using PowerShell.
+Você precisa criar um Azure SQL Managed Instance no RG1 usando PowerShell.
 
-Which cmdlet should you run?
+Qual cmdlet você deve executar?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** New-AzSqlInstance
+**✅ Resposta:** New-AzSqlInstance
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-By using the New-AzSqlInstance cmdlet, you can create a new SQL managed instance.
+Usando o cmdlet New-AzSqlInstance, você pode criar um novo SQL managed instance.
 
-New-AzSQLServer creates a new Microsoft SQL server, New-AzSqlDatabase creates a new Azure SQL Database, Set-AzSqlInstance sets the properties for a SQL managed instance, and Set-AzSqlServer sets the properties for a Microsoft SQL server.
+New-AzSQLServer cria um servidor Microsoft SQL. New-AzSqlDatabase cria um banco do Azure SQL Database. Set-AzSqlInstance define as propriedades de uma SQL managed instance e Set-AzSqlServer define as propriedades de um servidor Microsoft SQL.
 
 New-AzSqlInstance (Az.Sql) - Training | Microsoft Learn
 
-Automate deployment of database resources - Training | Microsoft Learn
+Automatizar a implantação de recursos de banco de dados - Treinamento | Microsoft Learn
 
 </details>
 
@@ -1929,26 +1929,26 @@ Automate deployment of database resources - Training | Microsoft Learn
 
 ### Q62
 
-**Question:**
-You have an Azure subscription that contains a resource group named RG1. RG1 is hosted in the West US Azure region.
+**Questão:**
+Você tem uma assinatura do Azure que contém um grupo de recursos chamado RG1. O RG1 está hospedado na região West US Azure.
 
-You need to create a new Azure SQL server named srv1.
+Você precisa criar um novo servidor Azure SQL chamado srv1.
 
-Which Azure CLI command should you run?
+Qual comando Azure CLI você deve executar?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** az sql server create -l westus -g rg1 -n srv1 -u adminuser -p adminpassword
+**✅ Resposta:** az sql server create -l westus -g rg1 -n srv1 -u adminuser -p adminpassword
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Using the az sql server create -l westus -g rg1-n srv1 -u adminuser -p adminpassword command will create a new Azure SQL server.
+Usando o comando az sql server create -l westus -g rg1-n srv1 -u adminuser -p adminpassword criará um novo servidor Azure SQL.
 
-The az sql db create -g rg1-s srv1-n mydb --service-objective S0 command creates a new Azure SQL Database, the az sql mi create -g rg1-n srv1-l westus -i -u adminuser -p adminpassword command will create a new Azure SQL Managed Instance, and the az sql elastic-pool create -g rg1-s srv1-n db1 command will create a new Azure SQL Database elastic pool.
+O az sql db create -g rg1-s srv1-n mydb --service-objective S0 O comando cria um novo Azure SQL Database, o az sql mi create -g rg1-n srv1-l westus -i -u adminuser -p adminpassword comando irá criar um novo Azure SQL Managed Instance, e o az sql elástico-pool criar -g rg1-s srv1-n db1 O comando criará um novo Azure SQL Database elastic pool.
 
 az sql server | Microsoft Learn
 
-Automate deployment of database resources - Training | Microsoft Learn
+Automatizar a implantação de recursos de banco de dados - Treinamento | Microsoft Learn
 
 </details>
 
@@ -1956,23 +1956,23 @@ Automate deployment of database resources - Training | Microsoft Learn
 
 ### Q63
 
-**Question:**
-You plan to deploy multiple Azure SQL Databases for a new application. Automation is required for consistency and efficiency.
+**Questão:**
+Você planeja implantar vários Azure SQL Databases para uma nova aplicação. A automação é necessária para consistência e eficiência.
 
-You need to determine the tools and methods to automate the deployment of these databases.
+Você precisa determinar as ferramentas e métodos para automatizar a implantação desses bancos de dados.
 
-Each correct answer presents part of the solution. Which three actions should you take?
+Cada resposta correta apresenta parte da solução. Que três ações você deve tomar?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Add deployment scripts to an Azure DevOps pipeline.; Define database configurations using ARM templates.; Run deployment scripts using the Az.Sql PowerShell module.
+**✅ Resposta:** Adicione scripts de implantação a um pipeline Azure DevOps.; Defina configurações de banco de dados usando modelos ARM.; Execute scripts de implantação usando o módulo Az.Sql PowerShell.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Automating the deployment of Azure SQL Databases requires tools and methods that ensure consistency and efficiency. Adding deployment scripts to an Azure DevOps pipeline facilitates automated processes and supports continuous delivery. Defining database configurations using ARM templates provides a declarative approach to deploying Azure resources, ensuring repeatability and alignment with automation requirements. Running deployment scripts using the Az.Sql PowerShell module utilizes cmdlets tailored for managing Azure SQL resources, enabling efficient scripting and automation. Using a third-party tool not integrated with Azure introduces unnecessary complexity and fails to leverage native capabilities. Manually configuring each database in the Azure portal is time-consuming and prone to human error, contradicting the automation requirement. Deploying databases interactively using SSMS is primarily suited for managing SQL Server instances and does not support the automation needed for efficient Azure SQL Database deployments.
+Automatização da implantação de Azure SQL Databases requer ferramentas e métodos que garantam consistência e eficiência. Adicionando scripts de implantação a um Azure DevOps O pipeline facilita processos automatizados e suporta a entrega contínua. Definindo configurações de banco de dados usando ARM Os modelos de modelos fornecem uma abordagem declarativa para a implantação de recursos do Azure, garantindo repetibilidade e alinhamento com os requisitos de automação. Az.Sql PowerShell utiliza cmdlets adaptados para gerenciar Azure SQL O uso de uma ferramenta de terceiros não integrada com o Azure introduz complexidade desnecessária e não consegue alavancar as capacidades nativas. Configuração manual de cada banco de dados no Azure portal é demorado e propenso a erro humano, contradizendo o requisito de automação. Implantando bancos de dados interativamente usando SSMS É principalmente adequado para gerenciar SQL Server não suporta as instâncias de automação necessárias para Azure SQL Database implantações.
 
-Automate deployment by using PowerShell - Training | Microsoft Learn
-Explore single SQL database - Training | Microsoft Learn
+Automatize a implantação usando PowerShell - Training | Microsoft Learn
+Explorar um único SQL database - Training | Microsoft Learn
 
 </details>
 
@@ -1980,59 +1980,59 @@ Explore single SQL database - Training | Microsoft Learn
 
 ### Q64
 
-**Question:**
-You have an Azure subscription. The subscription contains several Azure SQL Databases that support departmental applications.
+**Questão:**
+Você tem uma assinatura do Azure. A assinatura contém vários Azure SQL Databases que suportam aplicativos departamentais.
 
-You plan to use elastic jobs to periodically execute T-SQL-based maintenance tasks against all the databases.
+Você planeja usar o elastic jobs para executar periodicamente tarefas de manutenção baseadas no T-SQL em todos os bancos de dados.
 
-What should you do first?
+O que você deve fazer primeiro?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Create an Azure SQL Database.
+**✅ Resposta:** Crie um Azure SQL Database.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You need to create an Azure SQL Database to keep the elastic job configuration.
+Você precisa criar um Azure SQL Database para manter a configuração do elastic job.
 
-The Elastic Job agent can be configured once the database and the elastic job configuration is prepared.
+O Elastic Job agent pode ser configurado assim que o banco de dados e a configuração do elastic job estiverem preparados.
 
-You cannot create Elastic Job targets until you have an agent.
+Você não pode criar alvos Elastic Job até ter um agente.
 
-You do not need to create an elastic pool server for this task.
+Você não precisa criar um servidor elastic pool para esta tarefa.
 
-Job automation overview with Elastic Jobs - Azure SQL Database - Training | Microsoft Learn
+Job visão geral de automação com Elastic Jobs - Azure SQL Database - Training | Microsoft Learn
 
 </details>
 
 ---
 
-## Plan and configure a high availability and disaster recovery (HA/DR) environment (15)
+## Planejar e configurar um ambiente de alta disponibilidade e recuperação de desastres (HA/DR) (15)
 
 ### Q65
 
-**Question:**
-You need to recommend a high-availability and disaster recovery (HA/DR) strategy for a SQL Server on Azure Virtual Machines instance. The solution must meet the following requirements:
+**Questão:**
+Você precisa recomendar uma estratégia de alta disponibilidade e recuperação de desastres (HA/DR) para uma instância SQL Server on Azure Virtual Machines. A solução deve atender aos seguintes requisitos:
 
-**Options:**
-- **A.** All databases, including system databases, must be protected.
-- **B.** SQL Server Agent jobs must be protected.
-- **C.** Downtime must be minimized.
-- **D.** The failover process must be done automatically.
+**Alternativas:**
+- **A.** Todos os bancos de dados, incluindo bancos de dados do sistema, devem ser protegidos.
+- **B.** SQL Server Agent jobs deve ser protegido.
+- **C.** O tempo de inatividade deve ser minimizado.
+- **D.** O processo failover deve ser feito automaticamente.
 
-What should you include in the recommendation?
-- **E.** an Always On availability group
-- **F.** an Always On failover cluster instance
+O que você deve incluir na recomendação?
+- **E.** Always On availability group
+- **F.** Always On failover cluster instance
 - **G.** log shipping
 - **H.** transactional replication
 
-**✅ Answer:** F
+**✅ Resposta:** F
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should recommend an Always On failover cluster instance because this feature protects the entire instance. A SQL Server on Azure Virtual Machines instance is the entire installation of Microsoft SQL Server, such as binaries and all the objects inside the instance, including logins, SQL Server Agent jobs, and databases. Instance-level protection means that the entire instance is accounted for in the availability feature.
+Você deve recomendar um Always On failover cluster instance porque esse recurso protege toda a instância. Uma instância SQL Server on Azure Virtual Machines é toda a instalação do Microsoft SQL Server, como binários e todos os objetos dentro da instância, incluindo logins, SQL Server Agent jobs e bancos de dados. A proteção em nível de instância significa que toda a instância é contabilizada no recurso de disponibilidade.
 
-An Always On availability group works at the database level rather than the instance level. Transactional replication cannot replicate system databases, and neither transactional replication nor log shipping allow you to perform automatic failover.
+An Always On availability group funciona no nível do banco de dados em vez do nível da instância. Transactional replication não pode replicar bancos de dados do sistema, e nem transactional replication nem log shipping permitir que você execute automatic failover.
 
 [Always On failover cluster instances - SQL Server Always On - Training | Microsoft Learn](https://learn.microsoft.com/sql/sql-server/failover-clusters/windows/always-on-failover-cluster-instances-sql-server?view=sql-server-ver16)
 
@@ -2044,30 +2044,30 @@ An Always On availability group works at the database level rather than the inst
 
 ### Q66
 
-**Question:**
-You have 100 on-premises Microsoft SQL servers.
+**Questão:**
+Você tem 100 servidores on-premises Microsoft SQL.
 
-You plan to migrate the servers to SQL Server on Azure Virtual Machines.
+Você planeja migrar os servidores para SQL Server on Azure Virtual Machines.
 
-You need to recommend a high-availability solution that will maintain availability if a datacenter fails.
+Você precisa recomendar uma solução de alta disponibilidade que manterá a disponibilidade se um datacenter falhar.
 
-What should you include in the recommendation?
+O que você deve incluir na recomendação?
 
-**Options:**
-- **A.** availability sets
+**Alternativas:**
+- **A.** conjuntos de disponibilidade
 - **B.** availability zones
 - **C.** Azure Backup
 - **D.** Azure Site Recovery
 
-**✅ Answer:** B
+**✅ Resposta:** B
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should recommend availability zones, as they account for datacenter-level failure in Azure.
+Você deve recomendar o availability zones, pois eles são responsáveis por falhas no nível do datacenter no Azure.
 
-Availability sets provide uptime against Azure-related maintenance and single points of failure in a single datacenter, Azure Site Recovery replicates workloads running on physical and virtual machines from a primary site to a secondary location, and Azure Backup is used to provide independent and isolated backups to guard against the unintended destruction of the data on your virtual machines.
+Os conjuntos de disponibilidade fornecem tempo de atividade contra a manutenção relacionada ao Azure e pontos únicos de falha em um único datacenter, o Azure Site Recovery replica cargas de trabalho executadas em máquinas físicas e virtuais de um local primário para um local secundário e o Azure Backup é usado para fornecer backups independente e isolado para se proteger contra a destruição não intencional dos dados em suas máquinas virtuais.
 
-[Describe Azure high availability and disaster recovery features for Azure Virtual Machines - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/describe-high-availability-disaster-recovery-strategies/4-describe-azure-high-availability-disaster-recovery-features)
+[Descrever recursos de alta disponibilidade e recuperação de desastres do Azure para Azure Virtual Machines - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/describe-high-availability-disaster-recovery-strategies/4-describe-azure-high-availability-disaster-recovery-features)
 
 </details>
 
@@ -2075,28 +2075,28 @@ Availability sets provide uptime against Azure-related maintenance and single po
 
 ### Q67 ⚠️
 
-**Question:**
-You need to recommend a high availability and disaster recovery (HADR) solution for an Azure SQL managed instance named SQLMI1. The solution must meet the following requirements:
+**Questão:**
+Você precisa recomendar uma solução de alta disponibilidade e recuperação de desastres (HADR) para um Azure SQL managed instance chamado SQLMI1. A solução deve atender aos seguintes requisitos:
 
-**Options:**
-- **A.** Support automatic failover between Azure regions.
-- **B.** Keep the database synchronized across regions.
-- **C.** Support failback to the primary region.
-- **D.** Be scalable and cost-effective.
+**Alternativas:**
+- **A.** Suporte automatic failover entre regiões do Azure.
+- **B.** Mantenha a banco de dados sincronizada entre regiões.
+- **C.** Suporte failback para a região primária.
+- **D.** Seja escalável e rentável.
 
-What should you include in the recommendation?
+O que você deve incluir na recomendação?
 - **E.** active geo-replication
 - **F.** Always On availability groups
 - **G.** failover groups
 - **H.** transactional replication
 
-**✅ Answer:** G
+**✅ Resposta:** G
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Failover groups are the best choice because they are designed for Azure SQL Managed Instance, supporting synchronous replication within a region and asynchronous replication across paired regions, along with automatic failover and failback. Always On availability groups are only for on-premises or Azure VMs and require Windows Server Failover Clustering, which is not available for PaaS. Active geo-replication applies to Azure SQL Database, not managed instances, and lacks automatic failover. Transactional replication is intended for data distribution or reporting and does not provide full synchronization or automatic failover.  
+Failover groups são a melhor escolha, porque eles são projetados para Azure SQL Managed Instance, apoiando a replicação síncrona dentro de uma região e replicação assíncrona entre regiões pareadas, juntamente com automatic failover e failback. Always On availability groups são apenas para on-premises : Azure VMs e exigir Windows Server Failover Clustering, que não está disponível para PaaS. Active geo-replication aplica-se a Azure SQL Database, não gerenciadas instâncias, e falta automatic failover. Transactional replication destina-se a distribuição de dados ou relatórios e não fornece sincronização completa ou automatic failover.  
   
-[Explore auto-failover groups for Azure SQL Database and Azure SQL Managed Instance](https://learn.microsoft.com/en-us/training/modules/explore-iaas-paas-platform-tools-for-high-availability-disaster-recovery/6-explore-auto-failover-groups)
+[Explore auto-failover groups para Azure SQL Database e Azure SQL Managed Instance](https://learn.microsoft.com/en-us/training/modules/explore-iaas-paas-platform-tools-for-high-availability-disaster-recovery/6-explore-auto-failover-groups)
 
 </details>
 
@@ -2104,32 +2104,32 @@ Failover groups are the best choice because they are designed for Azure SQL Mana
 
 ### Q68
 
-**Question:**
-You have an availability group on a SQL Server on Azure Virtual Machines instance. 
+**Questão:**
+Você tem um availability group em uma instância SQL Server on Azure Virtual Machines. 
 
-You need to add an existing database to the availability group. 
+Você precisa adicionar um banco de dados existente para o availability group. 
 
-You perform a full backup of the database on the primary node of the availability group. 
+Você executa um full backup do banco de dados no nó primário do availability group. 
 
-Which restore command should you run on the secondary replica to ensure that you can join the database to the availability group?
+Qual comando de restauração você deve executar na réplica secundária para garantir que você possa se juntar ao banco de dados para o availability group?
 
-**Options:**
+**Alternativas:**
 - **A.** RESTORE WITH NORECOVERY
 - **B.** RESTORE WITH PARTIAL
 - **C.** RESTORE WITH RECOVERY
 - **D.** RESTORE WITH STANDBY
 
-**✅ Answer:** A
+**✅ Resposta:** A
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You need to restore the database by using the NORECOVERY option on the secondary replica before you can join the database to the availability group. 
+Você precisa restaurar o banco de dados usando a opção NORECOVERY na réplica secundária antes de poder juntar o banco de dados ao availability group. 
 
-Restoring the database by using the RECOVERY and STANDBY options does not allow it to join the availability group. Restoring the database by using PARTIAL is used if you need to perform a piecemeal restore.
+Restaurar o banco de dados usando as opções RECOVERY e STANDBY não permite que ele se junte ao availability group. Restaurar o banco usando o PARTIAL é usado se você precisar executar uma restauração fragmentada.
 
-[Prepare a secondary database for an availability group - SQL Server Always On - Training | Microsoft Learn](https://learn.microsoft.com/sql/database-engine/availability-groups/windows/manually-prepare-a-secondary-database-for-an-availability-group-sql-server?view=sql-server-ver16)
+[Preparar um banco de dados secundário para um availability group - SQL Server Always On - Training | Microsoft Learn](https://learn.microsoft.com/sql/database-engine/availability-groups/windows/manually-prepare-a-secondary-database-for-an-availability-group-sql-server?view=sql-server-ver16)
 
-[Back up and restore databases - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/backup-restore-databases/)
+[Fazer backup e restore de bancos de dados - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/backup-restore-databases/)
 
 </details>
 
@@ -2137,36 +2137,36 @@ Restoring the database by using the RECOVERY and STANDBY options does not allow 
 
 ### Q69
 
-**Question:**
-You have a SQL Server on Azure Virtual Machines instance. 
+**Questão:**
+Você tem uma instância SQL Server on Azure Virtual Machines. 
 
-During a weekly maintenance task, you discover that a database named db1 has consistency errors. 
+Durante uma tarefa de manutenção semanal, você descobre que um banco de dados chamado db1 tem erros de consistência. 
 
-You plan to restore the database from backups.
+Você planeja restaurar o banco de dados do backups.
 
-Which command should you run before you run the RESTORE command?
+Qual comando você deve executar antes de executar o comando RESTORE?
 
-**Options:**
+**Alternativas:**
 - **A.** ALTER DATABASE db1 SET EMERGENCY
 - **B.** ALTER DATABASE db1 SET OFFLINE
-- **C.** ALTER DATABASE db1 SET RESTRICTED\_USER
-- **D.** ALTER DATABASE db1 SET SINGLE\_USER
+- **C.** ALTER DATABASE db1 SET RESTRICTED \_ USUÁRIO
+- **D.** ALTER DATABASE db1 SET SINGLE \_ USUÁRIO
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should run the ALTER DATABASE db1 SET SINGLE\_USER command, as only one user at a time can access the database. If you specify SINGLE\_USER, and another user connects to the database, the ALTER DATABASE command is blocked until all users disconnect from the specified database. This is the command that should be run before the RESTORE command is run.
+Você deve executar o comando ALTER DATABASE db1 SET SINGLE \_ USER, pois apenas um usuário de cada vez pode acessar o banco de dados. Se você especificar SINGLE \_ USER e outro usuário se conectar ao banco de dados, o comando ALTER DATABASE será bloqueado até que todos os usuários se desconectem do banco de dados especificado. Este é o comando que deve ser executado antes do comando RESTORE.
 
-Running the ALTER DATABASE db1 SET EMERGENCY command would not work because the database is marked as READ\_ONLY, logging is disabled, and access is limited to members of the sysadmin fixed server role.
+A execução do comando ALTER DATABASE db1 SET EMERGENCY não funcionaria porque o banco de dados está marcado como READ \_ SOMENTE, o registro está desativado e o acesso é limitado aos membros da função de servidor fixo sysadmin.
 
-By running ALTER DATABASE db1 SET OFFLINE, the database will shut down, and you cannot perform the restore operation. You cannot modify a database while it is offline.
+Ao executar ALTER DATABASE db1 SET OFFLINE, o banco de dados será desligado e você não pode executar a operação de restauração. Você não pode modificar um banco de dados enquanto ele estiver offline.
 
-Running the ALTER DATABASE db1 SET RESTRICTED\_USER command allows for only members of the db\_owner fixed database role dbcreator, and fixed server roles to connect to the database.
+A execução do comando ALTER DATABASE db1 SET RESTRICTED \_ USER permite que apenas os membros do db \_ proprietário fixo banco de dados papel dbcreator, e fixo servidor funções para se conectar ao banco de dados.
 
-[ALTER DATABASE SET Options (Transact-SQL) - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/t-sql/statements/alter-database-transact-sql-set-options?view=sql-server-ver16)
+[ALTER DATABASE SET Opções (Transact-SQL) - SQL Server - Training | Microsoft Learn](https://learn.microsoft.com/sql/t-sql/statements/alter-database-transact-sql-set-options?view=sql-server-ver16)
 
-[Back up and restore databases - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/backup-restore-databases/)
+[Fazer backup e restore de bancos de dados - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/backup-restore-databases/)
 
 </details>
 
@@ -2174,29 +2174,29 @@ Running the ALTER DATABASE db1 SET RESTRICTED\_USER command allows for only memb
 
 ### Q70
 
-**Question:**
-You have an Azure SQL Database named db1. 
+**Questão:**
+Você tem um Azure SQL Database chamado db1. 
 
-You need to configure a backup strategy to ensure that the db1 has backups retained for six years.
+Você precisa configurar uma estratégia backup para garantir que o db1 tenha o backups retido por seis anos.
 
-What should you configure?
+O que você deve configurar?
 
-**Options:**
-- **A.** differential backup frequency
+**Alternativas:**
+- **A.** frequência differential backup
 - **B.** long-term retention
-- **C.** point-in-time-restore
+- **C.** point-in-time-restaurar
 
-**✅ Answer:** B
+**✅ Resposta:** B
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-A long-term retention policy allows you to specify how many weeks, months, and years a backup should be kept. The maximum time is 10 years.
+A política long-term retention permite especificar quantas semanas, meses e anos um backup deve ser mantido. O tempo máximo é de 10 anos.
 
-A point-in-time-restore policy only allow you to keep backups for 35 days, and a differential backup frequency policy specifies how often you want differential backup to be taken.
+Uma política de restauração pontual só permite que você mantenha o backups por 35 dias, e uma política de frequência differential backup especifica com que frequência você deseja que o differential backup seja tomado.
 
-[Azure SQL Database: Manage long-term backup retention - Azure SQL Database - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/long-term-backup-retention-configure?view=azuresql&amp;tabs=portal)
+[Azure SQL Database: Gerenciar a longo prazo backup retenção - Azure SQL Database - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/long-term-backup-retention-configure?view=azuresql&amp;tabs=portal)
 
-[Back up and restore databases - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/backup-restore-databases/)
+[Fazer backup e restore de bancos de dados - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/backup-restore-databases/)
 
 </details>
 
@@ -2204,31 +2204,31 @@ A point-in-time-restore policy only allow you to keep backups for 35 days, and a
 
 ### Q71
 
-**Question:**
-You have a Microsoft SQL Server 2019 instance. 
+**Questão:**
+Você tem uma instância do Microsoft SQL Server 2019. 
 
-You are configuring a backup maintenance solution.
+Você está configurando uma solução de manutenção backup.
 
-You need to ensure that the databases can be restored to any point in time.
+Você precisa garantir que os bancos de dados possam ser restaurados a qualquer ponto no tempo.
 
-Which two types of backups should you include? Each correct answer presents part of the solution.
+Quais dois tipos de backups você deve incluir? Cada resposta correta apresenta parte da solução.
 
-**Options:**
+**Alternativas:**
 - **A.** backup copy-only
-- **B.** file
+- **B.** arquivo
 - **C.** filegroup
-- **D.** full database
-- **E.** transaction log
+- **D.** banco de dados completo
+- **E.** log de transação
 
-**✅ Answer:** D, E
+**✅ Resposta:** D, E
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-To configure a backup maintenance solution and ensure that the databases can be restored to any point in time, a full database backup and a transaction log backup are required.
+Para configurar uma solução de manutenção backup e garantir que Os bancos de dados possam ser restauradas a qualquer momento, é necessário um banco de dados completo backup e um transaction log backup.
 
-A copy-only backup is a SQL Server backup that is independent of the sequence of conventional SQL Server backups. A file backup contains all the data in one or more files, and a filegroup backup contains all the data in one or more filegroups.
+A copy-only backup é a SQL Server backup that is independent of the sequence of conventional SQL Server backups. Um arquivo backup contém todos os dados em um ou mais arquivos, e um grupo de arquivos backup contém todos os dados em um ou mais grupos de arquivos.
 
-[Back up and restore SQL Server running on Azure virtual machines - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/backup-restore-databases/2-backup-restore-sql-server-running-azure-virtual-machines)
+[Voltar para cima e restaurar SQL Server correr em Azure virtual machines - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/backup-restore-databases/2-backup-restore-sql-server-running-azure-virtual-machines)
 
 </details>
 
@@ -2236,28 +2236,28 @@ A copy-only backup is a SQL Server backup that is independent of the sequence of
 
 ### Q72
 
-**Question:**
-You have an Azure SQL Managed Instance that hosts five databases.
+**Questão:**
+Você tem um Azure SQL Managed Instance que hospeda cinco bancos de dados.
 
-You need to configure disaster recovery for the databases in the event of a regional outage. The solution must not create additional read-only replicas or manual failover configurations.
+Você precisa configurar a recuperação de desastres para os bancos de dados em caso de uma interrupção regional. A solução não deve criar configurações adicionais read-only replicas ou manual failover.
 
-What can you use?
+O que você pode usar?
 
-**Options:**
+**Alternativas:**
 - **A.** active geo-replication
 - **B.** Always On availability groups
 - **C.** auto-failover groups
-- **D.** long-term backup retention
+- **D.** retenção de longo prazo backup
 
-**✅ Answer:** C
+**✅ Resposta:** C
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-The auto-failover groups feature allows you to manage the replication and failover of some or all databases on a logical server to another region, which allows you to configure high availability in the event of a regional outage.
+O recurso auto-failover groups permite gerenciar a replicação e failover de alguns ou todos os bancos de dados em um servidor lógico para outra região, o que permite configurar alta disponibilidade no caso de uma interrupção regional.
 
-Active geo-replication creates a secondary database replica in another region, but it is asynchronously kept up-to-date for Azure SQL Database. The Always On availability groups feature is a high-availability and disaster recovery (HA/DR) solution, but it is not for Azure SQL Database. Long-term backup retention stores database backups in Azure Blob storage.
+Active geo-replication cria uma réplica de banco de dados secundário em outra região, mas é assincronicamente mantido atualizado para Azure SQL Database. O recurso Always On availability groups é uma solução de alta disponibilidade e recuperação de desastres (HA/DR), mas não é para Azure SQL Database. A longo prazo backup banco de dados de lojas de retenção backups em Azure Blob storage.
 
-[Explore auto-failover groups for Azure SQL Database and Azure SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/explore-iaas-paas-platform-tools-for-high-availability-disaster-recovery/6-explore-auto-failover-groups)
+[Explorar auto-failover groups E Azure SQL Database e Azure SQL Managed Instance - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/explore-iaas-paas-platform-tools-for-high-availability-disaster-recovery/6-explore-auto-failover-groups)
 
 </details>
 
@@ -2265,31 +2265,31 @@ Active geo-replication creates a secondary database replica in another region, b
 
 ### Q73
 
-**Question:**
-You have an Azure subscription that contains four virtual machines. All the virtual machines have Microsoft SQL Server 2019 installed.
+**Questão:**
+Você tem uma assinatura do Azure que contém quatro máquinas virtuais. Todas as máquinas virtuais têm o Microsoft SQL Server 2019 instalado.
 
-A distributed availability group named DG1 has a replica on each virtual machine.
+A distributed availability group chamada DG1 tem uma réplica em cada máquina virtual.
 
-You need to enable monitoring for DG1. The solution must help diagnose performance issues.
+Você precisa habilitar o monitoramento para DG1. A solução deve ajudar a diagnosticar problemas de desempenho.
 
-What should you use?
+O que você deve usar?
 
-**Options:**
+**Alternativas:**
 - **A.** Extended Events
 - **B.** Query Performance Insight
 - **C.** SQL Database Advisor
 
-**✅ Answer:** A
+**✅ Resposta:** A
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Extended Events is a comprehensive solution for monitoring any product in the Azure SQL family.
+Extended Events é uma solução abrangente para monitorar qualquer produto da família Azure SQL.
 
-Query Performance Insight provides intelligent query analysis for single and pooled databases but cannot provide information about a distributed availability group.
+Query Performance Insight fornece análise de consulta inteligente para bancos de dados individuais e agrupados, mas não pode fornecer informações sobre um distributed availability group.
 
-SQL Database Advisor provides performance recommendations but cannot provide information about a distributed availability group.
+SQL Database Advisor fornece recomendações de desempenho, mas não pode fornecer informações sobre um distributed availability group.
 
-[Monitoring and performance tuning - Azure SQL Database - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/monitor-tune-overview?view=azuresql)
+[Monitoramento e ajuste de desempenho - Azure SQL Database - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/monitor-tune-overview?view=azuresql)
 
 </details>
 
@@ -2297,30 +2297,30 @@ SQL Database Advisor provides performance recommendations but cannot provide inf
 
 ### Q74
 
-**Question:**
-You have an Azure subscription that contains five virtual machines. The virtual machines host a Microsoft SQL Server 2019 Always On availability group named AG1.
+**Questão:**
+Você tem uma assinatura do Azure que contém cinco máquinas virtuais. As máquinas virtuais hospedam um Microsoft SQL Server 2019 Always On availability group chamado AG1.
 
-You need to enable monitoring for AG1. The solution must ensure that you can monitor the health of AG1 and diagnose performance issues.
+Você precisa habilitar o monitoramento para AG1. A solução deve garantir que você possa monitorar a saúde do AG1 e diagnosticar problemas de desempenho.
 
-What should you use?
+O que você deve usar?
 
-**Options:**
+**Alternativas:**
 - **A.** Intelligent Insights
 - **B.** Query Performance Insight
 - **C.** SQL Database Advisor
 - **D.** Extended Events
 
-**✅ Answer:** D
+**✅ Resposta:** D
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Extended events allows you to monitor the health of AG1 and diagnose any performance issues.
+Extended events permite monitorar a saúde do AG1 e diagnosticar quaisquer problemas de desempenho.
 
-Query Performance Insight provides intelligent query analysis for single and pooled databases, SQL Database Advisor provides performance recommendations, and Intelligent Insights uses built-in intelligence to continuously monitor database usage through artificial intelligence (AI) and detect disruptive events that cause poor performance.
+Query Performance Insight fornece análise de consulta inteligente para bancos de dados individuais e agrupados, SQL Database Advisor fornece recomendações de desempenho e Intelligent Insights usa inteligência embutida para monitorar continuamente o uso de banco de dados através da inteligência artificial (AI) e detectar eventos disruptivos que causam mau desempenho.
 
-[Azure SQL Database and Azure SQL Managed Instance monitoring and tuning documentation - Azure SQL - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/monitoring-tuning-index?view=azuresql&amp;viewFallbackFrom=auresql)
+[Azure SQL Database e Azure SQL Managed Instance documentação de monitoramento e afinação - Azure SQL - Training | Microsoft Learn](https://learn.microsoft.com/azure/azure-sql/database/monitoring-tuning-index?view=azuresql&amp;viewFallbackFrom=auresql)
 
-[Explore IaaS and PaaS solutions for high availability and disaster recovery - Training | Microsoft Learn](https://learn.microsoft.com/training/modules/explore-iaas-paas-platform-tools-for-high-availability-disaster-recovery/)
+[Explorar soluções IaaS e PaaS para alta disponibilidade e recuperação de desastres - Treinamento | Microsoft Learn](https://learn.microsoft.com/training/modules/explore-iaas-paas-platform-tools-for-high-availability-disaster-recovery/)
 
 </details>
 
@@ -2328,26 +2328,26 @@ Query Performance Insight provides intelligent query analysis for single and poo
 
 ### Q75
 
-**Question:**
-You have an Azure SQL Database that uses the General Purpose service tier.
+**Questão:**
+Você tem um Azure SQL Database que usa o nível de serviço General Purpose.
 
-You need to ensure that there are at least two readable copies of the database, and the database is available if a datacenter becomes unavailable.
+Você precisa garantir que haja pelo menos duas cópias legíveis do banco de dados e o banco de dados esteja disponível se um datacenter ficar indisponível.
 
-What should you include in the recommendation?
+O que você deve incluir na recomendação?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** active geo-replication
+**✅ Resposta:** active geo-replication
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Active geo-replication is a feature that lets you create a continuously synchronized, readable secondary database for a primary database. The readable secondary database can be in the same Azure region as the primary database, or, more commonly, in a different region.
+O Active geo-replication é um recurso que permite criar uma banco de dados secundária continuamente sincronizada e legível para uma banco de dados primária. A banco de dados secundária legível pode estar na mesma região do Azure que a banco de dados primária, ou, mais comumente, numa região diferente.
 
-The failover groups allow you to manage the replication and failover of some or all databases on a logical server to another region, but do not allow you to create multiple Azure SQL Database geo-secondary replicas. Automated backups do not let you have two readable copies of the database available, and elastic pools are used for managing and scaling multiple databases that have varying and unpredictable usage demands. The databases in an elastic pool are on a single server and share a set number of resources.
+O failover groups permite que você gerencie a replicação e o failover de alguns ou todos os bancos de dados em um servidor lógico para outra região, mas não permite que você crie várias réplicas geo-secundárias Azure SQL Database. O backups automatizado não permite que você tenha duas cópias legíveis do banco de dados disponíveis e o elastic pools é usado para gerenciar e dimensionar vários bancos de dados que têm demandas de uso variáveis e imprevisíveis. Os bancos de dados em um elastic pool estão em um único servidor e um único número compartilhado.
 
 Active geo-replication - Azure SQL Database - Training | Microsoft Learn
 
-Explore IaaS and PaaS solutions for high availability and disaster recovery - Training | Microsoft Learn
+Explorar soluções IaaS e PaaS para alta disponibilidade e recuperação de desastres - Treinamento | Microsoft Learn
 
 </details>
 
@@ -2355,26 +2355,26 @@ Explore IaaS and PaaS solutions for high availability and disaster recovery - Tr
 
 ### Q76
 
-**Question:**
-You have an on-premises Microsoft SQL Server 2019 server that hosts 10 databases that is up to date with patching. You are required to replicate all of the databases to the cloud.
+**Questão:**
+Você tem um servidor on-premises Microsoft SQL Server 2019 que hospeda 10 bancos de dados atualizados com patches. É necessário replicar todos os bancos de dados para a nuvem.
 
-Which two options could you recommend? Each correct answer presents a complete solution.
+Quais duas opções você poderia recomendar? Cada resposta correta apresenta uma solução completa.
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** a SQL Server on Azure Virtual Machines instance; An Azure SQL Managed Instance link
+**✅ Resposta:** instância SQL Server on Azure Virtual Machines; Um link Azure SQL Managed Instance
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-A SQL Server on Azure Virtual Machines is required for hybrid high-availability and disaster recovery (HA/DR).
+O SQL Server on Azure Virtual Machines é necessário para a alta disponibilidade híbrida e recuperação de desastres (HA/DR).
 
-Azure SQL Managed Instance link enables near real-time data replication between SQL Server and Azure SQL Managed Instance.
+O link Azure SQL Managed Instance permite a replicação de dados quase em tempo real entre SQL Server e Azure SQL Managed Instance.
 
-Azure SQL Database, and an Azure SQL Database elastic pool are not the correct options, as they cannot be used with Always On availability groups.
+Azure SQL Database e um Azure SQL Database elastic pool não são as opções corretas, pois não podem ser usadas com o Always On availability groups.
 
-High availability, disaster recovery, business continuity - SQL Server on Azure VMs - Training | Microsoft Learn
+Alta disponibilidade, recuperação de desastres, continuidade dos negócios - SQL Server on Azure VMs - Training | Microsoft Learn
 
-Plan and implement an high availability and disaster recovery environment - Training | Microsoft Learn
+Planejar e implementar um ambiente de alta disponibilidade e recuperação de desastres - Treinamento | Microsoft Learn
 
 </details>
 
@@ -2382,26 +2382,26 @@ Plan and implement an high availability and disaster recovery environment - Trai
 
 ### Q77
 
-**Question:**
-You have an Azure SQL Managed Instance that contains a database named db1. You have a valid backup of db1.
+**Questão:**
+Você tem um Azure SQL Managed Instance que contém um banco de dados chamado db1. Você tem um backup válido de db1.
 
-You need to restore db1 to the point in time of the backupdb1 over the existing database.
+Você precisa restaurar o db1 ao ponto no tempo do backupdb1 sobre o banco de dados existente.
 
-Which two actions should you perform? Each correct answer presents part of the solution.
+Quais ações você deve executar? Cada resposta correta apresenta parte da solução.
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** Drop db1.; Restore db1 from a URL.
+**✅ Resposta:** Drop db1.; Restaurar db1 de um URL.
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-You should drop the existing database first because the existing database cannot be overwritten on the SQL managed instance. You should also restore the database db1 from a URL.
+Você deve soltar o banco de dados existente primeiro porque o banco de dados existente não pode ser sobrescrito no SQL managed instance. Você também deve restaurar o banco de dados db1 de um URL.
 
-Setting db1 to single-user mode is not allowed on the SQL managed instance, and while the SQL managed instance allows you to perform a manual database restore from a URL, it does not allow you to restore the database from a tape or disk.
+A configuração db1 para o modo de usuário único não é permitida no SQL managed instance, e enquanto o SQL managed instance permite que você execute uma restauração manual do banco de dados a partir de um URL, ele não permite que você restaure o banco de dados de uma fita ou disco.
 
-Restore a database from a backup - Azure SQL Managed Instance - Training | Microsoft Learn
+Restaurar um banco de dados de a backup - Azure SQL Managed Instance - Training | Microsoft Learn
 
-Back up and restore databases - Training | Microsoft Learn
+Fazer backup e restore de bancos de dados - Treinamento | Microsoft Learn
 
 </details>
 
@@ -2409,26 +2409,26 @@ Back up and restore databases - Training | Microsoft Learn
 
 ### Q78 ⚠️
 
-**Question:**
-You have an Azure SQL logical server named SQL1 that hosts five databases.
+**Questão:**
+Você tem um servidor lógico Azure SQL chamado SQL1 que hospeda cinco bancos de dados.
 
-You need to ensure that you can restore the databases if SQL1 is deleted.
+Você precisa garantir que você pode restaurar Os bancos de dados se SQL1 é excluído.
 
-What should you include in the solution?
+O que você deve incluir na solução?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** long-term backup retention
+**✅ Resposta:** retenção de longo prazo backup
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-Using long-term retention will allow you to restore the databases if the server is deleted.
+O uso do long-term retention permitirá que você restaure os bancos de dados se o servidor for excluído.
 
-The remaining options do not allow for a restore of the databases if a server is deleted. Accelerated database recovery is a redesigning of the Microsoft SQL Server database engine recovery process, enabling fast and consistent database recovery. Azure SQL Database elastic pools are a solution for managing and scaling multiple databases. The Azure Backup service provides simple, secure, and cost-effective solutions to back up your data and recover it from the Microsoft Azure cloud.
+As opções restantes não permitem uma restauração das bancos de dados se um servidor for excluído. Accelerated database recovery é uma reformulação do processo de recuperação do motor de banco de dados Microsoft SQL Server, permitindo uma recuperação rápida e consistente da banco de dados. Azure SQL Database elastic pools são uma solução para gerir e dimensionar várias bancos de dados. O serviço Azure Backup fornece soluções simples, seguras e económicas para fazer backup dos seus dados e recuperá-los a partir da nuvem Microsoft Azure.
 
-Long-term backup retention - Azure SQL Database & Azure SQL Managed Instance - Training | Microsoft Learn
+A longo prazo backup retenção - Azure SQL Database & Azure SQL Managed Instance - Training | Microsoft Learn
 
-Back up and restore databases - Training | Microsoft Learn
+Fazer backup e restore de bancos de dados - Treinamento | Microsoft Learn
 
 </details>
 
@@ -2436,28 +2436,28 @@ Back up and restore databases - Training | Microsoft Learn
 
 ### Q79
 
-**Question:**
-You have an Always On availability group that contains three Microsoft SQL replicas.
+**Questão:**
+Você tem um Always On availability group que contém três réplicas do Microsoft SQL.
 
-You have a business process that runs on each replica. The process runs every hour and must be started only on the primary replica.
+Você tem um processo de negócios que é executado em cada réplica. O processo é executado a cada hora e deve ser iniciado apenas na réplica primária.
 
-Which view should you query to obtain the necessary information about the state of each replica?
+Qual ponto de vista você deve consultar para obter as informações necessárias sobre o estado de cada réplica?
 
-**Options:** not saved (only the answer was saved)
+**Alternativas:** Não salvo (apenas a resposta foi salva)
 
-**✅ Answer:** sys.dm_hadr_availability_replica_states
+**✅ Resposta:** sys.dm_hadr_availability_replica_states
 
-<details><summary>Why</summary>
+<details><summary>Explicação</summary>
 
-The sys.dm_hadr_availability_replica_states view returns a row for each local replica and a row for each remote replica in the same Always On availability group as a local replica. Each row contains information about the state of a given replica. The columns role and role_desc contain information about the description of the replica role.
+A vista sys.dm_hadr_availability_replica_states retorna uma linha para cada réplica local e uma linha para cada réplica remota no mesmo Always On availability group que uma réplica local. Cada linha contém informações sobre o estado de uma determinada réplica. O papel das colunas e o role_desc contêm informações sobre a descrição do papel da réplica.
 
-sys.availability_groups returns a row for each availability group for which the local instance of SQL Server hosts an availability replica. sys.dm_hadr_database_replica_cluster_states returns a row that contains information intended to provide you with insights into the health of the availability databases in the Always On availability groups in each Always On availability group on a Windows Server Failover Cluster (WSFC) cluster. sys.availabilty_replicas returns a row for each availability replica that belongs to any Always On availability group in the WSFC failover cluster.
+sys.availability_groups retorna uma linha para cada availability group para o qual a instância local de SQL Server Apresenta uma réplica de disponibilidade. sys.dm_hadr_database_replica_cluster_states retorna uma linha que contém informações destinadas a fornecer insights sobre a saúde dos bancos de dados de disponibilidade no Always On availability groups em cada Always On availability group a Windows Server Failover Cluster (WSFC) Cluster. sys.availabilty_replicas retorna uma linha para cada réplica de disponibilidade que pertence a qualquer Always On availability group na WSFC failover Cluster.
 
-Monitor availability groups using Transact-SQL (T-SQL) - SQL Server Always On - Training | Microsoft Learn
+Monitor availability groups utilizando Transact-SQL (T-SQL) - SQL Server Always On - Training | Microsoft Learn
 
 sys.dm_hadr_availability_replica_states (Transact-SQL) - SQL Server - Training | Microsoft Learn
 
-Explore IaaS and PaaS solutions for high availability and disaster recovery - Training | Microsoft Learn
+Explorar soluções IaaS e PaaS para alta disponibilidade e recuperação de desastres - Treinamento | Microsoft Learn
 
 </details>
 

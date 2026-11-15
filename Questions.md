@@ -1,29 +1,29 @@
-We need to design the **FactSales** table in **Azure Synapse Analytics dedicated SQL pool** with the following requirements:
+Precisamos projetar a tabela **FactSales** em um **dedicated SQL pool do Azure Synapse Analytics** com os seguintes requisitos:
 
-* Data will be retained for **five years**.
-* Each year, data older than five years must be deleted.
-* Data must be **distributed evenly across distributions**.
-* Must **minimize deletion time** → use **partitioning** by `OrderDateKey`.
-
----
-
-### Breakdown of choices:
-
-* **Distribution**:
-
-  * `ROUND_ROBIN` → spreads rows evenly across distributions (✅ balances load, avoids skew).
-  * `HASH` → requires a good distribution column (not specified as necessary here).
-  * `REPLICATE` → duplicates data on all distributions (bad for a large fact table).
-    → Best option: **ROUND\_ROBIN**.
-
-* **Partitioning**:
-
-  * Since we delete **by year**, the partition key should be `OrderDateKey`.
-  * This allows us to drop old partitions instead of deleting row by row.
+* Os dados serão retidos para **cinco anos**.
+* A cada ano, dados com mais de cinco anos devem ser excluídos.
+* Os dados devem ser **distribuídos uniformemente entre distribuições**.
+* Deve **minimizar o tempo de eliminação** → usar **particionamento** por `OrderDateKey`.
 
 ---
 
-### Final Answer:
+### Quebra de opções:
+
+* **Distribuição**:
+
+  * `ROUND_ROBIN` → se espalha linhas uniformemente através de distribuições (✅ equilibra a carga, evita desvios).
+  * `HASH` → requer uma boa coluna de distribuição (não especificada conforme necessário aqui).
+  * `REPLICATE` → duplica dados em todas as distribuições (ruim para uma grande tabela de fatos).
+    → Melhor opção: **ROUND \_ ROBIN**.
+
+* **Particionamento**:
+
+  * Como excluímos **por ano**, a chave de partição deve ser `OrderDateKey`.
+  * Isso nos permite deixar de lado partições antigas em vez de excluir linha a linha.
+
+---
+
+### Resposta final:
 
 ```sql
 WITH CLUSTERED COLUMNSTORE INDEX
@@ -32,612 +32,612 @@ PARTITION (OrderDateKey RANGE RIGHT FOR VALUES
 (20170101, 20180101, 20190101, 20200101, 20210101))
 ```
 
-👉 Correct selections:
+👉 Selecções correctas:
 
-* **ROUND\_ROBIN**
+* **ROUND \_ ROBIN**
 * **OrderDateKey**
 
-Let’s break it down:
+Vamos quebrá-lo:
 
-* The issue: **tempDB contention** identified by **Intelligent Insights** in an **Azure SQL Database**.
-* Goal: reduce **contention on tempDB**.
+* A questão: **tempDB contenção** identificado por **Intelligent Insights** em um **Azure SQL Database**.
+* Objetivo: reduzir **contenção sobre tempDB**.
 
 ---
 
-### Options analysis:
+### Análise das opções:
 
-**A. Implement memory-optimized tables** ✅
+**A. Implementar memory-optimized tables** ✅
 
-* Memory-optimized tables reduce or eliminate tempDB usage (since no need for tempDB for row versioning or intermediate storage).
-* This directly helps reduce tempDB contention.
-* Supported in Azure SQL Database.
+* Memory-optimized tables reduzir ou eliminar o uso de tempDB (uma vez que não há necessidade de tempDB para versionamento de linha ou armazenamento intermediário).
+* Isso ajuda diretamente a reduzir a contenção do TempDB.
+* Suportado em Azure SQL Database.
 
 **B. Run `DBCC FLUSHPROCINDB`** ❌
 
-* Clears cached execution plans for a database.
-* Doesn’t address tempDB contention at all.
+* Limpa planos de execução em cache para um banco de dados.
+* Não aborda a contenção do TempDB de forma alguma.
 
-**C. Replace sequential index keys with nonsequential keys** ❌
+**C. Substituir chaves de índice sequenciais por chaves não sequenciais** ❌
 
-* This helps reduce latch contention on **indexes** (hotspot issue with identity keys), not **tempDB contention**.
+* Isso ajuda a reduzir a contenção de trava no **índices** (problema hotspot com chaves de identidade), não no **tempDB contenção**.
 
 **D. Run `DBCC DBREINDEX`** ❌
 
-* Deprecated command to rebuild indexes (replaced by `ALTER INDEX`).
-* Has nothing to do with tempDB contention.
+* Comando depreciado para reconstruir índices (substituído por `ALTER INDEX`).
+* Não tem nada a ver com o TempDB.
 
 ---
 
-👉 Correct Answer:
-**A. Implement memory-optimized tables**
+👉 resposta correta:
+**A. Implementar memory-optimized tables**
 
 
-Let’s analyze the scenario:
+Vamos analisar o cenário:
 
-* **Requirement:** Count **new events** in **five-minute intervals**.
-* **Important detail:** Must **report only events that arrive during the interval** (no late arrivals, no retractions).
-* **Sink:** Delta Lake table.
-
----
-
-### Output modes in Structured Streaming:
-
-* **Complete** → rewrites the entire result table every trigger. Used for aggregations when you want the whole table. Not efficient here.
-* **Append** → only new rows (finalized results) are written to the sink. ✅
-* **Update** → only rows that changed since the last trigger are written (good for aggregations with late data).
+* **Requisito:** Contagem **novos eventos** em **intervalos de cinco minutos**.
+* **Detalhes importantes:** Deve **apenas relatar eventos que chegam durante o intervalo** (sem chegadas tardias, sem retrações).
+* Tabela **Sink:** Delta Lake.
 
 ---
 
-Since the requirement says:
+### Modos de saída em Streaming Estruturado:
 
-* “**report only events that arrive during the interval**” → meaning finalized counts per window, not updates.
-* That matches **Append mode**, because results are appended once the window closes.
+* **Completar** → reescreve toda a tabela de resultados todos os gatilhos. Usado para agregações quando você quer a tabela inteira. Não é eficiente aqui.
+* **Anexar** → apenas novas linhas (resultados finalizados) são gravadas na pia. ✅
+* **Atualização** → apenas linhas que mudaram desde o último gatilho são escritas (boas para agregações com dados tardios).
 
 ---
 
-👉 Correct Answer:
+Uma vez que o requisito diz:
+
+* “**apenas relatar eventos que chegam durante o intervalo**” → significa contagens finalizadas por janela, não atualizações.
+* Isso corresponde ao **Modo de anexo**, porque os resultados são anexados quando a janela fecha.
+
+---
+
+👉 resposta correta:
 **B. append**
 
-Let’s carefully check the requirements:
+Vamos verificar cuidadosamente os requisitos:
 
-* Databases are currently on **SQL Server 2019 (SQL1)**.
-* Must be able to **communicate with SQL2 (on-premises)** using **linked server connections**.
-* Must **minimize administrative effort**.
+* Os bancos de dados estão atualmente em **SQL Server 2019 (SQL1)**.
+* Deve ser capaz de **Comunicar-se com SQL2 (on-premises)** usando **conexões de servidor vinculadas**.
+* Deve **minimizar o esforço administrativo**.
 
 ---
 
-### Options:
+### Alternativas:
 
 **A. Azure SQL Database** ❌
 
-* PaaS service, but it does **not support linked servers**.
+* Serviço PaaS, mas faz **não suporta servidores vinculados**.
 
 **B. Azure SQL Database elastic pool** ❌
 
-* Same limitations as single Azure SQL DB. No linked servers.
+* As mesmas limitações que o único Azure SQL DB. Nenhum servidor vinculado.
 
-**C. SQL Server on Azure Virtual Machines** ✅ (supports linked servers, since it’s full SQL Server).
+**C. SQL Server on Azure Virtual Machines** ✅ (suporta servidores vinculados, uma vez que é completo SQL Server).
 
-* But → requires **high administrative effort** (patching, backups, HA, etc.).
+* Mas o → requer **esforço administrativo elevado** (patching, backups, HA, etc.).
 
 **D. Azure SQL Managed Instance** ✅
 
-* PaaS service with **near 100% SQL Server compatibility**.
-* **Supports linked servers** (to on-premises SQL, via private endpoint / VPN / ExpressRoute).
-* **Minimizes administrative effort** compared to running SQL on VMs.
+* Serviço PaaS com **perto de 100% SQL Server compatibilidade**.
+* **Suporta servidores vinculados** (a on-premises SQL, via private endpoint / VPN / ExpressRoute).
+* **Minimiza o esforço administrativo** comparado com a execução do SQL no VMs.
 
 ---
 
-👉 Correct Answer:
+👉 resposta correta:
 **D. Azure SQL Managed Instance**
 
 
-We are designing a **star schema** for analytics.
-The extract includes **dimensions (descriptive attributes)** and **facts (measurable values)**.
+Estamos projetando um **schema estrela** para análise.
+O extrato inclui **dimensões (atributos descritivos)** e **Factos (valores mensuráveis)**.
 
 ---
 
-### Given columns:
+### Colunas dadas:
 
-* **EventCategory** → e.g., "Videos" → **dimension**
-* **EventAction** → e.g., "Play" → **dimension**
-* **EventLabel** → e.g., "Contoso Promotional" → **dimension**
-* **ChannelGrouping** → e.g., "Social" → **dimension**
-* **TotalEvents** → numeric → **fact**
-* **SessionsWithEvent** → numeric → **fact**
-* **UsersWithEvent** → numeric → **fact**
-
----
-
-### Star schema mapping:
-
-1. **EventCategory** → goes to **DimEvent**
-   (It’s descriptive about the type of event.)
-
-2. **ChannelGrouping** → goes to **DimChannel**
-   (It describes the channel, so belongs to channel dimension.)
-
-3. **TotalEvents** → goes to **FactEvents**
-   (It’s a measure/metric, belongs in fact table.)
+* **EventCategory** → e.g., "Vídeos" → **dimensão**
+* **EventAction** → e.g., "Jogar" → **dimensão**
+* **EventLabel** → e.g., "Contoso Promocional" → **dimensão**
+* **ChannelGrouping** → e.g., "Social" → **dimensão**
+* **TotalEvents** → numeral → **facto**
+* **SessionsWithEvent** → numeral → **facto**
+* **UsersWithEvent** → numeral → **facto**
 
 ---
 
-### Final Answer:
+### Mapeamento do esquema estelar:
+
+1. **EventCategory** → vai para **DimEvent**
+   (É descritivo sobre o tipo de evento.)
+
+2. **ChannelGrouping** → vai para **DimChannel**
+   (Ele descreve o canal, então pertence à dimensão do canal.)
+
+3. **TotalEvents** → vai para **FactEvents**
+   (É uma medida / métrica, pertence de fato tabela.)
+
+---
+
+### Resposta final:
 
 * **EventCategory → DimEvent**
 * **ChannelGrouping → DimChannel**
 * **TotalEvents → FactEvents**
 
 
-Let’s analyze this step by step:
+Vamos analisar este passo a passo:
 
-* **Scenario:**
+* **Cenário:**
 
-  * Azure Synapse Analytics (DW1) with **automated data loads**.
-  * At the same time, **users run ad-hoc queries**.
-  * Requirement: **ensure automated loads have enough memory to finish quickly** despite concurrency.
-
----
-
-### Options:
-
-**A. Assign a smaller resource class to the automated data load queries** ❌
-
-* Smaller resource class = less memory → opposite of what’s needed.
-
-**B. Create sampled statistics to every column** ❌
-
-* Statistics improve query plans but do not guarantee memory availability for loads.
-
-**C. Assign a larger resource class to the automated data load queries** ✅
-
-* Resource classes in Synapse determine how much memory is allocated to a query.
-* Larger resource class = more memory → better for **data load performance**.
-
-**D. Hash distribute the large fact tables before performing the automated data loads** ❌
-
-* Hash distribution helps query performance and reduces data movement, but it does **not** solve the memory availability issue for the loading process.
+  * Azure Synapse Analytics (DW1) com **cargas automatizadas de dados**.
+  * Ao mesmo tempo, **usuários executar consultas ad-hoc**.
+  * Requisito: **garantir que as cargas automatizadas tenham memória suficiente para terminar rapidamente** apesar da concorrência.
 
 ---
 
-👉 Correct Answer:
-**C. Assign a larger resource class to the automated data load queries.**
+### Alternativas:
 
+**A. Atribuir uma classe de recurso menor às consultas automatizadas de carga de dados** ❌
 
-We need to encrypt **Azure Data Factory v2 (DF1)** using a **customer-managed key (CMK)** from **Azure Key Vault (vault1)**.
+* Smaller resource class = less memory → oposto ao que é necessário.
 
----
+**B. Criar estatísticas amostradas para cada coluna** ❌
 
-### Important facts:
+* Estatísticas melhoram os planos de consulta, mas não garantem a disponibilidade de memória para cargas.
 
-* To use **CMK encryption** with ADF, the **Key Vault** must have:
+**C. Atribuir uma classe de recurso maior às consultas automatizadas de carga de dados** ✅
 
-  * **Soft-delete enabled**
-  * **Purge protection enabled**
+* Classes de recursos em Synapse determinam quanta memória é alocada para uma consulta.
+* Larger resource class = more memory → melhor para **desempenho da carga de dados**.
 
-This is a **hard requirement** from Azure because ADF must be able to recover the key if accidentally deleted.
+**D. Distribua as grandes tabelas de fatos antes de executar as cargas de dados automatizadas** ❌
 
----
-
-### Options:
-
-**A. Disable purge protection on vault1** ❌
-
-* Wrong, purge protection must be **enabled**, not disabled.
-
-**B. Remove the linked service from df1** ❌
-
-* Not required before enabling CMK encryption.
-
-**C. Create a self-hosted integration runtime** ❌
-
-* Not related to encryption with CMK.
-
-**D. Disable soft delete on vault1** ❌
-
-* Wrong, **soft delete must be enabled**, not disabled.
+* A distribuição de hash ajuda a consultar o desempenho e reduz o movimento dos dados, mas o **E** resolve o problema de disponibilidade de memória para o processo de carregamento.
 
 ---
 
-👉 The correct first step is actually the **opposite** of A and D:
-You must **enable soft-delete and purge protection** on the Key Vault.
+👉 resposta correta:
+**C. Atribua uma classe de recursos maior às consultas automatizadas de carga de dados.**
 
-Since none of the listed answers say **enable**, and the trick options are about disabling them, the correct interpretation is:
 
-✅ **None of these disabling actions are correct. The required step is to ENABLE soft-delete and purge protection on vault1.**
+Precisamos criptografar o **Azure Data Factory v2 (DF1)** usando um **chave gerenciada pelo cliente (CMK)** do **Azure Key Vault (vault1)**.
+
+---
+
+### Factos importantes:
+
+* Para usar **encriptação CMK** com ADF, o **Key Vault** deve ter:
+
+  * **Soft-delete habilitado**
+  * **Proteção contra purgas ativada**
+
+Este é um **exigência dura** do Azure porque o ADF deve ser capaz de recuperar a chave se for apagado acidentalmente.
+
+---
+
+### Alternativas:
+
+**A. Desativar a proteção de purga em vault1** ❌
+
+* Errado, a proteção de purga deve ser **activado**, não desabilitada.
+
+**B. Remover o serviço vinculado do df1** ❌
+
+* Não é necessário antes de ativar a criptografia CMK.
+
+**C. Criar um tempo de execução de integração auto-hospedado** ❌
+
+* Não está relacionado com encriptação com CMK.
+
+**D. Desativar delete suave em vault1** ❌
+
+* Errado, **O soft delete deve ser ativado**, não desativado.
+
+---
+
+👉 O primeiro passo é, na verdade, o **oposta** de A e D:
+Você deve **permitir a proteção de soft-delete e purga** no Cofre Chave.
+
+Uma vez que nenhuma das respostas listadas diz **permitir**, e as opções de truque são sobre desativá-los, a interpretação correta é:
+
+✅ **Nenhuma dessas ações incapacitantes está correta. O passo necessário é para ENABLE soft-delete e expurgar a proteção em vault1.**
 
 ---
 
 
-We want an **alert on CPU usage** for **all Azure SQL databases** on the same server, including **future databases**.
+Queremos um **alerta sobre o uso de CPU** para **Azure SQL databases** no mesmo servidor, incluindo **bancos de dados futuros**.
 
 ---
 
-### Options:
+### Alternativas:
 
-**A. Resource Groups** ❌
+**A. Grupos de Recursos** ❌
 
-* Alerts at resource group scope don’t automatically track database-level metrics like CPU usage.
+* Alertas no escopo do grupo de recursos não rastreiam automaticamente métricas de nível de banco de dados, como o uso do CPU.
 
-**B. SQL Servers** ✅
+**B. Servidores SQL** ✅
 
-* If you set the alert on the **SQL Server resource**, it applies to all databases under that server, including **new ones created later**.
+* Se você definir o alerta no **Recurso SQL Server**, ele se aplica a todas Os bancos de dados sob esse servidor, incluindo **Novos criados mais tarde**.
 
-**C. SQL Databases** ❌
+**C. Bancos de Dados SQL** ❌
 
-* Works only per individual database. Would require configuring alerts one by one and wouldn’t auto-apply to new databases.
+* Funciona apenas por banco de dados individual. Exigiria configurar alertas um a um e não se aplicaria automaticamente a novos bancos de dados.
 
-**D. SQL Virtual Machines** ❌
+**D. Máquinas Virtuais SQL** ❌
 
-* Not relevant here — we’re using **Azure SQL Database PaaS**, not SQL Server on VMs.
-
----
-
-👉 Correct Answer:
-**B. SQL Servers**
-
-We need **voice notifications** when **maintenance events affect any of the 10 regions** where our **Azure SQL Managed Instances** run.
+* Não é relevante aqui – estamos usando **Azure SQL Database PaaS**, não SQL Server em VMs.
 
 ---
 
-### Options:
+👉 resposta correta:
+**B. Servidores SQL**
 
-**A. From the Azure portal, create a service health alert** ✅
-
-* Service health alerts notify you about **issues in Azure services or regions** (including planned maintenance).
-* Can deliver alerts via **email, SMS, or voice call**.
-* Configured **once per subscription/region**, so this minimizes administrative effort across all managed instances.
-
-**B. Create an Azure Advisor operational excellence alert** ❌
-
-* Advisor gives best-practice recommendations (cost, performance, security), not service health/maintenance events.
-
-**C. Configure a SQL Server Agent job in SSMS** ❌
-
-* Local to a single managed instance, doesn’t integrate with Azure-wide maintenance event notifications.
-
-**D. Configure an activity log alert** ❌
-
-* Activity log captures events **within your subscription resources** (e.g., resource modifications), not **service health events at the regional level**.
+Precisamos de **Notificações de voz** quando **eventos de manutenção afetam qualquer uma das 10 regiões** onde o nosso **Instâncias gerenciadas Azure SQL** correr.
 
 ---
 
-👉 Correct Answer:
-**A. From the Azure portal, create a service health alert**
+### Alternativas:
 
+**A. A partir do Azure portal, crie um alerta de saúde de serviço** ✅
 
-Let’s analyze this step by step:
+* Alertas de saúde do serviço notificá-lo sobre **problemas em serviços ou regiões do Azure** (incluindo manutenção planejada).
+* Pode entregar alertas via **e-mail, SMS ou chamada de voz**.
+* **uma vez por assinatura/região** configurado, de modo que isso minimiza o esforço administrativo em todas as instâncias gerenciadas.
 
-### Requirements:
+**B. Criar um alerta de excelência operacional Azure Advisor** ❌
 
-1. **Failovers that do not require client applications to change their connection strings**
-   → This rules out **geo-replication**, because geo-replication requires **manual connection string changes** during failover.
+* O consultor dá recomendações de melhores práticas (custo, desempenho, segurança), e não eventos de manutenção/saúde de serviço.
 
-2. **Replicate the database to a secondary Azure region**
-   → This means cross-region support is needed (not just Availability Zones, which are within the same region).
+**C. Configurar um SQL Server Agent job em SSMS** ❌
 
-3. **Support failover to the secondary region**
-   → Must support **automatic or manual failover across regions**.
+* Local para um único managed instance, não se integra com notificações de eventos de manutenção em todo o Azure.
+
+**D. Configurar um alerta de log de atividade** ❌
+
+* O log de atividades captura eventos **dentro de seus recursos de assinatura** (e.g., modificações de recursos), não **eventos de saúde do serviço em nível regional**.
 
 ---
 
-### Options:
+👉 resposta correta:
+**A. A partir do Azure portal, crie um alerta de saúde de serviço**
+
+
+Vamos analisar este passo a passo:
+
+### Requisitos:
+
+1. **Failovers que não exigem aplicativos de clientes para alterar suas cadeias de conexão**
+   → Isso exclui **geo-replication**, porque geo-replication requer **mudanças manuais connection string** durante failover.
+
+2. **Replicar o banco de dados para uma região secundária do Azure**
+   → Isso significa que o suporte entre regiões é necessário (não apenas Availability Zones, que estão dentro da mesma região).
+
+3. **Suporte failover para a região secundária**
+   → deve apoiar **automático ou manual failover em regiões**.
+
+---
+
+### Alternativas:
 
 * **A. Failover groups** ✅
 
-  * Provides **automatic failover** between **primary and secondary servers** across regions.
-  * Applications can connect using a **listener endpoint**, so no connection string changes are required.
-  * Meets all requirements.
+  * Fornece **automatic failover** entre **servidores primários e secundários** entre regiões.
+  * Os aplicativos podem se conectar usando um **ponto final listener**, portanto, não são necessárias alterações no connection string.
+  * Cumpre todos os requisitos.
 
 * **B. Transactional replication** ❌
 
-  * Mainly for replication, not high availability or transparent failover.
-  * Requires connection changes and doesn’t provide auto-failover.
+  * Principalmente para replicação, não alta disponibilidade ou failover transparente.
+  * Requer mudanças de conexão e não fornece auto-failover.
 
 * **C. Availability Zones** ❌
 
-  * Increases availability within the **same region**, not across regions.
-  * Does not meet the replication-to-secondary-region requirement.
+  * Aumenta a disponibilidade dentro do **mesma região**, não entre regiões.
+  * Não atende ao requisito de replicação para região secundária.
 
 * **D. Geo-replication** ❌
 
-  * Provides readable secondary, but **failover requires manual reconfiguration** of connection strings.
-  * Doesn’t meet the requirement.
+  * Fornece legível secundário, mas **failover requer reconfiguração manual** de cordas de conexão.
+  * Não atende ao requisito.
 
 ---
 
-✅ **Correct Answer: A. failover groups**
+✅ **Resposta correta: A. failover groups**
 
 
-Great question 👍 Let’s break it down.
+Grande pergunta 👍 Vamos dividi-lo.
 
-You want to see **the parameter values from the last time a query was executed** on **SQL Server running in an Azure VM**.
-
----
-
-### 🔎 Key SQL Server features involved:
-
-1. **Lightweight Query Profiling**
-
-   * Introduced to reduce overhead of query profiling.
-   * Enables capturing runtime execution stats (e.g., row counts, operator performance).
-   * Needed for getting **execution stats** in DMVs.
-
-2. **Last\_Query\_Plan\_Stats** (Database Scoped Configuration)
-
-   * Allows you to access the **last actual execution plan** for a query (not just the estimated plan).
-   * Includes **runtime parameter values** from the last execution.
-
-3. **PARAMETER\_SNIFFING**
-
-   * Controls whether SQL Server caches query plans based on the first set of parameters.
-   * Not related to retrieving parameter values from the last query.
+Você quer ver **os valores dos parâmetros da última vez que uma consulta foi executada** em **SQL Server correndo em uma Azure VM**.
 
 ---
 
-### ✅ Correct Answers:
+### Características 🔎 Key SQL Server envolvidas:
 
-* **B. Enable Lightweight\_Query\_Profiling in DB1**
-  (Needed to collect query profiling info with minimal overhead.)
+1. **Perfil de Consulta Leve**
 
-* **C. Enable Last\_Query\_Plan\_Stats in DB1**
-  (Lets you retrieve the last actual execution plan, including parameter values.)
+   * Introduzido para reduzir a sobrecarga de perfil de consulta.
+   * Permite capturar estatísticas de execução em tempo de execução (e.g., contagem de linhas, desempenho do operador).
+   * Necessário para obter **estatísticas de execução** em DMVs.
 
----
+2. **Last\_Query\_Plano\_Estatísticas** (Configuração da Banco de dados Escopo)
 
-### ❌ Incorrect options:
+   * Permite que você acesse o **última actual execution plan** para uma consulta (não apenas o plano estimado).
+   * Inclui **valores dos parâmetros de tempo de execução** da última execução.
 
-* **A & D (Enable in master)** → Wrong scope. These are **database scoped configurations**, not set at master.
-* **E (Enable PARAMETER\_SNIFFING)** → Controls plan caching, not parameter value retrieval.
+3. **PARAMETER \_ SNIFFING**
 
----
-
-✅ Final Answer:
-**B. Enable Lightweight\_Query\_Profiling in DB1**
-**C. Enable Last\_Query\_Plan\_Stats in DB1**
+   * Controla se o SQL Server armazena em cache planos de consulta com base no primeiro conjunto de parâmetros.
+   * Não relacionado à recuperação de valores de parâmetros da última consulta.
 
 ---
 
+### ✅ Respostas corretas:
 
-Alright, let’s carefully analyze this one ✅
+* **B. Habilite a definição de perfil leve \_ Query \_ em DB1**
+  (Necessário coletar informações de perfil de consulta com sobrecarga mínima.)
 
----
-
-### Requirements:
-
-1. **Support user-initiated backups**
-
-   * Needed for flexibility (restore when you want, not only automated retention).
-   * ✅ Available in **SQL Server on Azure VM** (IaaS) → you control SQL Server Agent jobs, backups to Blob Storage, etc.
-   * ❌ Azure SQL Database / Managed Instance → backups are automated by Azure (you can restore but not *initiate* backups directly).
-
-2. **Support multiple automatically replicated instances across Azure regions**
-
-   * Means geo-redundancy / high availability.
-
-3. **Minimize administrative effort**
-
-   * Rules out heavy management like Always On AG setup in SQL VMs.
+* **C. Ativar última consulta \_ Plano \_ Estatísticas \_ em DB1**
+  (Permite recuperar o último actual execution plan, incluindo valores de parâmetros.)
 
 ---
 
-### Deployment Option:
+### ❌ Opções incorretas:
+
+* **A & D (Ativar no mestre)** → Escopo errado. Estes são **configurações de escopo de banco de dados**, não definido como mestre.
+* **(Ativar PARAMETER \_ SNIFFING)** → Controles plano de cache, não recuperação de valor do parâmetro.
+
+---
+
+✅ Resposta Final:
+**B. Habilite a definição de perfil leve \_ Query \_ em DB1**
+**C. Ativar última consulta \_ Plano \_ Estatísticas \_ em DB1**
+
+---
+
+
+Muito bem, vamos analisar cuidadosamente este ✅
+
+---
+
+### Requisitos:
+
+1. **Suporte iniciado pelo usuário backups**
+
+   * Necessário para flexibilidade (restaurar quando quiser, não apenas retenção automatizada).
+   * ✅ Disponível em **SQL Server em Azure VM** (IaaS) → você controla SQL Server Agent jobs, backups a Blob Storage, etc.
+   * ❌ Azure SQL Database / Managed Instance → backups são automatizados pelo Azure (você pode restaurar, mas não *Iniciar* backups diretamente).
+
+2. **Suporte a múltiplas instâncias replicadas automaticamente em todas as regiões do Azure**
+
+   * Significa geo-redundância / alta disponibilidade.
+
+3. **Minimizar o esforço administrativo**
+
+   * Regras para fora de gestão pesada como Always On AG configuração em SQL VMs.
+
+---
+
+### Opção de Implantação:
 
 👉 **SQL Server on Azure Virtual Machines**
 
-* Because only in IaaS SQL VM can you run **user-initiated backups**.
-* PaaS (Azure SQL Database / Managed Instance) = automatic backups only, no user-initiated.
+* Porque somente em IaaS SQL VM você pode executar **Iniciado pelo usuário backups**.
+* PaaS (Azure SQL Database / Managed Instance) = automatic backups Apenas, não iniciado pelo usuário.
 
 ---
 
-### Resiliency Option:
+### Opção de resiliência:
 
 👉 **Auto-failover group**
 
-* Provides **automatic replication across regions** + automatic failover with **no connection string change**.
+* Fornece **replicação automática entre regiões** + automatic failover com **mudança connection string**.
 * Active geo-replication = database-level only (manual failover).
-* Zone-redundant deployment = only within the same region, not across regions.
+* Um zone-redundant deployment cobre zonas da mesma região, sem cruzar regiões.
 
 ---
 
-### ✅ Correct Answer:
+### ✅ resposta correta:
 
-* **Deployment option**: **SQL Server on Azure Virtual Machines**
-* **Resiliency option**: **Auto-failover group**
+* **Opção de implantação**: **SQL Server on Azure Virtual Machines**
+* **Opção de resiliência**: **Auto-failover group**
 
 
-Great, let’s break this one down carefully 👇
-
----
-
-### **NEW QUESTION 49 (Exam Topic 5)**
-
-You have an Azure SQL Database.
-You are reviewing a **slow performing query**. The screenshot shows a query plan with operators.
+Vamos analisar esta questão em detalhes 👇
 
 ---
 
-### **Step 1 – Identify what the exhibit shows**
+### **NEW QUESTION 49 (Tópico de Exame 5)**
 
-* In the query plan screenshot, the header indicates "Query cost relative to the batch: 100%".
-* The boxes show query execution operators with percentages.
-* This is a **visual execution plan** that SQL Server produces when you run queries.
-* Since it shows **estimated vs actual execution details** (with percentages), this is an **actual execution plan**.
-
-👉 **Answer:** **an actual execution plan**
+Você tem um Azure SQL Database.
+Está a rever um **consulta de execução lenta**. A imagem mostra um plano de consulta com os operadores.
 
 ---
 
-### **Step 2 – Identify the operator in the plan**
+### **Passo 1 – Identifique o que a exposição mostra**
 
-Looking at the exhibit:
+* Na captura de tela do plano de consulta, o cabeçalho indica "Query cost related to the batch: 100%".
+* As caixas mostram operadores de execução de consulta com porcentagens.
+* Este é um **plano de execução visual** que o SQL Server produz quando você executa consultas.
+* Uma vez que mostra **Estimativa vs detalhes reais de execução** (com percentagens), este é um **actual execution plan**.
 
-* The bottom operator is labeled **Clustered Index Scan**.
-* But the question asks for the **operator in the execution plan that indicates the query would benefit from tuning**.
-* The operator causing performance issues here is **Key Lookup (Clustered)** (since key lookups repeatedly access rows from a clustered index — expensive for performance).
-
-👉 **Answer:** **Key Lookup**
-
----
-
-### ✅ Final Answer:
-
-1. The exhibit shows → **an actual execution plan**
-2. The operator in the execution plan that indicates query would benefit from performance tuning → **Key Lookup**
+👉 **Resposta:** **actual execution plan**
 
 ---
 
-⚡ Tip: In SQL exams, whenever you see **Key Lookup** or **Index Scan** with high cost %, it usually means missing indexes → performance tuning required.
+### **Passo 2 – Identifique o operador no plano**
 
-Good question 👇
+Olhando para a exposição:
 
-We need anomaly detection for **streaming IoT hub data** with **minimum development effort**. Let’s evaluate:
+* O operador inferior é rotulado **Digitalização Clustered Index**.
+* Mas a pergunta pede o **operador no plano de execução que indica que a consulta se beneficiaria do ajuste**.
+* O operador que causa problemas de desempenho aqui é o **Key Lookup (Clustered)** (uma vez que as principais pesquisas acessam repetidamente linhas de um clustered index – caro para desempenho).
 
----
-
-### **Requirements**
-
-* **Send output to Azure Synapse** → must support Synapse sink integration.
-* **Identify spikes and dips in time series** → anomaly detection on real-time streaming data.
-* **Minimize development/configuration effort** → prefer serverless, built-in features over heavy coding.
+👉 **Resposta:** **Key Lookup**
 
 ---
 
-### **Option Analysis**
+### ✅ Resposta Final:
+
+1. A exposição mostra → **actual execution plan**
+2. O operador no plano de execução que indica que a consulta se beneficiaria do ajuste de desempenho → **Key Lookup**
+
+---
+
+Dica ⚡ Dica: Nos exames SQL, sempre que você vê **Key Lookup** ou **Index Scan** com alto custo %, geralmente significa perder índices → de ajuste de desempenho necessário.
+
+Boa pergunta 👇
+
+Precisamos de detecção de anomalias para **streaming de dados do hub IoT** com **esforço mínimo de desenvolvimento**. Vamos avaliar:
+
+---
+
+### **Requisitos**
+
+* **Enviar saída para Azure Synapse** → deve apoiar a integração da pia Synapse.
+* Detecção de anomalias **Identificar picos e mergulhos em séries temporais** → em dados de streaming em tempo real.
+* **Minimizar o esforço de desenvolvimento/configuração** → preferem serverless, características embutidas sobre codificação pesada.
+
+---
+
+### **Análise de Opção**
 
 **A. Azure SQL Database**
 
-* Not suitable for anomaly detection on streaming data.
-* It’s more for storage, not real-time analytics.
+* Não é adequado para detecção de anomalias em dados de streaming.
+* É mais para armazenamento, não análise em tempo real.
   ❌
 
 **B. Azure Databricks**
 
-* Powerful for machine learning and advanced analytics.
-* But requires **custom ML models**, coding, and more configuration.
-* Does not minimize effort.
+* Poderoso para aprendizado de máquina e análise avançada.
+* Mas requer **modelos personalizados ML**, codificação e mais configuração.
+* Não minimiza o esforço.
   ❌
 
 **C. Azure Stream Analytics**
 
-* Has **built-in anomaly detection functions** (e.g., `AnomalyDetection_SpikeAndDip`).
-* Natively integrates with **Azure IoT Hub (input)** and **Azure Synapse Analytics (output sink)**.
-* **Serverless, minimal setup**, exactly fits requirements.
+* Tem **Funções de detecção de anomalias incorporadas** (e.g., `AnomalyDetection_SpikeAndDip`).
+* Nativamente integra-se com **Hub de IoT do Azure (entrada)** e **Azure Synapse Analytics (pia de saída)**.
+* **Serverless, configuração mínima**, exatamente se encaixa requisitos.
   ✅
 
 ---
 
-### ✅ Correct Answer:
+### ✅ resposta correta:
 
 **C. Azure Stream Analytics**
 
 ---
 
-Great one 👇 This is about ensuring your **Azure Stream Analytics job has enough Streaming Units (SUs)** provisioned.
+Great one 👇 Trata-se de garantir a sua **O Azure Stream Analytics job tem unidades de streaming suficientes (SUs)** provisioned.
 
 ---
 
-### **Key Metric: SU % Utilization**
+### **Métrica chave: SU % Utilização**
 
-* This shows how much of your allocated Streaming Unit capacity is being used.
-* If it's close to 100%, you may need to scale up.
+* Isso mostra quanto da sua capacidade de unidade de streaming alocada está sendo usada.
+* Se estiver perto de 100%, talvez seja necessário aumentar a escala.
 
-But monitoring SU utilization alone is not enough. You need to check if the job is keeping up with the input data stream.
+Mas monitorar a utilização do SU por si só não é suficiente. Você precisa verificar se o job está acompanhando o fluxo de dados de entrada.
 
 ---
 
-### **Options Analysis**
+### **Análise de Opções**
 
-**A. Late Input Events**
+**A. Eventos de entrada tardia**
 
-* These occur when events arrive later than the configured *late arrival tolerance*.
-* They’re about data quality, not SU capacity.
+* Estes ocorrem quando os eventos chegam mais tarde do que o *Tolerância de chegada tardia* configurado.
+* Eles são sobre qualidade de dados, não capacidade SU.
   ❌
 
-**B. Out of order Events**
+**B. Fora de ordem Eventos**
 
-* These are events that arrive out of sequence.
-* Also about event ordering, not about whether SUs are sufficient.
+* Estes são eventos que chegam fora de sequência.
+* Também sobre a ordenação de eventos, não sobre se o SUs é suficiente.
   ❌
 
-**C. Backlogged Input Events**
+**C. Eventos de Entrada Backlogged**
 
-* Very important.
-* Shows how many input events the job has received but not yet processed.
-* If backlog grows → SUs are insufficient.
+* Muito importante.
+* Mostra quantos eventos de entrada o job recebeu, mas ainda não foi processado.
+* Se o backlog crescer → SUs são insuficientes.
   ✅
 
-**D. Watermark Delay**
+**D. Marca d'Água Atraso**
 
-* Indicates how far the system is behind in processing events, measured in time.
-* If watermark delay is increasing → job is under-provisioned.
+* Indica até que ponto o sistema está atrasado no processamento de eventos, medidos no tempo.
+* Se o atraso da marca d'água estiver aumentando, → job está abaixo de provisioned.
   ✅
 
-**E. Function Events**
+**E. Função Eventos**
 
-* Refers to events sent to Azure Functions (custom processing).
-* Not relevant to SU sizing.
+* Refere-se a eventos enviados para Azure Functions (processamento personalizado).
+* Não é relevante para o dimensionamento SU.
   ❌
 
 ---
 
-### ✅ Correct Answers:
+### ✅ Respostas corretas:
 
-**C. Backlogged Input Events**
-**D. Watermark Delay**
+**C. Eventos de Entrada Backlogged**
+**D. Marca d'Água Atraso**
 
 ---
 
 
-### **Question Recap**
+### **Pergunta Recap**
 
 * DB: **Azure SQL database (db1)**
-* Monitoring tool: **Query Performance Insight (QPI)** → relies on **Query Store**.
-* Requirement: **Performance monitoring data must be available as soon as possible**.
-* Task: Choose **configuration setting** and **value**.
+* Ferramenta de monitoramento: **Query Performance Insight (QPI)** → depende de **Query Store**.
+* Requisito: **Os dados de monitoramento de desempenho devem estar disponíveis o mais rápido possível**.
+* Tarefa: Escolha **configuração de configuração** e **Valor**.
 
 ---
 
-### **Understanding Query Store Configurations**
+### **Entendendo configurações Query Store**
 
-1. **DATA\_FLUSH\_INTERVAL\_SECONDS**
+1. **DATA \_ FLUSH \_ INTERVAL \_ SECONDS**
 
-   * Controls how often collected data is written (“flushed”) from memory to disk.
+   * Controla a frequência com que os dados coletados são gravados (“flushed”) da memória para o disco.
    * **Default = 900s (15 min)**.
-   * Lowering this value (e.g., 60s or 1s) makes data available faster in QPI.
+   * Reduzir este valor (e.g., 60s ou 1s) torna os dados disponíveis mais rapidamente em QPI.
 
-2. **INTERVAL\_LENGTH\_MINUTES**
+2. **INTERVAL \_ LENGTH \_ MINUTOS**
 
-   * Defines time granularity of data aggregation (default = 60 min).
-   * Smaller intervals (e.g., 1 min) improve granularity but don’t directly affect how soon data is available.
+   * Define a granularidade temporal da agregação de dados (padrão = 60 min).
+   * Intervalos menores (e.g., 1 min) melhoram a granularidade, mas não afetam diretamente o quão cedo os dados estão disponíveis.
 
-3. **MAX\_PLANS\_PER\_QUERY**
+3. **MAX \_ PLANS \_ POR \_ QUERY**
 
-   * Controls how many execution plans are stored → irrelevant for timeliness.
+   * Controla quantos planos de execução são armazenados → irrelevantes para pontualidade.
 
-4. **QUERY\_CAPTURE\_MODE**
+4. **QUERY \_ CAPTURA \_ MODO**
 
-   * Controls which queries are captured (ALL, AUTO, CUSTOM).
-   * Impacts **what is captured**, not **when it is available**.
-
----
-
-### **Correct Answer**
-
-To make **performance monitoring data available ASAP**, you must:
-
-* Configure **DATA\_FLUSH\_INTERVAL\_SECONDS**
-* Set to **1 (second)**
+   * Controles quais consultas são capturadas (ALL, AUTO, CUSTOM).
+   * Impactos **O que é capturado**, não **quando disponível**.
 
 ---
 
-✅ **Final Answer:**
-**Configuration setting:** `DATA_FLUSH_INTERVAL_SECONDS`
-**Value:** `1`
+### **Resposta correta**
+
+Para fazer **dados de monitoramento de desempenho disponíveis ASAP**, você deve:
+
+* Configurar **DATA \_ FLUSH \_ INTERVAL \_ SECONDS**
+* Set para **1 (segundo)**
 
 ---
 
-### Command structure:
+✅ **Resposta final:**
+**Configuração Configuração:** `DATA_FLUSH_INTERVAL_SECONDS`
+**Valor:** `1`
+
+---
+
+### Estrutura de comando:
 
 ```sql
 RESTORE DATABASE MyDB1
@@ -648,14 +648,14 @@ GO
 
 ---
 
-### Options:
+### Alternativas:
 
 1. **NORECOVERY**
 
-   * Leaves the database **non-operational**.
-   * Used when you plan to apply **additional transaction log backups**.
-   * Keeps the database in a "restoring" state.
-   * Example:
+   * Deixa o banco de dados **não-operacional**.
+   * Usado quando você planeja aplicar **transaction log backups adicional**.
+   * Mantém o banco de dados em um estado de "restauração".
+   * Exemplo:
 
      ```sql
      RESTORE DATABASE MyDB1 
@@ -665,9 +665,9 @@ GO
 
 2. **RECOVERY**
 
-   * Makes the database **operational** immediately after the restore.
-   * You cannot restore more backups after this.
-   * Example:
+   * Faz o banco de dados **operacional** imediatamente após a restauração.
+   * Você não pode restaurar mais backups depois disso.
+   * Exemplo:
 
      ```sql
      RESTORE DATABASE MyDB1 
@@ -677,9 +677,9 @@ GO
 
 3. **STANDBY**
 
-   * Makes the database **read-only** after restore.
-   * Useful for log shipping (secondary database is readable while waiting for the next log restore).
-   * Example:
+   * Faz o banco de dados **read-only** após a restauração.
+   * Useful for log shipping (o banco de dados secundário é legível enquanto espera pela próxima restauração do log).
+   * Exemplo:
 
      ```sql
      RESTORE DATABASE MyDB1 
@@ -689,515 +689,515 @@ GO
 
 ---
 
-✅ **In short:**
+✅ **Em suma:**
 
-* Use **NORECOVERY** if more restores are coming (like log backups).
-* Use **RECOVERY** if this is the final restore and you want the DB online.
-* Use **STANDBY** if you want a read-only copy (common in log shipping).
+* Use **NORECOVERY** se mais restaurações estiverem chegando (como log backups).
+* Use **RECOVERY** se esta for a restauração final e você quiser o DB online.
+* Use **STANDBY** se você quiser uma cópia read-only (comum em log shipping).
 
 
-### Key point in the question:
+### Ponto-chave na pergunta:
 
-* Customers need to be able to **create database objects**.
-* The solution must meet **business goals** → usually means **isolation** between customers, avoiding conflicts.
-
----
-
-### Roles:
-
-* **`ddl_admin`**: Allows a user to run **Data Definition Language (DDL)** commands such as `CREATE`, `ALTER`, `DROP`.
-* **`db_writer`**: Only allows `INSERT`, `UPDATE`, `DELETE` data → **cannot create schema objects**.
+* Os clientes precisam ser capazes de **criar objetos de banco de dados**.
+* A solução deve atender **objetivos de negócios** → geralmente significa **isolamento** entre os clientes, evitando conflitos.
 
 ---
 
-### Options:
+### Funções:
 
-**A. Grant `ddl_admin` on existing schema**
-
-* Problem: All customers share the same schema → conflicts, no isolation. ❌
-
-**B. Create additional schema per customer and grant `ddl_admin`**
-
-* ✅ Best option.
-* Each customer gets their own schema, and `ddl_admin` on that schema allows them to create their own tables, procedures, etc.
-* Prevents conflicts, aligns with multi-tenant isolation.
-
-**C. Create additional schema and grant `db_writer`**
-
-* ❌ `db_writer` only allows DML, not schema changes.
-
-**D. Grant `db_writer` on existing schema**
-
-* ❌ Same as above, plus shared schema (bad for isolation).
+* **`ddl_admin`**: Permite que um usuário execute comandos **Linguagem de Definição de Dados (DDL)**, como `CREATE`, `ALTER`, `DROP`.
+* **`db_writer`**: Permite somente `INSERT`, `UPDATE`, dados `DELETE` → **não pode criar objetos de esquema**.
 
 ---
 
-✅ **Correct Answer: B. For each customer, create an additional schema and grant the customer ddl\_admin to the new schema.**
+### Alternativas:
+
+**A. `ddl_admin` no esquema existente**
+
+* Problema: Todos os clientes compartilham o mesmo esquema → conflitos, sem isolamento. ❌
+
+**B. Criar esquema adicional por cliente e conceder `ddl_admin`**
+
+* ✅ Melhor opção.
+* Cada cliente recebe seu próprio esquema, e o `ddl_admin` nesse esquema permite que eles criem suas próprias tabelas, procedimentos, etc.
+* Previne conflitos, alinha-se com o isolamento multilocatário.
+
+**C. Criar esquema adicional e conceder `db_writer`**
+
+* ❌ `db_writer` só permite DML, não mudanças de esquema.
+
+**D. `db_writer` no esquema existente**
+
+* ❌ O mesmo que acima, além de esquema compartilhado (ruim para isolamento).
 
 ---
 
-### Scenario:
-
-* You need to implement **security** for **ResearchDB1**.
-* Requirement → must meet **security and compliance**.
-* Clearly, this is about **Always Encrypted** with **Azure Key Vault** integration.
+✅ **Resposta correta: B. Para cada cliente, crie um esquema adicional e conceda ao cliente ddl \_ admin o novo esquema.**
 
 ---
 
-### Steps (in correct sequence):
+### Cenário:
 
-1. **Create an Azure AD managed identity**
-
-   * Needed so ResearchApp1 can authenticate securely without storing credentials.
-
-2. **Create an Azure Key Vault instance and configure an access policy**
-
-   * Key Vault stores encryption keys.
-   * Access policy ensures the managed identity has permission to use the keys.
-
-3. **Run the Always Encrypted wizard**
-
-   * This wizard configures column encryption and points to the Key Vault for key management.
+* Você precisa implementar **segurança** para **ResearchDB1**.
+* Requisito → deve atender **segurança e conformidade**.
+* Claramente, isso é sobre **Always Encrypted** com integração **Azure Key Vault**.
 
 ---
 
-### Answer:
+### Passos (na sequência correta):
 
-✅ Correct sequence is:
+1. **Criar um Azure AD managed identity**
 
-1. **Create an Azure AD managed identity**
-2. **Create an Azure Key Vault instance and configure an access policy**
-3. **Run the Always Encrypted wizard**
+   * Necessário para que ResearchApp1 possa autenticar com segurança sem armazenar credenciais.
 
----
+2. **Criar uma instância Azure Key Vault e configurar uma política de acesso**
 
-⚡Pro tip:
-The option **“Create an Azure Key Vault instance and generate a secret”** is a distractor. For Always Encrypted, you store **keys**, not secrets.
+   * Key Vault armazena chaves de criptografia.
+   * A política de acesso garante que o managed identity tenha permissão para usar as chaves.
 
----
+3. **Execute o assistente Always Encrypted**
 
-
-Good question 👌 Let’s analyze it.
+   * Este assistente configura a criptografia de coluna e aponta para o Key Vault para gerenciamento de chaves.
 
 ---
 
-### Scenario:
+### Resposta:
 
-* You have **an Azure SQL Database server** (`sqlsrv1`) with 10 databases.
-* Performance is slower than expected.
-* You specifically want to check **if the issue is related to `tempdb`**.
+✅ Sequência correta é:
 
----
-
-### Options:
-
-**A. Run Query Store-based queries**
-
-* Query Store helps with **query performance** over time (execution plans, regressions).
-* Not about `tempdb`. ❌
-
-**B. Review information provided by SQL Server Profiler-based traces**
-
-* SQL Profiler is not supported for Azure SQL Database. ❌
-
-**C. Review information provided by Query Performance Insight**
-
-* Gives insights into **top consuming queries** (DTU, CPU, IO, memory).
-* Doesn’t specifically help diagnose `tempdb` usage. ❌
-
-**D. Run dynamic management view (DMV)-based queries**
-
-* DMVs in Azure SQL Database can show resource usage, waits, and specifically **tempdb contention** (e.g., `sys.dm_db_resource_stats`, `sys.dm_exec_requests`, `sys.dm_db_session_space_usage`).
-* This is the correct way to check `tempdb` bottlenecks. ✅
+1. **Criar um Azure AD managed identity**
+2. **Criar uma instância Azure Key Vault e configurar uma política de acesso**
+3. **Execute o assistente Always Encrypted**
 
 ---
 
-### ✅ Correct Answer:
-
-**D. Run dynamic management view-based queries**
-
----
-
-Great question 👍 Let’s break it down clearly:
+Dica ⚡ Pro:
+A opção **Crie uma instância Azure Key Vault e gere um segredo** é uma distração. Para Always Encrypted, você armazena **chaves**, não segredos.
 
 ---
 
-### **Why “Simple layout (striping)” is the correct choice here**
 
-* You have **two P30 disks**, each provides **5,000 IOPS**.
-* Requirement: **10,000 IOPS**.
-* The **simple layout** (striping) combines both disks’ throughput and IOPS, giving you **aggregate performance** (5,000 + 5,000 = 10,000 IOPS).
-* This meets the requirement.
+Boa pergunta 👌 Vamos analisá-la.
 
 ---
 
-### **Other layouts and when they are used**
+### Cenário:
 
-1. **Mirror layout**
-
-   * Writes are duplicated across disks.
-   * You don’t get combined IOPS; instead, you get **redundancy**.
-   * Example: If you had two disks with 5,000 IOPS each, effective IOPS remains 5,000.
-   * Use case: **High availability and redundancy** (at the cost of performance/space).
-
-2. **Parity layout**
-
-   * Data + parity bits are striped across disks.
-   * Provides fault tolerance with better capacity than mirror, but **slower writes**.
-   * Use case: **Archival or workloads that need balance between capacity and resiliency**.
-   * (Not shown in your options, but good to know.)
-
-3. **Simple layout (striping)**
-
-   * Data is striped across disks, **no redundancy**.
-   * All disks contribute to performance (IOPS + throughput).
-   * Use case: **High-performance workloads where redundancy is not critical** (e.g., tempdb, non-critical analytical workloads, or when redundancy is provided elsewhere).
-
-4. **Storage Pool**
-
-   * Logical grouping of multiple physical disks.
-   * Foundation step before creating virtual disks with layouts.
-   * Use case: Always the **first step** when using Storage Spaces in Windows/Azure VM.
+* Você tem **e Azure SQL Database servidor** (`sqlsrv1`) com 10 bancos de dados.
+* O desempenho é mais lento do que o esperado.
+* Você quer especificamente verificar **Se o problema estiver relacionado ao `tempdb`**.
 
 ---
 
-✅ In your scenario:
+### Alternativas:
 
-* Performance (10,000 IOPS) is the **primary requirement**.
-* Redundancy is **not mentioned**.
-* So → **Storage Pool → Simple Layout → Volume** is correct.
+**A. Executar consultas baseadas em Query Store**
+
+* Query Store ajuda com **desempenho da consulta** ao longo do tempo (planos de execução, regressões).
+* Não sobre `tempdb`. ❌
+
+**B. Informação de revisão fornecida por SQL Server Profiler-based traces**
+
+* O SQL Profiler não é compatível com Azure SQL Database. ❌
+
+**C. Informação da revisão fornecida por Query Performance Insight**
+
+* Dá insights sobre **consultas de consumo superior** (DTU, CPU, IO, memória).
+* Não ajuda especificamente a diagnosticar o uso do `tempdb`. ❌
+
+**D. Executar consultas baseadas na visão de gestão dinâmica (DMV)**
+
+* DMVs em Azure SQL Database pode mostrar o uso de recursos, esperas e especificamente **tempdb contenção** (e.g., `sys.dm_db_resource_stats`, `sys.dm_exec_requests`, `sys.dm_db_session_space_usage`).
+* Esta é a maneira correta de verificar os gargalos `tempdb`. ✅
+
+---
+
+### ✅ resposta correta:
+
+**D. Executar consultas baseadas em visualização de gerenciamento dinâmico**
+
+---
+
+Grande pergunta 👍 Vamos dividi-lo claramente:
+
+---
+
+### **Por que “Layout simples (strip)” é a escolha correta aqui**
+
+* Você tem **dois discos P30**, cada um fornece **5,000 IOPS**.
+* Requisito: **10,000 IOPS**.
+* O **layout simples** (strip) combina a taxa de transferência de ambos os discos e IOPS, dando-lhe **Desempenho agregado** (5,000 + 5,000 = 10,000 IOPS).
+* Isso atende ao requisito.
+
+---
+
+### **Outros layouts e quando são usados**
+
+1. **Layout do espelho**
+
+   * As gravações são duplicadas entre discos.
+   * Você não se combina IOPS; em vez disso, você obtém **redundância**.
+   * Exemplo: Se você tivesse dois discos com 5,000 IOPS cada, o IOPS efetivo permanece 5,000.
+   * Caso de uso: **Alta disponibilidade e redundância** (à custa do desempenho/espaço).
+
+2. **layout paridade**
+
+   * Dados + bits de paridade são listrados em todos os discos.
+   * Fornece tolerância a falhas com melhor capacidade do que o espelho, mas **Escreve mais lento**.
+   * Caso de uso: **Arquivamento ou cargas de trabalho que precisam de equilíbrio entre capacidade e resiliência**.
+   * (Não mostrado em suas opções, mas é bom saber.)
+
+3. **Layout simples (striping)**
+
+   * Os dados são listrados através dos discos, **sem redundância**.
+   * Todos os discos contribuem para o desempenho (IOPS + taxa de transferência).
+   * Caso de uso: **Cargas de trabalho de alto desempenho onde a redundância não é crítica** (e.g., tempdb, cargas de trabalho analíticas não críticas, ou quando a redundância é fornecida em outro lugar).
+
+4. **Piscina de armazenamento**
+
+   * Agrupamento lógico de múltiplos discos físicos.
+   * Fundação passo antes de criar discos virtuais com layouts.
+   * Caso de uso: Sempre o **primeiro passo** ao usar espaços de armazenamento no Windows / Azure VM.
+
+---
+
+✅ No seu cenário:
+
+* Desempenho (10,000 IOPS) é o **requisito primário**.
+* A redundância é **não mencionado**.
+* O → **Piscina de armazenamento → Layout simples → Volume** está correto.
 
 ---
 
 
 Correct ✅
 
-The answer is: **B. Decrease by half the value of Data Flush Interval**
+A resposta é: **B. Diminuição pela metade do valor do intervalo de fluxo de dados**
 
-### Explanation:
+### Explicação:
 
-* Query Store collects query performance data in memory first, then periodically flushes it to disk (the database).
-* If the **Data Flush Interval** is too long, Query Store can accumulate too much data in memory. If SQL Server runs out of space for Query Store, it can transition into **read-only mode** to prevent further growth.
-* By **decreasing the Data Flush Interval**, data is written to disk more frequently, reducing memory pressure and minimizing the risk of Query Store becoming read-only.
+* O Query Store coleta dados de desempenho da consulta na memória primeiro, depois periodicamente os libera no disco (o banco de dados).
+* Se o **Dados Flush Intervalo** for muito longo, o Query Store pode acumular muitos dados na memória. Se o SQL Server ficar sem espaço para o Query Store, ele pode fazer a transição para o **modo read-only** para evitar mais crescimento.
+* Por **Diminuição do intervalo de fluxo de dados**, os dados são gravados no disco com mais frequência, reduzindo a pressão da memória e minimizando o risco de Query Store se tornar read-only.
 
-Other options:
+Outras opções:
 
-* **A. Double Data Flush Interval** → Increases risk (keeps more data in memory).
-* **C & D. Statistics Collection Interval** → Controls how often runtime statistics are aggregated, not related to Query Store read-only transitions.
+* **A. Intervalo Duplo Dados Flush** → Aumenta o risco (mantém mais dados na memória).
+* **C & D. Estatísticas Coleção Intervalo** → Controla com que frequência as estatísticas de tempo de execução são agregadas, não relacionadas às transições Query Store read-only.
 
-👉 So the best solution is **B**.
+👉 Então a melhor solução é **B**.
 
-Perfect ✅ let’s break this down step by step using the policy in the screenshot.
+Perfeito ✅ vamos quebrar este passo a passo usando a política na captura de tela.
 
-### **Retention Policy in Screenshot**
+### **Política de Retenção em Screenshot**
 
-* **Weekly LTR Backups** → Retained for **6 weeks**.
-* **Monthly LTR Backups** → Retained for **12 months** (the **Week 2 backup** of each month).
-* **Yearly LTR Backups** → Retained for **10 years** (the **Week 2 backup of January** each year).
-
----
-
-### **Example: January 2020**
-
-1. **Jan 4, 2020** → Week 1 of Jan
-
-   * Stored as **weekly backup**.
-   * Retained **6 weeks** only.
-   * ❌ Not monthly, because policy says Week 2.
-
-2. **Jan 11, 2020** → Week 2 of Jan
-
-   * Stored as **weekly backup** → retained **6 weeks**.
-   * ✅ Promoted to **monthly backup** → retained **12 months**.
-   * ✅ Also promoted to **yearly backup** (since it’s the Week 2 backup of January) → retained **10 years**.
+* **Semana LTR Backups** → Retido para **6 semanas**.
+* **Mensal LTR Backups** → Retido para **12 meses** (o **Semana 2 backup** de cada mês).
+* **Anual LTR Backups** → Retido para **10 anos** (o **Semana 2 backup de Janeiro** a cada ano).
 
 ---
 
-### **February 2020**
+### **Exemplo: Janeiro 2020***
 
-* **Feb 1, 2020** → Week 1 → weekly only → 6 weeks.
-* **Feb 8, 2020** → Week 2 → weekly + promoted to monthly → retained **12 months**.
+1. **Jan 4, 2020** → Semana 1 de Jan
 
-(no yearly in February, only January provides yearly).
+   * Armazenado como **semanal backup**.
+   * Retido apenas **6 semanas**.
+   * ❌ Não mensalmente, porque a política diz Semana 2.
+
+2. **Jan 11, 2020** → Semana 2 de janeiro
+
+   * Armazenado como **semanal backup** → retido **6 semanas**.
+   * ✅ Promovido a **mensal backup** → retido **12 meses**.
+   * ✅ Também promovido a **anual backup** (já que é a Semana 2 backup de janeiro) → reteve **10 anos**.
 
 ---
 
-### **Summary**
+### **fevereiro 2020**
 
-* **Weekly backups**: Every week, kept **6 weeks**.
-* **Monthly backups**: The **Week 2 backup** of each month, kept **12 months**.
-* **Yearly backups**: The **Week 2 backup of January**, kept **10 years**.
+* **Feb 1, 2020** → Semana 1 → semanalmente apenas → 6 semanas.
+* **Feb 8, 2020** → Semana 2 → semanalmente + promovido a mensal → retido **12 meses**.
+
+(sem anual em fevereiro, apenas janeiro fornece anualmente).
 
 ---
 
-👉 So the reason **Jan 4, 2020** is **not** a monthly backup is simply because the **monthly rule is configured for Week 2**, not Week 1.
+### **Resumo**
+
+* **Semana backups**: Toda semana, mantido **6 semanas**.
+* **Mensal backups**: O **Semana 2 backup** de cada mês, mantido **12 meses**.
+* **Anual backups**: O **Semana 2 backup de Janeiro**, mantido **10 anos**.
+
+---
+
+👉 Assim, a razão **Jan 4, 2020** é **E** por mês backup é simplesmente porque o **A regra mensal é configurada para a semana 2**, não a Semana 1.
 
 
-You got it 👍
+Você tem isso 👍
 
-For **triggering an Azure Data Factory pipeline when a file arrives in Azure Data Lake Storage Gen2**, the correct service is **Event Grid**.
+Para **Acionando um pipeline Azure Data Factory quando um arquivo chega ao Azure Data Lake Storage Gen2**, o serviço correto é **Event Grid**.
 
-* **Microsoft.EventHub** → Used for streaming large volumes of events (real-time ingestion).
-* **Microsoft.Sql** → SQL resource provider (not relevant to file triggers).
-* **Microsoft.Automation** → Used for automation runbooks, not event-driven triggers.
-* ✅ **Microsoft.EventGrid** → Correct. Event Grid integrates with **ADLS Gen2** and can raise an event when a new file is created, which can then trigger the **ADF pipeline**.
+* **Microsoft.EventHub** → Usado para transmitir grandes volumes de eventos (ingestão em tempo real).
+* **Microsoft.Sql** → SQL fornecedor de recursos (não relevante para gatilhos de arquivo).
+* **Microsoft.Automation** → Usado para automação runbooks, não gatilhos orientados a eventos.
+* ✅ **Microsoft.EventGrid** → Correcto. Event Grid integra-se com **ADLS Gen2** e pode levantar um evento quando um novo arquivo é criado, o que pode desencadear a **gasoduto ADF**.
 
-**Final Answer: B. Microsoft.EventGrid** ✔️
+**Resposta final: B. Microsoft.EventGrid** ✔️
 
 Great question — this comes up a lot in Synapse design ✅
 
-You’re creating a **dimension table** in a **dedicated SQL pool** and need a **surrogate key** with **fast query performance**.
+Você está criando um **tabela de dimensão** em um **dedicated SQL pool** e precisa de um **chave de substituição** com **desempenho rápido da consulta**.
 
-Let’s analyze:
+Vamos analisar:
 
-* **A. an IDENTITY column**
+* **A. coluna IDENTITY**
 
-  * Common in OLTP systems (SQL Server).
-  * But in Synapse dedicated SQL pool, `IDENTITY` values are generated per distribution, which can lead to **duplicate values across distributions** unless carefully managed. Not the best for scalability or performance in MPP (Massively Parallel Processing).
+  * Comum em sistemas OLTP (SQL Server).
+  * Mas na dedicated SQL pool à Synapse, os valores `IDENTITY` são gerados por distribuição, o que pode levar ao **valores duplicados entre distribuições**, a menos que seja cuidadosamente gerenciado. Não é o melhor para escalabilidade ou desempenho no MPP (Processamento Massivo Paralelo).
 
-* **B. a GUID column**
+* **B. coluna GUID**
 
-  * Globally unique, but **large (16 bytes)** and not sequential.
-  * Leads to fragmentation and **slower query performance**. Bad choice for surrogate keys in Synapse.
+  * Globalmente único, mas **grandes (16 bytes)** e não sequencial.
+  * Leva à fragmentação e **desempenho de consulta mais lento**. Má escolha para chaves de substituição em Synapse.
 
-* **C. a sequence object**
+* **C. um objeto de sequência**
 
-  * ✅ Recommended in Synapse.
-  * Centralized and generates unique values across distributions.
-  * Provides **scalable, fast, and sequential surrogate keys** — avoids the pitfalls of `IDENTITY`.
+  * ✅ Recomendado em Synapse.
+  * Centralizado e gera valores únicos entre distribuições.
+  * Prover **Chaves de substituição escaláveis, rápidas e sequenciais** Evita as armadilhas de `IDENTITY`.
 
-📌 **Correct Answer: C. a sequence object**
+📌 **Resposta correta: C. um objeto de sequência**
 
-Great question 👍 Let’s break down why the **other options** are not correct for this specific requirement and when you *would* use them:
-
----
-
-### **Option A. Attach two mirrored 4-TB SSDs (RAID-1 / Mirroring)**
-
-* **Why not here?**
-
-  * Mirroring cuts usable capacity in half (4 TB usable from 8 TB raw).
-  * IOPS does **not scale** much compared to striping.
-  * Goal here is **maximum IOPS**, not redundancy.
-* **When to use:**
-
-  * If your main requirement is **high availability** or **redundancy**, e.g., protecting against a single disk failure.
-  * Not ideal for Azure Premium SSDs since Azure already provides redundancy at the infrastructure level.
+Great question 👍 Vamos explicar por que o **outras opções** não estão corretos para este requisito específico e quando você *Iria* usá-los:
 
 ---
 
-### **Option C. Attach a RAID-5 array with five 1-TB SSDs**
+### **Opção A. Anexar dois espelhos 4- TB SSDs (RAID-1 / espelhamento)**
 
-* **Why not here?**
+* **Por que não aqui?**
 
-  * RAID-5 has **write penalties** (parity calculation) → not good for SQL Server workloads with high write activity.
-  * More complex setup and slower performance compared to striping (RAID-0).
-* **When to use:**
+  * O espelhamento corta a capacidade utilizável pela metade (4 TB utilizável a partir de 8 TB cru).
+  * IOPS faz **não escala** muito em comparação com o striping.
+  * O objetivo aqui é **máximo IOPS**, não redundância.
+* **Quando usar:**
 
-  * Suitable when you want a **balance between capacity and redundancy** and workloads are **read-heavy** (but rarely used for SQL Server on Azure due to performance trade-offs).
-
----
-
-### **Option D. Attach a single 4-TB SSD**
-
-* **Why not here?**
-
-  * A single disk’s IOPS and throughput are capped by Azure limits for that disk size.
-  * Even the largest Premium SSD can’t reach the IOPS you get by **striping multiple smaller SSDs**.
-* **When to use:**
-
-  * If your requirement is **simplicity** (easy to manage, one disk).
-  * If workload IOPS needs fit within the single-disk cap.
+  * Se o seu principal requisito é **alta disponibilidade** ou **redundância**, e.g., protegendo contra uma única falha no disco.
+  * Não é ideal para o Azure Premium SSDs, uma vez que o Azure já fornece redundância no nível da infraestrutura.
 
 ---
 
-### ✅ **Correct Choice: Option B. Stripe set with four 1-TB SSDs (RAID-0 / Storage Spaces)**
+### **Opção C. Anexar uma matriz RAID-5 com cinco 1- TB SSDs**
 
-* Premium SSDs in Azure **scale IOPS linearly when striped**.
-* Striping provides the **highest throughput and IOPS**.
-* Perfect when the requirement is **performance** over redundancy.
+* **Por que não aqui?**
 
----
+  * RAID-5 tem **escrever penalidades** (cálculo de paridade) → não é bom para cargas de trabalho SQL Server com alta atividade de gravação.
+  * Configuração mais complexa e desempenho mais lento em comparação com o striping (RAID-0).
+* **Quando usar:**
 
-⚖️ **Summary:**
-
-* Use **Striping (RAID-0)** → for maximum IOPS/throughput.
-* Use **Mirroring (RAID-1)** → for redundancy/high availability.
-* Use **RAID-5** → for capacity efficiency + some fault tolerance (but rarely in SQL Server Azure due to poor write performance).
-* Use **Single large SSD** → for simplicity when IOPS needs are moderate.
+  * Apropriado quando você quer um **equilíbrio entre capacidade e redundância** e cargas de trabalho são **lido-pesado** (mas raramente usado para SQL Server no Azure devido a trade-offs de desempenho).
 
 ---
 
-Great question 👍 Let’s break down when each option (distribution + index) can be used:
+### **Opção D. Anexar um único 4- TB SSD**
+
+* **Por que não aqui?**
+
+  * O IOPS e a taxa de transferência de um único disco são limitados pelos limites do Azure para esse tamanho de disco.
+  * Mesmo o maior Premium SSD não pode chegar ao IOPS que você recebe por **striping múltiplo menor SSDs**.
+* **Quando usar:**
+
+  * Se sua exigência é **simplicidade** (fácil de gerenciar, um disco).
+  * Se a carga de trabalho IOPS precisar se encaixar dentro do limite de disco único.
 
 ---
 
-### **Distribution types**
+### ✅ **Escolha correta: Opção B. Stripe conjunto com quatro 1- TB SSDs (RAID-0 / Espaços de armazenamento)**
+
+* Premium SSDs em Azure **escala IOPS linearmente quando listrado**.
+* O stripping fornece o **maior rendimento e IOPS**.
+* Quando o requisito é **desempenho** sobre redundância.
+
+---
+
+⚖️ **Resumo:**
+
+* Use **Striping (RAID-0)** → para máximo IOPS /throughput.
+* Use **Espelho (RAID-1)** → para redundância / alta disponibilidade.
+* Use **RAID-5** → para eficiência de capacidade + alguma tolerância a falhas (mas raramente no SQL Server Azure devido ao desempenho de escrita ruim).
+* Use **Grande SSD** → para simplificar quando as necessidades do IOPS são moderadas.
+
+---
+
+Great question 👍 Vamos detalhar quando cada opção (distribuição + índice) pode ser usada:
+
+---
+
+### **Tipos de distribuição**
 
 1. **Hash**
-   ✅ Best for: **Fact tables** (large tables, high number of rows).
+   ✅ Melhor para: **Tabelas Fact** (tabelas grandes, número alto de linhas).
 
-   * Use when you can choose a **high-cardinality column** as the distribution key (like CustomerID, OrderID).
-   * Optimizes joins and aggregations.
+   * Use quando você pode escolher um **coluna de alta cardinalidade** como chave de distribuição (como CustomerID, OrderID).
+   * Otimiza associações e agregações.
 
-2. **Round robin**
-   ✅ Best for: **Staging tables** or when no good distribution key exists.
+2. **robin redondo**
+   ✅ Melhor para: **Tabelas de estágio** ou quando não existe uma boa chave de distribuição.
 
-   * Data is evenly distributed, but not based on a column → can lead to more data movement during joins.
-   * Example: Landing raw data before transformations.
+   * Os dados são distribuídos uniformemente, mas não com base em uma coluna → pode levar a mais movimento de dados durante as junções.
+   * Exemplo: Aterrar dados brutos antes das transformações.
 
-3. **Replicated**
-   ✅ Best for: **Small dimension tables** (usually < 2 GB compressed).
+3. **Replicado**
+   ✅ Melhor para: **Tabelas de pequena dimensão** (usually < 2 GB comprimida).
 
-   * A full copy of the table is stored on every compute node.
-   * Eliminates data movement in joins between fact and dimension tables.
-   * Example: Date dimension, Country lookup.
+   * Uma cópia completa da tabela é armazenada em todos os nós de computação.
+   * Elimina o movimento de dados em associações entre tabelas de fato e dimensão.
+   * Exemplo: Dimensão da data, país lookup.
 
 ---
 
-### **Index types**
+### **Tipos de índice**
 
 1. **Clustered columnstore index (CCI)**
-   ✅ Best for: **Fact tables in analytics/OLAP**.
+   ✅ Melhor para: **Tabelas de fatos em análise/ OLAP**.
 
-   * Provides high compression + very fast scans for aggregates.
-   * Default for large fact tables in Synapse.
+   * Fornece alta compressão + varreduras muito rápidas para agregados.
+   * Default for large fact tables in Rio de Janeiro.
 
 2. **Clustered index**
-   ✅ Best for: **Small tables or OLTP-like workloads**.
+   ✅ Melhor para: **Tabelas pequenas ou cargas de trabalho semelhantes a OLTP**.
 
-   * If you need fast point lookups (e.g., get 1 record by key).
-   * Sometimes used on small dimension tables instead of CCI (to avoid compression overhead).
+   * Se você precisar de pesquisas de pontos rápidos (e.g., obter 1 registro por chave).
+   * Sometimes used on small dimension tables instead of CCI (para evitar sobrecarga de compressão).
 
 3. **Nonclustered index**
-   ✅ Best for: **Improving specific query patterns**.
+   ✅ Melhor para: **Melhorar padrões de consulta específicos**.
 
-   * Example: When you need to optimize filtering on a few columns.
-   * Usually applied on top of CCI for targeted queries (but use sparingly to avoid load overhead).
-
----
-
-✅ **Summary rule of thumb:**
-
-* **Fact tables (big, >1M rows):** Hash + CCI.
-* **Small dimension tables (<2GB):** Replicated + Clustered or CCI.
-* **Staging tables:** Round robin + Clustered index.
-* **Special queries:** Add Nonclustered index as needed.
+   * Exemplo: Quando você precisa otimizar a filtragem em algumas colunas.
+   * Geralmente aplicado em cima de CCI para consultas direcionadas (mas use com moderação para evitar sobrecarga de carga).
 
 ---
 
-Let’s break this one down carefully:
+✅ **Regra de resumo do polegar:**
+
+* **Tabelas de fatos (grandes, >1M linhas):** Hash + CCI.
+* **Small dimension tables (<2GB):** Replicado + Clustered ou CCI.
+* **Tabelas de estagiamento:** Rodada robin + Clustered index.
+* **Consultas especiais:** Adicione Nonclustered index conforme necessário.
 
 ---
 
-### ✅ Requirements:
-
-* **App1 authenticates with SQL authentication** → means username/password inside DB, not Azure AD or Windows login.
-* **App1 must only view DB2** → should not see DB1.
-* **Minimal administrative effort** → simplest, direct solution.
+Vamos quebrar este aqui com cuidado:
 
 ---
 
-### 🔎 Options:
+### Requisitos ✅:
 
-**A. a contained database user for App1 on DB2**
-
-* A contained database user is **created inside the database only** (DB2).
-* It doesn’t require a server-level login on `Server1`.
-* This means App1 only sees **DB2** and not DB1.
-* ✅ This meets **all requirements**.
+* **App1 autentica com SQL authentication** → significa nome de usuário / senha dentro DB, não Azure AD ou Windows login.
+* **App1 só deve ver DB2** → não deve ver DB1.
+* **Esfor mínimo administrativo** → solução mais simples e direta.
 
 ---
 
-**B. a login for App1 on Server1**
+### Opções 🔎:
 
-* A server-level login would exist at `Server1`.
-* By default, it has visibility to the server and could be mapped to both DB1 and DB2.
-* ❌ More admin overhead, doesn’t restrict visibility to DB2 only without extra steps.
+**A. contained database user para App1 em DB2**
 
----
-
-**C. a contained database user from an external provider for App1 on DB2**
-
-* "External provider" = Azure AD authentication.
-* ❌ Doesn’t apply here since App1 is using **SQL authentication**, not Azure AD.
+* A contained database user E **criado apenas dentro do banco de dados** (DB2).
+* Ele não requer um servidor de nível login em `Server1`.
+* Isso significa que App1 só vê **DB2** e não DB1.
+* ✅ Isso atende **todos os requisitos**.
 
 ---
 
-**D. a contained database user from a Windows login for App1 on DB2**
+**B. login para App1 em Server1**
 
-* This is Windows authentication.
-* ❌ Not valid, since App1 must authenticate via **SQL authentication**.
-
----
-
-### ✅ Correct Answer:
-
-**A. a contained database user for App1 on DB2**
+* Um servidor de nível login existiria em `Server1`.
+* Por padrão, ele tem visibilidade para o servidor e pode ser mapeado para DB1 e DB2.
+* ❌ Mais admin overhead, não restringe a visibilidade ao DB2 apenas sem etapas extras.
 
 ---
 
+**C. a contained database user de um fornecedor externo para App1 E-mail DB2**
 
-Perfect, let’s analyze this one 👇
+* "External provider" = Azure AD autenticação.
+* ❌ Não se aplica aqui, uma vez que App1 está usando **SQL authentication**, não Azure AD.
 
-The query execution plan shows a **Key Lookup (Clustered)** operator.
+---
 
-### Breakdown:
+**D. contained database user de um Windows login para App1 em DB2**
 
-* **Key Lookup** happens when SQL Server finds a row in a **nonclustered index**, but needs more columns not present in the index, so it goes back to the **clustered index (or heap)** to fetch them.
-* This causes extra I/O and slows performance.
-* The fix is to add those missing columns into the **nonclustered index** as **INCLUDE columns**, so SQL Server doesn’t need to do the lookup.
+* Isto é Windows authentication.
+* ❌ Não é válido, uma vez que App1 deve autenticar via **SQL authentication**.
 
-### Correct Answer:
+---
 
-* **The performance issue stems from the:** 👉 **Key Lookup** operator
-* **The performance issue can be resolved by adding include columns to the:** 👉 **nonclustered index**
+### ✅ resposta correta:
 
-✅ Final Answer:
+**A. contained database user para App1 em DB2**
+
+---
+
+
+Perfeito, vamos analisar este um 👇
+
+O plano de execução da consulta mostra um operador **Key Lookup (Clustered)**.
+
+### Discriminação:
+
+* **Key Lookup** acontece quando o SQL Server encontra uma linha em um **nonclustered index**, mas precisa de mais colunas não presentes no índice, então ele volta para o **clustered index (ou pilha)** para buscá-las.
+* Isso causa E/S extra e retarda o desempenho.
+* A correção é adicionar essas colunas ausentes no **nonclustered index** como **colunas INCLUDE**, então o SQL Server não precisa fazer o lookup.
+
+### Resposta correta:
+
+* Operador **O problema de desempenho decorre do:** 👉 **Key Lookup**
+* **O problema de desempenho pode ser resolvido adicionando colunas include ao:** 👉 **nonclustered index**
+
+✅ Resposta Final:
 
 * **Key Lookup**
 * **nonclustered index**
 
-Great, let’s work through this one step by step 👇
+Vamos resolver esta questão passo a passo 👇
 
-### Scenario:
+### Cenário:
 
-* **DB1** = Azure SQL Database (Hyperscale tier, no secondary replicas yet).
-* **App1** = Azure Web Apps (multiple instances, read-only access to DB1).
-* Requirement: Create a **read-only replica** of DB1 and configure **App1** to use it.
-
----
-
-### Key Concepts:
-
-1. **Hyperscale tier** supports **read-scale replicas** (read-only replicas).
-
-   * You can create **1–4 named replicas** on the same logical server.
-   * These replicas can be used for **read-only workloads** like reporting or queries.
-
-2. To direct apps to replicas:
-
-   * Use the **ApplicationIntent=ReadOnly** parameter in the connection string.
-   * This ensures the app routes queries to the replica, not the primary.
+* **DB1** = Azure SQL Database (Hyperscale nível, sem réplicas secundárias ainda).
+* **App1** = Azure Web Apps (multiple instances, read-only acesso a DB1).
+* Requisito: Crie um **read-only replica** de DB1 e configure o **App1** para usá-lo.
 
 ---
 
-### Correct Steps:
+### Conceitos-chave:
 
-* **To add read-only replicas of DB1** → ✅ *Create a replica on the same logical server.*
-* **To configure App1 instances to access the read-only replica** → ✅ *Add an ApplicationIntent entry to the connection string.*
+1. **Nível Hyperscale** suporta **réplicas em escala de leitura** (read-only replicas).
+
+   * Você pode criar **1–4 chamado réplicas** no mesmo servidor lógico.
+   * Essas réplicas podem ser usadas para **cargas de trabalho read-only**, como relatórios ou consultas.
+
+2. Para direcionar aplicativos para réplicas:
+
+   * Use o parâmetro **ApplicationIntent=ReadOnly** no connection string.
+   * Isso garante que o aplicativo encaminhe consultas para a réplica, não para a primária.
 
 ---
 
-✅ **Final Answer:**
+### Passos corretos:
 
-* **Create a replica on the same logical server**
-* **Add an ApplicationIntent entry to the connection string**
+* **Adicionar read-only replicas de DB1** → ✅ *Crie uma réplica no mesmo servidor lógico.*
+* **Para configurar instâncias App1 para acessar o read-only replica** → ✅ *Adicione uma entrada ApplicationIntent ao connection string.*
 
 ---
 
-**Recommendation (Synapse dedicated SQL pool table distribution types):**
+✅ **Resposta final:**
 
-* **Retail store data:** **Replicated** (small dimension/reference table → replicate to all distributions to avoid data movement on joins).
-* **Promotional data:** **Hash** (larger table joined to fact data → hash-distribute on the join key to improve parallel joins).
+* **Criar uma réplica no mesmo servidor lógico**
+* **Adicionar uma entrada ApplicationIntent ao connection string**
+
+---
+
+**Recomendação (tipos de distribuição dedicados da tabela da piscina SQL da Synapse):**
+
+* **Dados da loja de varejo:** **Replicado** (pequena dimensão / tabela de referência → replicar a todas as distribuições para evitar o movimento de dados em junções).
+* **Dados promocionais:** **Hash** (tabela maior juntou-se aos dados de fato → hash-distribuir na chave de junção para melhorar junções paralelas).
 

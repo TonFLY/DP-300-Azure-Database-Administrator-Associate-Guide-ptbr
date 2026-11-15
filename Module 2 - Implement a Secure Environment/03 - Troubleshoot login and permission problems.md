@@ -1,96 +1,96 @@
-# Troubleshoot login and permission problems
+# Solucionar problemas de login e permissão
 
-> **Exam skills:** Troubleshoot authentication and authorization issues
-> **Reading time:** ~6 min
+> **Habilidades cobradas:** Resolver problemas de autenticação e autorização
+> **Tempo de leitura:** ~6 min
 
-## The big idea
-When someone cannot connect or cannot read data, check things in order. Is it a short Azure hiccup? Is the network blocked? Does the login exist? Does the user have rights? It is like a car that will not start: check the fuel, then the battery, then the key.
+## Conceito central
+Quando alguém não consegue se conectar ou não pode ler dados, verifique as coisas em ordem. É um soluço curto do Azure? A rede está bloqueada? O login existe? O usuário tem direitos? É como um carro que não vai começar: verifique o combustível, a bateria e a chave.
 
-## Common reasons a connection fails
-1. **Reconfiguration events.** Azure moves or updates your database. It restarts for a moment. Usually **under 60 seconds**.
-2. **Firewall.** No firewall rule allows the client's IP (lesson 5).
-3. **Login problems.** Wrong username or password, the login is **disabled**, or it **does not exist**.
-4. **Resource limits.** The database hit its CPU, memory, storage or connection limits.
-5. **Timeouts.** Slow network or long-running queries.
+## Razões comuns para uma conexão falhar
+1. **Eventos de reconfiguração.** Azure move ou atualiza seu banco de dados. Ele reinicia por um momento. Normalmente **menos de 60 segundos**.
+2. **Firewall.** Nenhuma regra de firewall permite o IP do cliente (lição 5).
+3. **Problemas Login.** Nome de usuário ou senha errados, o login E **Deficientes**Ou então **não existe**.
+4. **Limites de recursos.** O banco de dados atingiu seus limites de memória, armazenamento ou conexão CPU.
+5. **Tempo limite.** Redes lentas ou consultas de longa duração.
 
-## Transient faults
-A **transient fault** is a short, temporary error. It fixes itself. It happens during planned maintenance, scaling, failover, or (rarely) unplanned problems. Azure reconnects within about **60 seconds**.
+## Falhas transitórias
+A **Falha transitória** é um erro curto, temporário. Ele se corrige. Isso acontece durante a manutenção planejada, escala, failoverou (raramente) problemas não planejados. O Azure se reconecta dentro de **60 segundos**.
 
-Typical transient error messages:
-- "Can't open database requested by login. The login failed."
-- "Can't process request. Not enough resources to process request."
-- "Too many operations in progress for subscription."
+Mensagens de erro transitórias típicas:
+- "Não é possível abrir o banco de dados solicitado pelo login. O login falhou."
+- "Não consigo processar o pedido. Não há recursos suficientes para processar o pedido."
+- "Demasiadas operações em andamento para assinatura."
 
-**Example:** A pizza-ordering app shows "login failed" for 20 seconds at 3 AM, then works again. Azure was patching the server. This is a transient fault, not a broken password.
+**Exemplo:** Um aplicativo de pedido de pizza mostra "login falhou" por 20 segundos em 3 AM, então funciona novamente. O Azure estava corrigindo o servidor. Esta é uma falha transitória, não uma senha quebrada.
 
-### Retry logic
-Apps should **retry** quietly, not show the error to users. Microsoft recommends:
-- Wait **5 seconds** before the first retry.
-- Use **exponential backoff**: wait longer each time, e.g. 5s → 10s → 20s → 40s, up to **60s**.
-- Set a **maximum** number of retries, so it never loops forever.
-- If a query fails, **close the connection and open a new one** for the retry. Do not reuse the broken connection.
+### Tentar novamente a lógica
+Os aplicativos devem **tentar novamente** silenciosamente, não mostrar o erro aos usuários. A Microsoft recomenda:
+- Espere **5 segundos** antes da primeira tentativa.
+- Use **backoff exponencial**: espere mais tempo cada vez, e.g. 5s → 10s → 20s → 40s, até **60s**.
+- Defina um número **Máximo** de tentativas, para que nunca se repita para sempre.
+- Se uma consulta falhar, **Feche a conexão e abra uma nova** para a nova tentativa. Não reutilize a conexão quebrada.
 
-### What to check
+### O que verificar
 
-| Problem | Action |
+| Problema | Ação |
 |---------|--------|
-| Login failures for many users | Check **Azure Service Health** for outages |
-| Resource limit errors | Watch CPU, memory, storage; **scale up** if needed |
-| Failures lasting **over 60 seconds** | Contact **Azure Support** |
+| Falhas Login para muitos usuários | Check **Azure Service Health** para interrupções |
+| Erros de limite de recursos | Relógio CPU, memória, armazenamento; **escala acima** se necessário |
+| Falhas duradouras **ao longo de 60 segundos** | Contato **Suporte do Azure** |
 
-## Fix "Login failed for user"
-Work through these steps.
+## Fix " Login falhou para o usuário"
+Trabalhe através dessas etapas.
 
-1. **Is the login disabled?**
+1. **O login está desativado?**
    ```sql
    SELECT name, is_disabled FROM sys.sql_logins WHERE name = 'Ravi';
    ALTER LOGIN Ravi ENABLE;
    ```
-2. **Does the login exist?** If not, create it.
+2. **O login existe?** Se não, crie-o.
    ```sql
    CREATE LOGIN Ravi WITH PASSWORD = 'StrongP@ss1';
    ```
-3. **Is there a user in the target database?** A login alone is not enough.
+3. **Existe um usuário na banco de dados alvo?** Um login por si só não é suficiente.
    ```sql
    CREATE USER Ravi FOR LOGIN Ravi;
    ```
-4. **Does the user have permissions?** Add to a role or grant rights.
+4. **O usuário tem permissões?** Adicionar a um papel ou conceder direitos.
    ```sql
    ALTER ROLE db_datareader ADD MEMBER Ravi;
    -- or
    GRANT SELECT ON SCHEMA::Sales TO Ravi;
    ```
 
-**Example:** A new analyst can log in to the server but gets an error opening `SalesDB`. The login exists, but nobody created a user in `SalesDB`. Step 3 fixes it.
+**Exemplo:** Um novo analista pode fazer login no servidor, mas recebe um erro ao abrir o `SalesDB`. O login existe, mas ninguém criou um usuário no `SalesDB`. O passo 3 corrige isso.
 
-Note: Failed **Microsoft Entra** logins do **not** show in the SQL audit log. Check the **Entra sign-in logs** for those.
+Observação: Falha no **Microsoft Entra** logins do **E** no log de auditoria SQL. Verifique o **Entrar logs** para esses.
 
-## Authorization errors (logged in, but "permission denied")
-- Check for a **DENY** somewhere (direct or through a role). DENY beats GRANT.
-- If a procedure uses **dynamic SQL**, the caller needs rights on the tables (ownership chain is broken).
-- Test as that user: `EXECUTE AS USER = 'Ravi'; SELECT ...; REVERT;`.
+## Erros de autorização (logado, mas "permissão negada")
+- Verifique se há **DENY** em algum lugar (direto ou através de um papel). DENY bate GRANT.
+- Se um procedimento usa **dinâmico SQL**, o chamador precisa de direitos sobre as tabelas (cadeia de propriedade está quebrada).
+- Teste como esse usuário: `EXECUTE AS USER = 'Ravi'; SELECT ...; REVERT;`.
 
-## Check the connection string
-Update the app's **connection string** if you:
-- created a new database,
-- renamed or moved the server, or
-- rotated passwords.
+## Verifique o connection string
+Atualize o **connection string** do aplicativo se você:
+- criou uma nova banco de dados,
+- ou mudou o servidor, ou
+- Senhas giradas.
 
-Copy a fresh one from the Azure portal: **SQL database → Connection strings**. Then add the username, password and correct server name. For secure connections, keep `Encrypt=True;TrustServerCertificate=False;`.
+Copie um novo do Azure portal: **SQL database → Cordas de conexão**. Em seguida, adicione o nome de usuário, senha e nome do servidor correto. Para conexões seguras, mantenha o `Encrypt=True;TrustServerCertificate=False;`.
 
-## Remember for the exam
-- Most short "login failed" or "not enough resources" errors are **transient**; they clear in under **60 seconds**.
-- Retry: wait **5s** first, then **exponential backoff**, with a **max** retry count.
-- Retry on a **new connection**, not the failed one.
-- Over 60 seconds of failures → **Azure Support**. Many users failing → **Azure Service Health**.
-- "Login failed" steps: login enabled? → login exists? → **user** in the database? → **permissions**?
-- `sys.sql_logins` shows `is_disabled`; fix with `ALTER LOGIN ... ENABLE`.
-- Failed Entra logins → **Entra sign-in logs**, not the SQL audit.
+## Para lembrar na prova
+- A maioria dos erros curtos de "login falhou" ou "não há recursos suficientes" são **transitório**; eles desaparecem em **60 segundos**.
+- Tente novamente: espere **5s** primeiro, depois **backoff exponencial**, com uma contagem de retry **max**.
+- Tente novamente um **nova conexão**, não o falhado.
+- Mais de 60 segundos de falhas → **Suporte do Azure**. Muitos usuários falham → **Azure Service Health**.
+- Passos "Login falhou": login habilitado? → login existe? → **usuário** na banco de dados? → **permissões**?
+- `sys.sql_logins` mostra `is_disabled`; corrigir com `ALTER LOGIN ... ENABLE`.
+- Falha na auditoria logins → **Entrar logs**, não na auditoria SQL.
 
-## Quick check
-1. An app gets "Not enough resources to process request" for 30 seconds during scaling. What should the app do?
-   <details><summary>Answer</summary>Retry with exponential backoff on a new connection. It is a transient fault.</details>
-2. A login exists and is enabled, but the user gets an error opening the database. What is the most likely missing step?
-   <details><summary>Answer</summary>There is no database user mapped to the login. Create one with CREATE USER ... FOR LOGIN.</details>
-3. Connection failures have lasted 10 minutes and Azure Service Health shows no outage. What next?
-   <details><summary>Answer</summary>Contact Azure Support. Failures over 60 seconds are not normal transient faults.</details>
+## Teste rápido
+1. Um aplicativo recebe "Não há recursos suficientes para processar o pedido" por 30 segundos durante a escala. O que o aplicativo deve fazer?
+   <details><summary>Resposta</summary>Tente novamente com um recuo exponencial em uma nova conexão. É uma falha transitória.</details>
+2. O A login existe e está habilitado, mas o usuário recebe um erro ao abrir o banco de dados. Qual é o passo mais provável em falta?
+   <details><summary>Resposta</summary>Não há nenhum usuário de banco de dados mapeado para o login. Crie um com CREATE USER... FOR LOGIN.</details>
+3. Falhas de conexão duraram 10 minutos e Azure Service Health não mostra nenhuma interrupção. E depois?
+   <details><summary>Resposta</summary>As falhas superiores a 60 segundos não são falhas transitórias normais.</details>
