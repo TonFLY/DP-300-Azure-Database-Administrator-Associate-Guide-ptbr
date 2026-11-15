@@ -1,26 +1,26 @@
-# Monitor and troubleshoot deployments
+# Monitorar e diagnosticar problemas em implantações
 
-> **Exam skills:** Monitor and troubleshoot deployments
-> **Reading time:** ~8 min
+> **Habilidades cobradas:** Monitorar e diagnosticar problemas em implantações
+> **Tempo de leitura:** ~8 min
 
-## The big idea
-A template can fail before it starts, or halfway through. You need to know **where to look** for each kind of failure. Think of posting a parcel. The post office can refuse it at the counter (bad address). Or it can get lost on the way. You check different places for each problem.
+## Conceito central
+Um modelo pode falhar antes de começar, ou a meio caminho. Você precisa saber **Para onde olhar** para cada tipo de falha. Pense em postar um pacote. Os correios podem recusá-lo no balcão (endereço ruim). Ou pode se perder no caminho. Você verifica lugares diferentes para cada problema.
 
-## Three kinds of deployment errors
-| Error type | When it happens | Where you see it |
+## Três tipos de erros de implantação
+| Tipo de erro | Quando acontece | Onde você vê |
 |---|---|---|
-| **Validation (syntax) error** | Before anything is sent. Bad JSON or Bicep. | VS Code (Bicep / ARM Tools extension), `bicep build` |
-| **Preflight error** | The command runs, but **nothing is deployed**. Example: a bad parameter, or the SKU (size) is not offered in that region. | **Activity log only**. Not in deployment history. |
-| **Deployment error** | Passed checks, but **failed while creating** a resource. | **Deployment history** and the activity log |
+| **Erro de validação (syntax)** | Antes de qualquer coisa ser enviada. Bad JSON ou Bicep. | Código VS (extensão Bicep / ARM Tools), `bicep build` |
+| **Erro de pré-voo** | O comando corre, mas **Nada é implantado**. Exemplo: um parâmetro ruim ou o SKU (tamanho) não é oferecido nessa região. | **Apenas log de atividade**. Não no histórico de implantação. |
+| **Erro de implantação** | Passou cheques, mas **Falha ao criar** um recurso. | **Histórico de Implantação** e o registro de atividades |
 
-A Bicep file with syntax errors never becomes JSON. So it never reaches the activity log.
+A Bicep arquivo com erros de sintaxe nunca se torna JSON. Por isso, nunca chega ao registro de atividades.
 
-**Example:** A bank's script asks for SKU "S9" in a region that does not sell it. The command returns an error but no deployment appears under the resource group's Deployments. The DBA finds the failure in the **activity log**.
+**Exemplo:** O script de um banco pede SKU "S9" em uma região que não vende. O comando retorna um erro, mas nenhuma implantação aparece sob as implantações do grupo de recursos. O DBA encontra a falha no **log de atividade**.
 
-## Test before you deploy: validate and what-if
-- **Validate** checks the template is valid. It does not say what will change.
-- **What-if** shows what **would** change. It makes **no changes**. Change types: Create, Delete, Modify, NoChange, Ignore, NoEffect, Deploy.
-- **Delete** only shows in **complete mode** (see below).
+## Teste antes de implantar: valide e what-if
+- **Validar** verifica se o modelo é válido. Não diz o que vai mudar.
+- **What-if** mostra o que **Iria** mudar. Ele faz **sem alterações**. Alterar tipos: Criar, Excluir, Modificar, NoChange, Ignorar, NoEffect, Implantar.
+- **Excluir** só aparece em **modo completo** (veja abaixo).
 
 ```powershell
 Test-AzResourceGroupDeployment -ResourceGroupName rg-sql -TemplateFile main.bicep   # validate
@@ -33,10 +33,10 @@ az deployment group what-if  --resource-group rg-sql --template-file main.bicep
 az deployment group create   --resource-group rg-sql --template-file main.bicep --confirm-with-what-if  # or -c
 ```
 
-## Deployment history
-- Every deployment to a scope (resource group, subscription, management group, tenant) is saved with a **correlation ID**. Give this ID to Microsoft Support.
-- **Portal:** resource group → **Settings > Deployments** → pick a deployment → **Error details** / **Operation details**.
-- Each deployment has **operations** (one per resource). Find the failed one and read its status message.
+## Histórico de Implantação
+- Cada implantação para um escopo (grupo de recursos, assinatura, grupo de gerenciamento, inquilino) é salva com um **correlação ID**. Dê este ID ao Suporte da Microsoft.
+- **Portal:** grupo de recursos → **Configurações > Configurações** → escolher uma implantação → **Detalhes do erro** / **Detalhes da operação**.
+- Cada implantação tem **operações** (um por recurso). Encontre a falha e leia sua mensagem de status.
 
 ```powershell
 Get-AzResourceGroupDeployment -ResourceGroupName rg-sql
@@ -48,69 +48,69 @@ az deployment group list --resource-group rg-sql -o table
 az deployment operation group list --resource-group rg-sql --name sqlDeploy01
 ```
 
-### The 800 limit
-- Each scope keeps at most **800 deployments** in history.
-- When history goes above **700**, Azure deletes the oldest until it is down to **600**. What-if and validate also start this clean-up.
-- If history is already at 800, the next deployment fails with **`DeploymentQuotaExceeded`**. Wait and retry, or delete old entries (`Remove-AzResourceGroupDeployment` / `az deployment group delete`).
-- Auto clean-up **does not work** if there is a **CanNotDelete lock** on the resource group or subscription. It also fails if the user lacks the `Microsoft.Resources/deployments/delete` permission.
+### O limite 800
+- Cada escopo mantém no máximo **800 implantações** na história.
+- Quando a história ultrapassa **700**, o Azure elimina o mais antigo até chegar ao **600**. What-if e valida também inicia esta limpeza.
+- Se a história já estiver em 800, a próxima implantação falhará com o **`DeploymentQuotaExceeded`**. Aguarde e tente novamente ou exclua entradas antigas (`Remove-AzResourceGroupDeployment` / `az deployment group delete`).
+- Auto-limpeza **não funciona** se houver um **bloqueio CanNotDelete** no grupo de recursos ou assinatura. Também falha se o usuário não tiver a permissão `Microsoft.Resources/deployments/delete`.
 
-## Activity log
-- The activity log records **control-plane** actions (create, update, delete of resources) in the subscription: who did what, and what failed.
-- It shows **preflight failures** that never reach deployment history.
-- Portal: resource group → **Activity log** → filter Status = Failed.
-- You can send it to Log Analytics (table `AzureActivity`) and create **activity log alerts**.
+## Diário de atividades
+- O registro de atividades registra ações **controle-plano** (criar, atualizar, excluir recursos) na assinatura: quem fez o quê e o que falhou.
+- Mostra **falhas pré-voo** que nunca alcança o histórico de implantação.
+- Portal: grupo de recursos → **Diário de atividades** → filter Status = Failed.
+- Você pode enviá-lo para Log Analytics (tabela `AzureActivity`) e criar **Alertas de registro de atividade**.
 
-## Debug logging
+## debugar o registro
 ```powershell
 New-AzResourceGroupDeployment -Name sqlDebug01 -ResourceGroupName rg-sql `
   -TemplateFile main.bicep -DeploymentDebugLogLevel All   # All | RequestContent | ResponseContent
 ```
-- **Only PowerShell can turn it on.** The Azure CLI **cannot** turn it on, but it **can read** the saved request and response.
-- It can save **secrets** such as passwords. **Delete that deployment from history** afterwards.
+- **Somente o PowerShell pode ligá-lo.** O Azure CLI **não pode** ligá-lo, mas ele **pode ler** o pedido salvo e resposta.
+- Ele pode salvar **Segredos**, como senhas. **Eliminar essa implantação da história** depois.
 
-## Common errors for Azure SQL
-| Error | Cause | Fix |
+## Erros comuns para Azure SQL
+| Erro | Causa | Correção |
 |---|---|---|
-| **InvalidTemplate** | Syntax error or bad expression | Fix the file, run validate or `bicep build` |
-| **DeploymentFailed** | A general wrapper | Read the **inner error** in the operation details |
-| **ResourceNotFound / ParentResourceNotFound** | Database created before its server | Add **`dependsOn`** (JSON) or **`parent`** (Bicep) |
-| **SkuNotAvailable / RegionDoesNotAllowProvisioning** | Tier or region not offered | Choose another SKU or region. Check with `az sql db list-editions -l <region> --available` |
-| **NameAlreadyExists** | Server names are **global DNS names** (`<name>.database.windows.net`): 1–63 chars, lowercase letters, numbers, hyphens, no hyphen at start or end | Use `uniqueString(resourceGroup().id)` |
-| **AuthorizationFailed / RequestDisallowedByPolicy** | Missing RBAC role (role-based access) or an Azure Policy blocks it (e.g. a required tag) | Grant the role or follow the policy |
-| **MissingSubscriptionRegistration** | `Microsoft.Sql` provider not registered | `Register-AzResourceProvider -ProviderNamespace Microsoft.Sql` |
+| **InvalidTemplate** | Erro de sintaxe ou má expressão | Corrigir o arquivo, executar a validação ou `bicep build` |
+| **DeploymentFailed** | Um wrapper geral | Leia o **Erro interno** nos detalhes da operação |
+| **ResourceNotFound / ParentResourceNotFound** | Banco de dados criado antes de seu servidor | Adicionar **`dependsOn`** (JSON) ou **`parent`** (Bicep) |
+| **SkuNotAvailable / RegionDoesNotAllowProvisioning** | Nível ou região não oferecida | Escolha outra SKU ou região. Verifique com `az sql db list-editions -l <region> --available` |
+| **NameAlreadyExists** | Os nomes dos servidores são **nomes globais DNS** (`<name>.database.windows.net`): 1–63 chars, letras minúsculas, números, hífens, sem hífen no início ou no fim | Usar `uniqueString(resourceGroup().id)` |
+| **AuthorizationFailed / RequestDisallowedByPolicy** | Papel RBAC ausente (acesso baseado em papel) ou um Azure Policy o bloqueia (e.g. uma tag necessária) | O papel ou seguir a política |
+| **MissingSubscriptionRegistration** | Provedor `Microsoft.Sql` não registrado | `Register-AzResourceProvider -ProviderNamespace Microsoft.Sql` |
 
-## Deployment modes and rollback
-| Mode | What it does |
+## Modos de implantação e reversão
+| Modo | O que faz |
 |---|---|
-| **Incremental** (default) | Leaves resources that are **not** in the template alone. But resources that **are** in the template get **all** their properties re-applied. A property you left out goes back to its default. |
-| **Complete** | **Deletes** resources in the resource group that are not in the template. Microsoft is slowly retiring it and recommends **deployment stacks** for deletes. Not supported at subscription scope, in nested templates, or in the portal. |
+| **Incremental** (padrão) | Deixa os recursos que são **E** no modelo sozinho. Mas os recursos que **E-** no modelo obter **Todos** suas propriedades re-aplicado. Uma propriedade que você deixou de fora volta ao seu padrão. |
+| **Completar** | Recursos **Exclui** no grupo de recursos que não estão no modelo. A Microsoft está lentamente se aposentando e recomenda **pilhas de implantação** para exclusões. Não é suportado no escopo da assinatura, em modelos aninhados ou no portal. |
 
-**Rollback on error** redeploys the last good deployment if this one fails:
+**Rollback no erro** reimplanta a última boa implantação se esta falhar:
 ```powershell
 New-AzResourceGroupDeployment -Name sqlDeploy02 -ResourceGroupName rg-sql -TemplateFile main.json -RollbackToLastDeployment
 ```
 ```bash
 az deployment group create -g rg-sql -n sqlDeploy02 --template-file main.json --rollback-on-error
 ```
-- Add a deployment name (`-RollBackDeploymentName sqlDeploy01`, or a name after `--rollback-on-error`) to go back to a specific one.
-- Rollback runs the old deployment in **complete mode**. It can **delete** resources added since then.
-- Resource group scope only. Deployment names must be unique. It **does not roll back data**.
+- Adicione um nome de implantação (`-RollBackDeploymentName sqlDeploy01`, ou um nome após `--rollback-on-error`) para voltar a um nome específico.
+- O Rollback executa a implantação antiga no **modo completo**. Ele pode recursos **deletar** adicionados desde então.
+- Apenas o escopo do grupo de recursos. Os nomes de implantação devem ser exclusivos. It **não reverta dados**.
 
-## Remember for the exam
-- **Preflight errors are not in deployment history.** Look in the **activity log**.
-- "Show what will change without deploying" → **what-if**, not validate.
-- **Debug logging: PowerShell only** (`-DeploymentDebugLogLevel`). Delete the history afterwards.
-- **800** per scope. Auto clean-up at **700 → 600**. Blocked by **CanNotDelete locks**.
+## Para lembrar na prova
+- **Erros de pré-voo não estão no histórico de implantação.** Olhe no **log de atividade**.
+- "Mostrar o que vai mudar sem implantar" → **what-if**, não validar.
+- **Registro de depuração: PowerShell somente** (`-DeploymentDebugLogLevel`). Apague a história depois.
+- **800** por escopo. Limpeza automática em **700 → 600**. Bloqueado por **Fechaduras CanNotDelete**.
 - `DeploymentQuotaExceeded` = history full.
-- Database before server → **`dependsOn` / `parent`**.
-- "Server name already exists" → names are global → `uniqueString()`.
-- **Incremental** resets omitted properties. **Complete** deletes extras. Rollback uses complete mode.
-- Give Support the **correlation ID**.
+- Banco de dados antes do servidor → **`dependsOn` / `parent`**.
+- "O nome do servidor já existe" Os nomes → são globais → `uniqueString()`.
+- **Incremental** redefine propriedades omitidas. **Completar** exclui extras. Rollback usa modo completo.
+- Dê suporte ao **correlação ID**.
 
-## Quick check
-1. A deployment command fails, but nothing shows under the resource group's Deployments. Where do you look?
-   <details><summary>Answer</summary>The activity log. Preflight failures never reach deployment history.</details>
-2. You want raw request and response details for a failed SQL deployment. Which tool turns this on?
-   <details><summary>Answer</summary>Azure PowerShell with -DeploymentDebugLogLevel. The CLI cannot turn it on.</details>
-3. Deployments now fail with DeploymentQuotaExceeded even though auto clean-up should run. What is a likely cause?
-   <details><summary>Answer</summary>A CanNotDelete lock on the resource group or subscription stops automatic deletion of old history.</details>
+## Teste rápido
+1. Um comando de implantação falha, mas nada é mostrado nas implantações do grupo de recursos. Onde você olha?
+   <details><summary>Resposta</summary>O registro de atividades. Falhas de pré-voo nunca atingem o histórico de implantação.</details>
+2. Você quer detalhes brutos de solicitação e resposta para uma implantação SQL falhada. Qual ferramenta ativa isso?
+   <details><summary>Resposta</summary>Azure PowerShell com -DeploymentDebugLogLevel. O CLI não pode ligá-lo.</details>
+3. As implantações agora falham com o DeploymentQuotaExceeded, mesmo que a limpeza automática deva ser executada. Qual é a causa provável?
+   <details><summary>Resposta</summary>O bloqueio A CanNotDelete no grupo de recursos ou assinatura impede a exclusão automática da história antiga.</details>

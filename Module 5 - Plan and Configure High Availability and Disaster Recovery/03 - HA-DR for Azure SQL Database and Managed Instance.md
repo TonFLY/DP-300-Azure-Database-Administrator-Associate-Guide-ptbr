@@ -1,42 +1,42 @@
-# HA/DR for Azure SQL Database and Managed Instance
+# HA/DR para Azure SQL Database e Managed Instance
 
-> **Exam skills:** Evaluate Azure-specific HA/DR solutions, Evaluate HA/DR for hybrid deployments, Configure active geo-replication, Configure failover groups, Configure Always On availability groups on SQL Managed Instance and Azure VMs
-> **Reading time:** ~12 min
+> **Habilidades cobradas:** Avalie soluções HA/DR específicas do Azure, avalie HA/DR para implantações híbridas, Configure active geo-replication, Configure failover groups, Configure Always On availability groups em SQL Managed Instance e Azure VMs
+> **Tempo de leitura:** ~12 min
 
-## The big idea
-In PaaS, Microsoft already handles HA inside a region. You don't build clusters. Your job is to choose extra protection: **zone redundancy** for datacenter failures, and **active geo-replication** or **failover groups** for regional failures. For hybrid, the **Managed Instance link** connects SQL Server to SQL MI.
+## Conceito central
+Em PaaS, a Microsoft já lida com HA dentro de uma região. Você não constrói clusters. Seu job é escolher proteção extra: **redundância de zona** para falhas no datacenter e **active geo-replication** ou **failover groups** para falhas regionais. Para híbrido, o **Managed Instance link** conecta SQL Server a SQL MI.
 
-Think of renting a flat. The landlord fixes the boiler (built-in HA). You decide whether to also rent a holiday home in another city in case of a flood (geo-replication or failover groups).
+Pense em alugar um apartamento. O senhorio conserta a caldeira (HA embutido). Você decide se também alugar uma casa de férias em outra cidade em caso de uma inundação (geo-replication ou failover groups).
 
-## Built-in high availability
-- Azure SQL Database SLA: **99.99%**. Zone-redundant Business Critical/Premium: **99.995%**.
-- If hardware fails, Azure starts a new node and reattaches storage, or switches to another replica. This is automatic.
-- During failover, **open connections drop** and **in-progress transactions roll back**. Apps must use **retry logic** (try again after a short wait).
-- Business Critical/Premium keep several replicas inside the region. One can be used for read-only queries (**read scale-out**).
+## Alta disponibilidade incorporada
+- Azure SQL Database SLA: **99.99%**. Zona-redundante Business Critical /Premium: **99.995%**.
+- Se o hardware falhar, o Azure inicia um novo nó e reacopla o armazenamento ou muda para outra réplica. Isto é automático.
+- Durante failover, **conexões abertas drop** e **Transações em andamento roll back**. Os aplicativos devem usar **retry lógica** (tente novamente depois de uma curta espera).
+- Business Critical / Premium manter várias réplicas dentro da região. Um pode ser usado para consultas read-only (**read scale-out**).
 
-**Accelerated Database Recovery (ADR)** makes rollback and crash recovery very fast, even for long transactions. It is **on by default in PaaS and can't be turned off**. It is also in SQL Server 2019+.
+**Accelerated Database Recovery (ADR)** faz a recuperação do rollback e do crash muito rapidamente, mesmo para transações longas. É **ligado por padrão em PaaS e não pode ser desligado**. É igualmente em SQL Server 2019+.
 
-Azure also runs hidden health checks: automatic **DBCC CHECKDB**-style integrity checks, lost-write and stale-read detection, and **automatic page repair** of damaged pages.
+O Azure também executa verificações de saúde ocultas: verificações automáticas de integridade no estilo **DBCC CHECKDB**, detecção de perda de escrita e leitura obsoleta e **reparação automática de página** de páginas danificadas.
 
-PaaS differences from a VM: you **can't** set a database OFFLINE or EMERGENCY, and failover settings are limited to what Azure offers.
+Diferenças PaaS de um VM: você **Não posso.** define um banco de dados OFFLINE ou EMERGENCY, e as configurações failover são limitadas ao que o Azure oferece.
 
-## Zone redundancy
-- Spreads the database's replicas across **availability zones** in one region. Survives a datacenter failure. Transparent to apps.
-- **SQL Database:** General Purpose, Business Critical, Hyperscale and Premium. **Not Basic or Standard.**
-- **SQL Managed Instance:** General Purpose and Business Critical.
+## redundância de zona
+- Espalha as réplicas do banco de dados em **availability zones** em uma região. Sobrevive a uma falha no datacenter. Transparente para aplicativos.
+- **SQL Database:** General Purpose, Business Critical, Hyperscale e Premium. **Não básico ou padrão.**
+- **SQL Managed Instance:** General Purpose e Business Critical.
 
-**Example:** A school app on Business Critical turns on zone redundancy. If one datacenter in the region loses power, the app keeps working after a short reconnect.
+**Exemplo:** Um aplicativo escolar no Business Critical ativa a redundância de zona. Se um datacenter na região perder energia, o aplicativo continuará funcionando após uma pequena reconexão.
 
-## Active geo-replication (Azure SQL Database only)
-- Creates **readable secondary databases**, usually in **other regions**, updated **asynchronously** (some data loss is possible).
-- Uses AG technology behind the scenes.
-- Up to **4 readable geo-secondaries** per primary, in the same or different regions. Chain them for more.
-- Works for single databases and elastic pools, including **Hyperscale**. **Not supported on SQL Managed Instance.**
-- The secondary must use the **same service tier**. Same **compute size** and backup redundancy are strongly recommended. A smaller secondary causes **lag** with heavy writes.
-- Failover is **manual** (portal, PowerShell, CLI, T-SQL). After failover the **server name changes**, so apps must **update connection strings**.
-- **Cross-subscription:** same Microsoft Entra tenant → portal works. Different tenant → **SQL authentication + T-SQL** (or REST API). Not supported with Microsoft Entra-only authentication when an Entra user creates it.
+## Active geo-replication (somente Azure SQL Database)
+- Cria **bancos de dados secundárias legíveis**, geralmente em **outras regiões**, atualizado **assíncrona** (algumas perda de dados é possível).
+- Usa a tecnologia AG nos bastidores.
+- Até **4 geo-secundários legíveis** por primário, na mesma ou em diferentes regiões. Acorrente-os para mais.
+- Funciona para bancos de dados únicas e elastic pools, incluindo **Hyperscale**. **Não suportado no SQL Managed Instance.**
+- O secundário deve usar o **mesmo nível de serviço**. A mesma redundância **tamanho de computação** e backup é fortemente recomendada. Uma causa secundária menor **lag** com gravações pesadas.
+- Failover é **manual** (portal, PowerShell, CLI, T-SQL). Depois de failover o **mudanças de nome do servidor**, então os aplicativos devem **cordas de conexão de atualização**.
+- **Subscrição cruzada:** mesmo inquilino Microsoft Entra → portal funciona. O inquilino diferente → **SQL authentication + T-SQL** (ou REST API). Não é suportado com autenticação somente Microsoft Entra quando um usuário do Entra o cria.
 
-**Configure it:** Portal → the database → **Data management → Replicas** → **Create replica** → pick the server in another region. Or:
+**Configure-o:** Portal → o banco de dados → **Gestão de dados → Replicas** → **Criar réplica** → escolher o servidor em outra região. Ou:
 
 ```bash
 az sql db replica create -g rg-prod -s sql-prod-weu -n SalesDb --partner-server sql-prod-neu --partner-resource-group rg-dr
@@ -47,110 +47,110 @@ az sql db replica create -g rg-prod -s sql-prod-weu -n SalesDb --partner-server 
 ALTER DATABASE [SalesDb] ADD SECONDARY ON SERVER [sql-prod-neu] WITH (ALLOW_CONNECTIONS = ALL);
 ```
 
-**Example:** A travel site in East US adds a geo-secondary in West US for reports and DR. During a storm, the DBA fails over manually and updates the app to the new server name.
+**Exemplo:** Um site de viagens no Leste US adiciona um geo-secundário no Oeste US para relatórios e DR. Durante uma tempestade, o DBA falha manualmente e atualiza o aplicativo para o novo nome do servidor.
 
 ## Failover groups
-**Failover groups** (formerly "auto-failover groups") work on **SQL Database and SQL Managed Instance**.
-- Replicate **a group of databases** to a server or instance in **another region** and fail them over **together**.
-- Give two **listeners** (DNS names that always point to the right place):
+**Failover groups** (anteriormente "auto-failover groups") trabalha em **SQL Database e SQL Managed Instance**.
+- Replicar **um grupo de bancos de dados** para um servidor ou instância em **Outra região** e falhe-os sobre **Juntos**.
+- Dê dois **listeners** (nomes DNS que sempre apontam para o lugar certo):
   - Read-write: `<fog-name>.database.windows.net`
   - Read-only: `<fog-name>.secondary.database.windows.net` (use `ApplicationIntent=ReadOnly`)
-  - MI uses `<fog-name>.<zone_id>.database.windows.net`.
-- After failover, **no connection string change** is needed.
-- Replication is **asynchronous**.
+  - MI usa `<fog-name>.<zone_id>.database.windows.net`.
+- Depois de failover, **mudança connection string** é necessário.
+- A replicação é **assíncrono**.
 
-Scope:
-- **SQL Database:** some or all databases on a server. Many groups per server.
-- **SQL MI:** **all user databases**, **one group per instance**. **System databases are not replicated** (logins and Agent jobs in master/msdb must be created on the secondary yourself).
+Escopo:
+- **SQL Database:** alguns ou todos os bancos de dados em um servidor. Muitos grupos por servidor.
+- **SQL MI:** **todas Os bancos de dados de usuários**, **um grupo por instância**. **Bancos de dados do sistema não são replicados** (logins e Agente jobs no mestre / msdb deve ser criado no secundário você mesmo).
 
-### Failover policy
-| Policy | Value in CLI/PowerShell | What happens |
+### Política Failover
+| Política | Valor em CLI / PowerShell | O que acontece |
 |---|---|---|
-| **Customer managed (recommended)** | `Manual` | You decide when to fail over (planned or forced). Use it to test and run your DR plan |
-| **Microsoft managed** | `Automatic` | Microsoft forces failover of **all** such groups in the region, only for a **wide regional outage**, after a **grace period** (min and default **1 hour**). Never for one group. Don't rely on it |
+| **Cliente gerenciado (recomendado)** | `Manual` | Você decide quando falhar (planejado ou forçado). Use-o para testar e executar seu plano DR |
+| **Microsoft gerenciada** | `Automatic` | A Microsoft força failover de **Todos** tais grupos na região, apenas para um **ampla interrupção regional**, depois de um **período de graça** (min e padrão **1 hora**). Nunca para um grupo. Não confie nele |
 
-- `GracePeriodWithDataLossHours` = how long Azure waits before a forced failover (possible data loss). Set it higher if you can't afford data loss.
-- `az sql failover-group create` now defaults to **Manual**.
-- **Read-only listener failover** is **off by default**: if the secondary is offline, read-only traffic is **not** sent to the primary (to protect primary performance). You can turn it on.
-- **Failback is always manual.**
+- `GracePeriodWithDataLossHours` = how long Azure waits before a forced failover (possível perda de dados). Defina-o mais alto se você não puder pagar a perda de dados.
+- `az sql failover-group create` agora padrão para **Manual**.
+- **Read-only listener failover** é **desactivado por padrão**: se o secundário estiver offline, o tráfego read-only é **E** enviado para o primário (para proteger o desempenho primário). Você pode ligá-lo.
+- **Failback é sempre manual.**
 
-### Configure a failover group
-1. Create a secondary server (SQL DB) or instance (MI) in another region.
-2. Create the failover group (portal: server → **Failover groups** → **Add group**, or CLI/PowerShell) and add databases.
-3. Azure **seeds** (makes the first full copy of) the secondary databases.
-4. Point apps at the **listener** name.
+### Configurar um failover group
+1. Criar um servidor secundário (SQL DB) ou instância (MI) em outra região.
+2. Crie o failover group (portal: servidor → **Failover groups** → **Adicionar grupo**, ou CLI / PowerShell) e adicione bancos de dados.
+3. Azure **sementes** (faz a primeira cópia completa) dos bancos de dados secundários.
+4. Aponte aplicativos para o nome **listener**.
 
 ```bash
 az sql failover-group create --name fog-sales -g rg-prod --server sql-prod-weu \
   --partner-server sql-prod-neu --add-db SalesDb --failover-policy Manual
 ```
 
-**MI requirements:** both instances in the **same DNS zone** (set `DNSZonePartner` when creating the secondary), connected by **global VNet peering** (recommended), VPN or ExpressRoute.
+**Requisitos MI:** ambas as instâncias no **mesma zona DNS** (set `DNSZonePartner` ao criar o secundário), conectado por **global VNet peering** (recomendado), VPN ou ExpressRoute.
 
-**Example:** An HR SaaS app has payroll and expenses databases. A failover group moves both together to North Europe. The app keeps using `fog-hr.database.windows.net`.
+**Exemplo:** Um aplicativo HR SaaS tem bancos de dados de folha de pagamento e despesas. Um failover group se move ambos juntos para o norte da Europa. O aplicativo continua usando `fog-hr.database.windows.net`.
 
-## License-free standby replica
-If a secondary is used **only for DR** (no reads), mark it as a **standby** replica. You pay **no SQL Server licence** for its vCores. Compute and storage are still billed. Works for SQL DB geo-secondaries and SQL MI failover groups.
+## Réplica em standby sem licença
+Se um secundário for usado **apenas para DR** (sem leitura), marque-o como uma réplica **standby**. Você paga **Licença SQL Server** por seu vCores. A computação e o armazenamento ainda são cobrados. Funciona para geo-secundários SQL DB e SQL MI failover groups.
 
-### Connection strings with a failover group
-- Read-write apps: `Server=tcp:fog-sales.database.windows.net;...`
-- Report apps: `Server=tcp:fog-sales.secondary.database.windows.net;ApplicationIntent=ReadOnly;...`
-- Don't use the server names (`sql-prod-weu...`) in apps. After a failover they point to the wrong role.
-- Logins: use **contained database users** (users stored in the database, so they move with it). For server logins on SQL DB, create the same login with the **same SID** on the secondary server.
+### Cordas de conexão com um failover group
+- Aplicações Read-write: `Server=tcp:fog-sales.database.windows.net;...`
+- Relatório apps: `Server=tcp:fog-sales.secondary.database.windows.net;ApplicationIntent=ReadOnly;...`
+- Não use os nomes do servidor (`sql-prod-weu...`) em aplicativos. Depois de um failover eles apontam para o papel errado.
+- Logins: use **usuários de banco de dados contido** (usuários armazenados no banco de dados, então eles se movem com ele). Para o servidor logins em SQL DB, crie o mesmo login com o **mesmo SID** no servidor secundário.
 
-## PaaS HA/DR scenarios
-| Scenario | Pick |
+## cenários PaaS HA/DR
+| Cenário | Escolha |
 |---|---|
-| Survive a single node failure | Nothing to do: built-in HA |
-| Survive a datacenter failure in the region | **Zone redundancy** |
-| Offload reports in the same region (Business Critical) | **Read scale-out** replica (`ApplicationIntent=ReadOnly`) |
-| Readable copies in several regions for one database | **Active geo-replication** |
-| Several databases must fail over together, same connection string | **Failover group** |
-| Cross-region DR for SQL MI | **Failover group** |
-| DR between on-premises SQL Server 2022 and SQL MI with failback | **Managed Instance link** |
-| No replica at all, region lost | **Geo-restore** from backups (lesson 4) |
+| Sobreviver a uma única falha no nó | O que fazer: built-in HA |
+| Sobreviver a uma falha do datacenter na região | **redundância de zona** |
+| Relatórios de descarregamento na mesma região (Business Critical) | Réplica **Read scale-out** (`ApplicationIntent=ReadOnly`) |
+| Cópias legíveis em várias regiões para um banco de dados | **Active geo-replication** |
+| Vários bancos de dados devem falhar juntos, mesmo connection string | **Failover group** |
+| Região cruzada DR para SQL MI | **Failover group** |
+| DR entre on-premises SQL Server 2022 e SQL MI com failback | **Managed Instance link** |
+| Nenhuma réplica, região perdida | **Geo-restore** de backups (lição 4) |
 
-**Example:** A food delivery app runs on Azure SQL Database Business Critical with zone redundancy (HA). A failover group to the paired region gives DR. Reports read from the read-only listener. The secondary is marked as a standby replica only if no reports use it.
+**Exemplo:** Um aplicativo de entrega de alimentos é executado em Azure SQL Database Business Critical com redundância de zona (HA). A failover group para a região emparelhado dá DR. Relatórios lidos a partir do read-only listener. O secundário é marcado como uma réplica standby apenas se nenhum relatório usá-lo.
 
 ## Geo-replication vs failover groups
 | | Active geo-replication | Failover group |
 |---|---|---|
-| SQL Database | Yes | Yes |
-| SQL Managed Instance | **No** | **Yes** (only geo-DR option for MI) |
-| Unit | One database | Group of databases |
-| Number of secondaries | Up to 4 | One (multiple is preview for SQL DB) |
-| Same region allowed | Yes | No, cross-region only |
-| Connection string after failover | **Changes** | **Stays the same** (listener) |
-| Automatic failover | No | Only with Microsoft-managed policy |
-| Readable secondary | Yes | Yes |
+| SQL Database | Sim | Sim |
+| SQL Managed Instance | **Não** | **Sim** (apenas opção geo- DR para MI) |
+| Unidade | Um banco de dados | Grupo de bancos de dados |
+| Número de secundários | até 4 | Um (múltiplo é a pré-visualização para SQL DB) |
+| A mesma região permitida | Sim | Não, apenas entre regiões |
+| Connection string após failover | **Alterações** | **Fica o mesmo** (listener) |
+| Automatic failover | Não | Somente com a política gerenciada pela Microsoft |
+| Secundário legível | Sim | Sim |
 
-## Always On AGs and SQL Managed Instance: the MI link
-You can't build your own AG inside SQL MI. Built-in HA already uses AG technology. To connect SQL Server and SQL MI, use the **Managed Instance link**.
-- It uses a **distributed availability group** under the hood. Each link covers **one database**.
-- **SQL Server 2016 SP3, 2017 CU31, 2019 CU20**: **one-way** to MI. Good for migration, read replicas and DR. Failing over to MI breaks the link. No failback.
-- **SQL Server 2022 and 2025**: **two-way**. Manual **failover and failback**, online. The MI **update policy** must match (SQL Server 2022 or 2025, not "Always-up-to-date").
-- Editions: Enterprise, Standard, Developer.
-- Traffic uses the MI **VNet-local endpoint**, so you need VPN, ExpressRoute or VNet peering.
-- A DR-only MI replica can be **licence-free** (hybrid failover rights).
-- An MI with a link **can't be in a failover group** (and vice versa).
+## Always On AGs e SQL Managed Instance: o link MI
+Você não pode construir seu próprio AG dentro SQL MI. O HA incorporado já usa a tecnologia AG. Para conectar SQL Server e SQL MI, use o **Managed Instance link**.
+- Ele usa um **distributed availability group** sob o capô. Cada link cobre **uma banco de dados**.
+- **SQL Server 2016 SP3, 2017 CU31, 2019 CU20**: **one-way** a MI. Bom para migração, leia réplicas e DR. Falha ao MI quebra o link. Não failback.
+- **SQL Server 2022 e 2025**: **bidirecional**. Manual **failover e failback**, online. O MI **Política de atualização** deve corresponder (SQL Server 2022 ou 2025, não "Sempre atualizado").
+- Edições: Enterprise, Standard, Developer.
+- O tráfego usa o MI **ponto final VNet-local**, então você precisa de VPN, ExpressRoute ou VNet.
+- DR -apenas MI réplica pode ser **sem licença** (direitos híbridos failover).
+- An MI com um link **Não pode estar em um failover group** (e vice-versa).
 
-**Example:** A bank runs SQL Server 2022 on-premises. It links its main database to SQL MI in Azure as a DR copy. During a datacenter outage it fails over to MI, then later fails back.
+**Exemplo:** Um banco executa SQL Server 2022 on-premises. Ele liga seu banco de dados principal ao SQL MI no Azure como uma cópia DR. Durante uma interrupção do datacenter, ele falha em MI, depois falha de volta.
 
-## Remember for the exam
-- PaaS HA is **automatic**. Apps need **retry logic**.
-- Zone redundancy: not on Basic/Standard.
-- **Geo-replication = SQL Database only**, up to 4 secondaries, manual failover, **server name changes**.
-- **Failover group = SQL DB and MI**, listener, **no connection string change**, databases fail over together.
-- MI failover group: **all user DBs**, **one group per instance**, system DBs **not** replicated, same **DNS zone**.
-- Customer managed (`Manual`) policy is recommended. Microsoft managed waits at least **1 hour** and covers the whole region.
-- Read-only listener failover is **off by default**.
-- AG with SQL MI → **Managed Instance link** (two-way needs SQL Server 2022/2025).
-- DR-only secondary → **standby** replica, no licence cost.
+## Para lembrar na prova
+- PaaS HA é **automático**. Apps precisam de **retry lógica**.
+- Redundância de zona: não em Basic/Standard.
+- **Geo-replication = SQL Database apenas**, até 4 segundos, manual failover, **mudanças de nome do servidor**.
+- **Failover group = SQL DB e MI**, listener, **mudança connection string**, bancos de dados falham juntos.
+- MI failover group: **todo usuário DBs**, **um grupo por instância**, sistema DBs **E** replicado, mesmo **zona DNS**.
+- Recomenda-se a política de gestão do cliente (`Manual`). A Microsoft gerenciou esperas pelo menos **1 hora** e cobre toda a região.
+- Read-only listener failover é **desactivado por padrão**.
+- AG com SQL MI → **Managed Instance link** (necessidades bidirecionais SQL Server 2022/2025).
+- DR -apenas réplica secundária → **standby**, sem custo de licença.
 
-## Quick check
-1. You need cross-region DR for SQL Managed Instance. Which feature?
-   <details><summary>Answer</summary>A failover group. Active geo-replication is not available for SQL MI.</details>
-2. An app must keep the same connection string after a regional failover of three Azure SQL databases. Which feature?
-   <details><summary>Answer</summary>A failover group, because apps use its read-write listener and all three databases fail over together.</details>
-3. You need four readable copies of one Azure SQL database in four regions for local reporting. Which feature?
-   <details><summary>Answer</summary>Active geo-replication. It supports up to 4 readable secondaries. A failover group has one secondary.</details>
+## Teste rápido
+1. Você precisa de cross-region DR para SQL Managed Instance. Qual característica?
+   <details><summary>Resposta</summary>failover group. Active geo-replication não está disponível para SQL MI.</details>
+2. Um aplicativo deve manter o mesmo connection string após um failover regional de três Azure SQL databases. Qual recurso?
+   <details><summary>Resposta</summary>A failover groupporque os aplicativos usam seu read-write listener e os três bancos de dados falham juntos.</details>
+3. Você precisa de quatro cópias legíveis de um Azure SQL database em quatro regiões para relatórios locais. Qual característica?
+   <details><summary>Resposta</summary>Active geo-replication. Suporta até 4 secundários legíveis. Um failover group tem um secundário.</details>

@@ -1,108 +1,108 @@
-# SQL Server Agent jobs
+# Jobs do SQL Server Agent
 
-> **Exam skills:** Manage schedules for regular maintenance jobs, Configure job alerts and notifications, Configure alerts and notifications on database tasks
-> **Reading time:** ~8 min
+> **Habilidades cobradas:** Gerenciar agendamentos de jobs de manutenção periódica, configurar alertas e notificações de jobs e configurar alertas e notificações de tarefas de banco de dados
+> **Tempo de leitura:** ~8 min
 
-## The big idea
-Databases need regular care: backups, corruption checks, index and statistics upkeep. **SQL Server Agent** is the built-in scheduler that does this for you. It is like a night manager with a checklist. Each night the manager does the list. If something goes wrong, the manager phones the boss.
+## Conceito central
+Os bancos de dados precisam de manutenção periódica, com backups, verificações de corrupção e manutenção de índices e estatísticas. O **SQL Server Agent** é o agendador integrado que executa essas tarefas. Imagine um gerente noturno que percorre uma lista de tarefas a cada noite. Quando algo dá errado, ele liga para o responsável.
 
-## Where SQL Server Agent exists
-| Platform | SQL Server Agent? |
+## Onde o SQL Server Agent está disponível
+| Plataforma | Disponibilidade do SQL Server Agent |
 |---|---|
-| **SQL Server on an Azure VM** | **Yes, full Agent.** You manage the service, its account, proxies and alerts. |
-| **Azure SQL Managed Instance** | **Yes, built in and always running.** You cannot stop or start it. Its settings are **read-only**. Some features are missing (see lesson 4). |
-| **Azure SQL Database** | **No.** It has no `msdb` database (where Agent stores jobs). Use **elastic jobs**, Azure Automation or Logic Apps instead (lesson 5). |
+| **SQL Server em uma Azure VM** | **Sim, com todos os recursos do Agent.** Você gerencia o serviço, a conta do serviço, os proxies e os alertas. |
+| **Azure SQL Managed Instance** | **Sim, integrado e sempre em execução.** Não é possível pará-lo nem iniciá-lo manualmente. As configurações são **read-only**. Alguns recursos têm limitações, descritas na lição 4. |
+| **Azure SQL Database** | **Não.** O serviço não tem o banco `msdb`, onde o Agent armazena os jobs. Use **Elastic Jobs**, Azure Automation ou Logic Apps (lição 5). |
 
-## Jobs, steps and schedules
-- A **job** is a named task. Example: "NightlyBackup".
-- A job has one or more **steps**. A step can be T-SQL, PowerShell, an SSIS package (SQL Server Integration Services, for moving data), or CmdExec (an operating-system command).
-- A **schedule** says when a job runs: once, daily, weekly, at Agent start, and so on.
-- Jobs and schedules have a **many-to-many** link. One schedule can drive many jobs. One job can have many schedules.
-- Jobs, steps, schedules and history live in the **`msdb`** system database.
+## Jobs, steps e schedules
+- Um **job** é uma tarefa com nome, como “NightlyBackup”.
+- Um job tem um ou mais **steps** (etapas). Cada step pode executar T-SQL, PowerShell, um pacote SSIS (SQL Server Integration Services, usado para movimentar dados) ou CmdExec (um comando do sistema operacional).
+- Um **schedule** define quando o job roda, por exemplo, uma vez, diariamente, toda semana ou na inicialização do Agent.
+- Jobs e schedules têm uma relação **muitos para muitos**. Um schedule pode disparar vários jobs e um job pode ter vários schedules.
+- Jobs, steps, schedules e o histórico ficam no banco de sistema **`msdb`**.
 
-## Example schedule
-A shop database backs up like this:
+## Exemplo de agendamento
+Um banco de dados de uma loja segue esta programação:
 
-| When | What |
+| Quando | O quê |
 |---|---|
-| Sunday 2 AM | Full backup |
-| Monday–Saturday 1 AM | Differential backup |
-| Every hour | Transaction log backup (lets you restore to a point in time) |
-| Saturday midnight | Index maintenance |
+| Domingo, às 2 h | Full backup |
+| De segunda a sábado, à 1 h | Differential backup |
+| A cada hora | Transaction log backup (permite restaurar até um ponto específico no tempo) |
+| Sábado, à meia-noite | Manutenção de índices |
 
-## Maintenance plans
-- The **Maintenance Plan Wizard** in SSMS (SQL Server Management Studio) builds maintenance tasks for you.
-- It saves each plan as an **SSIS package** and creates a SQL Server Agent **job** to run it.
-- The wizard creates a **separate schedule** for each plan.
-- You choose who the job runs as: the **SQL Agent service account** or a **proxy account**.
+## Planos de manutenção
+- O **Maintenance Plan Wizard** do SSMS (SQL Server Management Studio) cria as tarefas de manutenção.
+- O assistente salva cada plano como um **pacote SSIS** e cria um **job** do SQL Server Agent para executá-lo.
+- Cada plano recebe um **schedule separado**.
+- Você escolhe a conta sob a qual o job será executado, como a **SQL Agent service account** ou uma **proxy account**.
 
-Tasks you can add:
-| Task | What it does |
+Tarefas disponíveis
+| Tarefa | O que faz |
 |---|---|
-| Check database integrity | Runs `DBCC CHECKDB` |
-| Shrink database | Makes files smaller. **Avoid doing it often** — it fragments indexes. |
-| Reorganize / Rebuild index | Fixes fragmentation (index pages out of order) |
-| Update statistics | Helps the optimizer pick good query plans |
-| History cleanup | Deletes old backup and job history in `msdb` |
-| Back up database | Full, differential or log backup |
-| Maintenance cleanup | Deletes old backup and report files from disk |
-| Execute SQL Server Agent job | Runs another existing job |
+| Check Database Integrity | Executa `DBCC CHECKDB`. |
+| Shrink Database | Reduz o tamanho dos arquivos. **Evite executar com frequência**, pois fragmenta os índices. |
+| Reorganize Index / Rebuild Index | Trata a fragmentação (páginas de índice fora de ordem). |
+| Update Statistics | Ajuda o otimizador a escolher planos de execução adequados. |
+| History Cleanup | Remove o histórico antigo de backups e jobs em `msdb`. |
+| Back Up Database | Executa um full backup, differential backup ou transaction log backup. |
+| Maintenance Cleanup | Remove do disco os arquivos antigos de backups e relatórios. |
+| Execute SQL Server Agent Job | Executa outro job existente. |
 
-Good habits:
-- Run heavy tasks (index rebuild, CHECKDB) **at quiet times**.
-- **Keep backups longer** than the gap between CHECKDB runs, as corruption may be found late.
-- **Do not shrink** databases on a schedule.
+Boas práticas
+- Execute tarefas pesadas, como rebuild de índices e CHECKDB, **em horários de menor atividade**.
+- **Retenha os backups por mais tempo** que o intervalo entre as execuções do CHECKDB, pois a corrupção pode ser detectada com atraso.
+- **Evite agendar Shrink Database** como rotina.
 
-## Proxy accounts
-- A **proxy** lets a CmdExec, PowerShell or SSIS step run as a **different Windows account**, built on a **credential** (a stored account name and secret). **T-SQL steps never use a proxy.** Managed Instance does not support proxies.
-- **Example:** A step must copy backups to a locked file share. A proxy with access to that share runs the step.
+## Contas proxy
+- Um **proxy** permite que um step CmdExec, PowerShell ou SSIS rode com uma **conta do Windows diferente**. O proxy se baseia em uma **credential**, que guarda o nome da conta e seu segredo. **Steps T-SQL nunca usam proxy.** Managed Instance não oferece suporte a proxies.
+- **Exemplo:** um step precisa copiar backups para um compartilhamento de arquivos restrito. O step roda por meio de um proxy com acesso ao compartilhamento.
 
-## Multi-server administration
-On SQL Server, a **master server (MSX)** can push jobs to many **target servers (TSX)**. Managed Instance does not support this.
+## Administração de múltiplos servidores
+No SQL Server, um **master server (MSX)** pode distribuir jobs a vários **target servers (TSX)**. Esse recurso não está disponível em Managed Instance.
 
-## Operators, notifications and alerts
-| Object | What it is |
+## Operators, notificações e alertas
+| Objeto | O que é |
 |---|---|
-| **Operator** | A person or group that receives messages, usually by email |
-| **Notification** | A message sent when a **job** succeeds, fails or completes |
-| **Alert** | A rule that fires on an **error** or **condition** and tells an operator or runs a job |
+| **Operator** | Pessoa ou grupo que recebe mensagens, normalmente por e-mail. |
+| **Notification** | Mensagem enviada quando um **job** é bem-sucedido, falha ou termina. |
+| **Alert** | Regra disparada por um **erro** ou uma **condição** para avisar um operator ou executar um job. |
 
 ### Operators
-- An operator has a name and an **email address**.
-- **Best practice:** use a **group email**, so nothing is missed when one person is away.
-- **Example:** operator `DBATeam` with email `dba-support@shop.com`.
+- Um operator tem um nome e um **endereço de e-mail**.
+- **Boa prática:** use um **e-mail de grupo** para que as mensagens cheguem mesmo quando alguém estiver ausente.
+- **Exemplo:** o operator `DBATeam` recebe mensagens em `dba-support@shop.com`.
 
-### Job notifications
-- On the job's **Notifications** page, choose an operator and **when** to send: on **failure** (most common), **success** or **completion**.
-- **Example:** email `DBATeam` when the nightly backup **fails**.
+### Notificações de jobs
+- Na página **Notifications** do job, escolha o operator e **quando** enviar a notificação. As opções são **On failure** (a mais comum), **On success** e **On completion**.
+- **Exemplo:** envie um e-mail para `DBATeam` quando o backup noturno **falhar**.
 
-### Alerts
-An Agent alert can fire on:
-| Type | Example |
+### Alertas
+O SQL Server Agent pode disparar um alerta nestas situações:
+| Tipo | Exemplo |
 |---|---|
-| **SQL error number** | Errors **823, 824, 825** (disk I/O errors that can mean corruption) |
-| **Severity level** | All errors of severity **16 or higher** |
-| **Performance condition** | Page Life Expectancy below 300 (memory pressure) |
-| **WMI event** | An availability group failover |
+| **Número do erro SQL** | Erros **823, 824 e 825** (erros de E/S em disco que podem indicar corrupção). |
+| **Nível de severidade** | Qualquer erro de severidade **16 ou superior**. |
+| **Condição de desempenho** | Page Life Expectancy abaixo de 300 (pressão de memória). |
+| **Evento WMI** | Failover de um availability group. |
 
-When an alert fires it can:
-1. Notify an operator (usually email).
-2. **Run a job** to react. Example: on an 823 error, start a job that runs `DBCC CHECKDB`.
+Quando o alerta dispara, o Agent pode:
+1. Notificar um operator, normalmente por e-mail.
+2. **Executar um job** em resposta ao alerta. Por exemplo, ao receber o erro 823, executar um job com `DBCC CHECKDB`.
 
-**Managed Instance:** SQL Agent **alerts are not supported**. Pager and NetSend are not supported either. Only **email notifications on job results** work. For anything else on MI, use **Azure Monitor alerts**.
+**Managed Instance:** os **alertas do SQL Server Agent**, Pager e NetSend não têm suporte. Os **resultados dos jobs** podem gerar notificações por e-mail. Para os demais alertas em MI, use **Azure Monitor alerts**.
 
 ## Database Mail
-Agent sends email through **Database Mail**. Set it up like this:
+O Agent envia e-mails usando o **Database Mail**. A configuração depende do ambiente.
 
 **SQL Server (VM):**
-1. Turn on Database Mail and create a **mail profile** (SMTP server, account).
-2. In **SQL Server Agent Properties → Alert System**, tick **Enable mail profile** and choose the profile.
-3. **Restart SQL Server Agent.**
+1. Ative o Database Mail e crie um **mail profile** com o servidor SMTP e a conta.
+2. Em **SQL Server Agent Properties → Alert System**, selecione **Enable mail profile** e escolha o perfil.
+3. **Reinicie o SQL Server Agent.**
 
 **Managed Instance:**
-- Agent properties are read-only, so you cannot pick a profile there.
-- Instead, the Database Mail profile **must be named `AzureManagedInstance_dbmail_profile`**.
-- The subnet's **NSG** (network security group, a firewall for the subnet) must allow **outbound** traffic to the SMTP port (25, 587 or 465).
+- As propriedades do Agent são **read-only**, portanto a interface não permite selecionar um perfil.
+- O perfil do Database Mail **deve se chamar `AzureManagedInstance_dbmail_profile`**.
+- O **NSG** (network security group) da sub-rede deve permitir tráfego **de saída** para a porta SMTP (25, 587 ou 465).
 
 ```sql
 EXEC msdb.dbo.sp_add_operator @name = N'DBATeam', @email_address = N'dba-support@shop.com';
@@ -111,21 +111,21 @@ EXEC msdb.dbo.sp_update_job  @job_name = N'NightlyBackup',
 ```
 `@notify_level_email`: **1** = on success, **2** = on failure, **3** = on completion.
 
-## Remember for the exam
-- Agent exists on **VM** and **Managed Instance**. **Not on Azure SQL Database** → elastic jobs.
-- On MI, Agent is **always on** and its settings are **read-only**.
-- Jobs, schedules and history are stored in **`msdb`**. Maintenance plans are **SSIS packages**.
-- Jobs and schedules are **many-to-many**.
-- **Don't shrink** databases on a schedule.
-- Operator = who. Notification = job result. Alert = error, severity, performance condition or WMI event.
-- MI: **no Agent alerts, no proxies**. Mail profile must be **`AzureManagedInstance_dbmail_profile`**.
-- SQL Server: enable the mail profile in Agent properties, then **restart Agent**.
-- An alert can **run a job** to fix the problem.
+## Para lembrar na prova
+- O Agent está disponível em **VM** e **Managed Instance**. No **Azure SQL Database**, use Elastic Jobs.
+- Em MI, o Agent está **sempre ativo** e suas configurações são **read-only**.
+- Jobs, schedules e histórico ficam em **`msdb`**. Planos de manutenção são **pacotes SSIS**.
+- A relação entre jobs e schedules é **muitos para muitos**.
+- **Evite incluir Shrink Database** em um schedule de manutenção.
+- Operator indica quem recebe. Notification informa o resultado do job. Alert reage a um erro, severidade, condição de desempenho ou evento WMI.
+- MI não oferece suporte a **alertas do Agent nem proxies**. O perfil de e-mail deve ser **`AzureManagedInstance_dbmail_profile`**.
+- No SQL Server, habilite o perfil de e-mail nas propriedades do Agent e depois **reinicie o Agent**.
+- Um alerta pode **executar um job** para tratar o problema.
 
-## Quick check
-1. On a Managed Instance, job emails never arrive. Agent properties cannot be edited. What do you check first?
-   <details><summary>Answer</summary>That the Database Mail profile is named AzureManagedInstance_dbmail_profile, and that the NSG allows outbound SMTP.</details>
-2. You want an email when error 824 appears on SQL Server on a VM. What do you create?
-   <details><summary>Answer</summary>A SQL Server Agent alert on error number 824, with an operator to notify.</details>
-3. A job step must copy files to a share the Agent service account cannot reach. What do you use?
-   <details><summary>Answer</summary>A proxy account based on a credential that has access to the share (VM only, not MI).</details>
+## Teste rápido
+1. No Managed Instance, os e-mails dos jobs não chegam e você não pode editar as propriedades do Agent. O que deve verificar primeiro?
+   <details><summary>Resposta</summary>Verifique se o perfil do Database Mail se chama AzureManagedInstance_dbmail_profile e se o NSG permite tráfego SMTP de saída.</details>
+2. Você quer receber um e-mail quando o erro 824 ocorrer no SQL Server em uma VM. O que deve criar?
+   <details><summary>Resposta</summary>Crie um alerta do SQL Server Agent para o erro 824 e indique qual operator deve receber a notificação.</details>
+3. Um job step precisa copiar arquivos para um compartilhamento que a conta do serviço do Agent não consegue acessar. O que você usa?
+   <details><summary>Resposta</summary>Use uma proxy account baseada em uma credential com acesso ao compartilhamento. Esse recurso está disponível em VM e não tem suporte em MI.</details>

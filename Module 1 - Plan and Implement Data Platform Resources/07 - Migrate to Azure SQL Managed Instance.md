@@ -1,123 +1,123 @@
-# Migrate to Azure SQL Managed Instance
+# Migrar para Azure SQL Managed Instance
 
-> **Exam skills:** Implement an online migration strategy, Implement a migration to Azure, Implement a migration between Azure SQL services, Implement Azure SQL Managed Instance database copy and move
-> **Reading time:** ~10 min
+> **Habilidades cobradas:** Implementar uma estratégia de migração online, implementar uma migração para o Azure, implementar uma migração entre serviços Azure SQL, implementar Azure SQL Managed Instance database copy e mover
+> **Tempo de leitura:** ~10 min
 
-## The big idea
-Managed Instance understands **native SQL Server backups**. So most MI migrations are "restore backups" (LRS) or "live copy" (MI link). Azure Arc wraps both in one portal flow. Inside Azure, you can **copy or move** a database from one MI to another.
+## Conceito central
+Managed Instance entende **nativo SQL Server backups**. Então a maioria das migrações MI são "restaurar backups" (LRS) ou "cópia ao vivo" (link MI). Azure Arc envolve ambos em um fluxo portal. Dentro do Azure, você pode **copiar ou mover** um banco de dados de um MI para outro.
 
-Analogy: moving to a serviced flat that accepts your own furniture. You can send it in boxes (backups), or keep a live video link until moving day (MI link).
+Analogia: mover-se para um apartamento com serviço que aceita seu próprio mobiliário. Você pode enviá-lo em caixas (backups), ou manter um link de vídeo ao vivo até o dia em movimento (Link MI).
 
-## Your options
-| Method | Online? | Notes |
+## Suas opções
+| Método | Online? | Notas |
 |--------|---------|-------|
-| **Log Replay Service (LRS)** | Yes (continuous mode) | Restores your backups from Blob Storage |
-| **Managed Instance link** | Yes | Near real-time replication using a distributed AG |
-| **SQL Server migration in Azure Arc** | Yes | Portal flow that uses MI link or LRS |
-| **Native backup/restore** | No | `RESTORE FROM URL` of a full backup |
-| **Transactional replication** | Both | MI can be publisher, distributor or subscriber |
-| **BACPAC** | No | SqlPackage or SSMS only (no portal import to MI) |
+| **Log Replay Service (LRS)** | Sim (modo contínuo) | Restaura o seu backups de Blob Storage |
+| **Managed Instance link** | Sim | Replicação quase em tempo real usando um AG distribuído |
+| **Migração SQL Server no Azure Arc** | Sim | Fluxo de portal que usa link MI ou LRS |
+| **Nativo backup /restaurar** | Não | `RESTORE FROM URL` de um full backup |
+| **Transactional replication** | Ambos | MI pode ser editor, distribuidor ou assinante |
+| **BACPAC** | Não | Somente SqlPackage ou SSMS (sem importação de portal para MI) |
 
-**Example:** A sports retailer's catalog database feeds the website, sales app and reports. It uses SQL Agent and cross-database joins. They pick MI so no app code changes.
+**Exemplo:** O banco de dados de catálogo de um varejista esportivo alimenta o site, o aplicativo de vendas e os relatórios. Ele usa SQL Agent e junções de bancos de dados cruzados. Eles escolhem MI para que nenhum código de aplicativo mude.
 
-## Connect on-premises to MI
-- MI lives in a **private subnet**. On-premises reaches it by **site-to-site VPN** or **ExpressRoute**. Point-to-site VPN is for one admin machine.
-- Optional **public endpoint** on port **3342**. A DBA turns it on; the network team opens the port.
+## Conectar on-premises a MI
+- MI vive em um **sub-rede privada**. On-premises chega a ele por **site-site VPN** ou **ExpressRoute**. Point-to-site VPN é para uma máquina de administração.
+- **endpoint público** opcional na porta **3342**. A DBA liga-o; a equipe de rede abre a porta.
 
-## Native backup and restore
+## Nativo backup e restaurar
 ```sql
 CREATE CREDENTIAL [https://acct.blob.core.windows.net/backups]
   WITH IDENTITY = 'SHARED ACCESS SIGNATURE', SECRET = '<sas token>';
 RESTORE DATABASE Sales FROM URL = 'https://acct.blob.core.windows.net/backups/Sales.bak';
 ```
-MI restore limits:
-- Only from **Azure Blob Storage** (no local disk).
-- Restores single databases, not a whole instance. Can't overwrite an existing database.
-- No **FILESTREAM/FileTable** backups.
-- Active **In-Memory OLTP** objects → **Business Critical** only, not General Purpose.
-- **TDE** backups need the certificate or key on MI first.
-- To apply **differential** backups you need LRS.
+Limites de restauração MI:
+- Apenas a partir de **Azure Blob Storage** (sem disco local).
+- Restaura bancos de dados únicas, não uma instância inteira. Não é possível substituir uma banco de dados existente.
+- Não **FILESTREAM/FileTable** backups.
+- Objetos **In-Memory OLTP** ativos → **Business Critical** apenas, não General Purpose.
+- **TDE** backups precisa do certificado ou chave em MI primeiro.
+- Para aplicar **diferencial** backups você precisa de LRS.
 
 ## Log Replay Service (LRS)
-LRS is log shipping into MI. You take backups; LRS restores them.
-1. Take full, differential and log backups. Upload them to **Blob Storage**.
-2. Start LRS. It restores what it finds.
-3. Keep uploading log backups.
-4. **Cutover**: complete the migration and switch apps.
+LRS é log shipping em MI. Você toma backups; LRS restaura-os.
+1. Pegue o total, diferencial e log backups. Carregue-os para **Blob Storage**.
+2. Start LRS. Ele restaura o que encontra.
+3. Mantenha o registro de upload backups.
+4. **Cutover**: complete a migração e troque de aplicativo.
 
-| Mode | How | Use |
+| Modo | Como | Utilização |
 |------|-----|-----|
-| **Autocomplete** | Upload the **whole chain first**, give the last file name. LRS finishes by itself. | Planned downtime |
-| **Continuous** | LRS keeps watching for new files. You complete it manually. | Minimal downtime |
+| **Autocompletar** | Carregue o **cadeia inteira primeiro**, dê o último nome do arquivo. LRS termina por si só. | Tempo de inatividade planejado |
+| **Contínuo** | LRS continua a observar novos arquivos. Você completa manualmente. | Tempo de inatividade mínimo |
 
-Key facts:
-- Source: **SQL Server 2012+, all editions**, any host.
-- The database stays in **restoring** state (not readable) until cutover.
-- Must finish within **30 days**, or the job is cancelled.
-- Access to storage: **SAS token or managed identity**, not both. SAS = **Read + List only**.
-- Commands: `Start-/Get-/Complete-/Stop-AzSqlInstanceDatabaseLogReplay` or `az sql midb log-replay start|show|complete|stop`.
-- Backups: **one backup per file**, `WITH CHECKSUM`, `COMPRESSION`, split big backups into several files.
-- Cutover to **Business Critical** is slow (it must seed 3 replicas). Prefer MI link for BC.
+Factos-chave:
+- Fonte: **SQL Server 2012+, todas as edições**, qualquer host.
+- O banco de dados permanece no estado **Restaurando** (não legível) até o cutover.
+- Deve terminar dentro do **30 dias**, ou o job é cancelado.
+- Acesso ao armazenamento: **token SAS ou managed identity**Não os dois. SAS = **Ler + Listar apenas**.
+- Comandos: `Start-/Get-/Complete-/Stop-AzSqlInstanceDatabaseLogReplay` ou `az sql midb log-replay start|show|complete|stop`.
+- Backups: **um backup por arquivo**, `WITH CHECKSUM`, `COMPRESSION`, dividir grande backups em vários arquivos.
+- Cutover para **Business Critical** é lento (deve semear 3 réplicas). Prefere link MI para BC.
 
-When LRS fits: you need full control, can't install DMS, or the source can't open ports to Azure. LRS only needs Blob Storage.
+Quando LRS se encaixa: você precisa de controle total, não pode instalar DMS ou a fonte não pode abrir portas para o Azure. LRS só precisa de Blob Storage.
 
-**Example:** A 2014 Standard Edition server can't use MI link. LRS in continuous mode keeps MI up to date for a week. Cutover on Saturday takes minutes.
+**Exemplo:** Um servidor da Edição Padrão de 2014 não pode usar o link MI. LRS no modo contínuo mantém o MI atualizado por uma semana. O cutover no sábado leva minutos.
 
 ## Managed Instance link
-MI link uses a **distributed availability group** to replicate one database from SQL Server to MI in near real time.
+O link MI usa um **distributed availability group** para replicar um banco de dados de SQL Server para MI em tempo quase real.
 
-| SQL Server version | Direction |
+| versão SQL Server | Direção |
 |-------------------|-----------|
-| 2016 SP3, 2017 CU31, 2019 CU20 (2016/2017 also need the Azure Connect pack) | **One-way.** Failover to MI breaks the link; no failback. |
-| **2022, 2025** | **Two-way.** Online failover **and failback**. MI must use the matching update policy (not Always-up-to-date). |
+| 2016 SP3, 2017 CU31, 2019 CU20 (2016/2017 também precisa do pacote Azure Connect) | **Só de ida.** Failover para MI quebra o link; nenhum failback. |
+| **2022, 2025** | **Dois sentidos.** Online failover **e failback**. MI deve usar a política de atualização correspondente (não sempre atualizada). |
 
-Key facts:
-- **One database = one link** (a multi-database mode is in preview).
-- Editions: **Enterprise, Standard, Developer**.
-- Needs **private** connectivity (VPN, ExpressRoute or VNet peering). It uses the MI VNet-local endpoint, port **5022**.
-- MI DB is **readable** during migration (good for reports).
-- **No time limit.** Cutover takes seconds.
-- An MI with a link **can't be in a failover group**.
-- No FILESTREAM or FileTable.
-- Set up with the **SSMS wizard**, T-SQL or PowerShell.
-- Also used for **DR** (MI as standby) and **read offload**.
+Factos-chave:
+- **One database = one link** (um modo multi-banco de dados está em pré-visualização).
+- Edições: **Enterprise, Standard, Desenvolvedor**.
+- Precisa de conectividade **privado** (VPN, ExpressRoute ou VNet peering). Ele usa o ponto final MI VNet-local, porta **5022**.
+- MI DB é **legível** durante a migração (bom para relatórios).
+- **Não há limite de tempo.** Cutover leva segundos.
+- An MI com um link **Não pode estar em um failover group**.
+- Não FILESTREAM : FileTable.
+- Configure com o **assistente SSMS**, T-SQL ou PowerShell.
+- Também usado para **DR** (MI como standby) e **ler offload**.
 
 ## LRS vs MI link
-| | MI link | LRS |
+| | link MI | LRS |
 |-|---------|-----|
-| Technology | Distributed AG | Backup restore from Blob |
-| Source | SQL Server 2016+ | SQL Server 2012+ |
-| Editions | Enterprise, Standard, Developer | All |
-| Target readable during migration | Yes | No |
-| Time limit | None | 30 days |
-| Best for | Business Critical, seconds of downtime | Old versions, Web/Express, public endpoint |
-| Reverse migration | Possible (2022/2025) | No |
+| Tecnologia | AG distribuído | Restauração Backup de Blob |
+| Fonte | SQL Server 2016+ | SQL Server 2012+ |
+| Edições | Enterprise, Standard, Desenvolvedor | Todos |
+| Alvo legível durante a migração | Sim | Não |
+| Prazo limite | Nenhum | 30 dias |
+| Melhor para | Business Critical, segundos de tempo de inatividade | Versões antigas, Web/Express, endpoint público |
+| Migração inversa | Possível (2022/2025) | Não |
 
-## SQL Server migration in Azure Arc
-For an **Arc-enabled** SQL Server, the portal has **Migration → Database migration** with four tiles:
-1. **Assess source instance:** blockers and a right-sized MI. Runs **every weekend** automatically, or on demand.
-2. **Select target:** pick or create an MI.
-3. **Migrate data:** choose **MI link** (real-time) or **LRS** (log shipping).
-4. **Monitor and cutover:** watch status and **replication lag**, then cut over.
+## Migração SQL Server no Azure Arc
+Para um **Arc-enabled** SQL Server, o portal tem **Migração → Migração de banco de dados** com quatro telhas:
+1. Bloqueadores **Avalie a instância de origem:** e um MI de tamanho direito. Funciona **Todos os fins de semana** automaticamente, ou sob demanda.
+2. **Selecione o alvo:** escolher ou criar um MI.
+3. **Migrar dados:** escolher **link MI** (em tempo real) ou **LRS** (log shipping).
+4. **Monitor e recorte:** estado do relógio e **atraso de replicação**, em seguida, cortar.
 
-- It uses **only MI link or LRS** (not DMS, not BACPAC).
-- MI link here: up to **10** databases at once (recent Azure extension for SQL Server). LRS: unlimited.
-- For LRS you must first upload at least one **full backup**.
-- **Copilot** can explain the assessment and run steps.
-- **Failover cluster instances can't be migrated** this way.
-- No reverse migration in the Arc flow.
+- Ele usa **link somente MI ou LRS** (não DMS, não BACPAC).
+- link MI aqui: até bancos de dados **10** de uma só vez (extensão recente do Azure para SQL Server). LRS: ilimitado.
+- Para LRS você deve primeiro carregar pelo menos um **full backup**.
+- **Copiloto** pode explicar a avaliação e executar etapas.
+- **Failover cluster instances não pode ser migrado** por aqui.
+- Não há migração reversa no fluxo do Arco.
 
-**Example:** The bike company Arc-enabled its servers last year. The DBA opens the portal, reads the weekend assessment, creates the recommended MI and starts an MI link. Cutover is a click.
+**Exemplo:** A empresa de bicicletas Arc habilitado seus servidores no ano passado. O DBA abre o portal, lê a avaliação de fim de semana, cria o MI recomendado e inicia um link MI. Cutover é um clique.
 
-## MI database copy and move
-Copy or move a **user database** from one MI to another, **online**, using Always On technology.
+## MI database copy e mover
+Copie ou mova um **banco de dados do usuário** de um MI para outro, **online**, usando a tecnologia Always On.
 
-| Operation | Source after completion | Typical use |
+| Operação | Fonte após a conclusão | Uso típico |
 |-----------|------------------------|-------------|
-| **Copy** | Stays online | Refresh test from production |
-| **Move** | **Dropped** | Rebalance load, consolidate instances |
+| **Copiar** | Estadias online | Teste de atualização da produção |
+| **Mover** | **Dropped** | Reequilibrar a carga, consolidar instâncias |
 
-Steps: **Start** → seeding → **Ready for completion** (changes keep flowing) → **Complete** (you click). You must complete within **24 hours**, or it auto-cancels and drops the target.
+etapas: **Iniciar** → semeadura → **Pronto para conclusão** (mudanças continuam fluindo) → **Completar** (você clica). Você deve completar dentro de **24 horas**, ou auto-cancela e deixa cair o alvo.
 
 ```powershell
 Copy-AzSqlInstanceDatabase -DatabaseName SalesDb -InstanceName mi-prod -ResourceGroupName rg-prod `
@@ -127,38 +127,38 @@ Complete-AzSqlInstanceDatabaseCopy -DatabaseName SalesDb -InstanceName mi-prod -
 # Move: Move-AzSqlInstanceDatabase. CLI: az sql midb copy|move start|complete|cancel
 ```
 
-Rules:
-- **Same region only.** Cross-subscription OK within the **same Entra tenant**.
-- User databases only. Source and target instance must differ. No rename.
-- Up to **8** operations at once per source instance.
-- **Not** for databases in a **failover group** or with **MI link**.
-- Different VNets need peering and ports **5022** and **11000–11999** open.
-- **PITR backups don't move.** The target starts a new backup chain.
-- TDE with customer-managed key → target needs the **same Key Vault key**.
-- Target **update policy** must be the same or higher.
-- Move is designed for **zero data loss**.
+Regras:
+- **Apenas na mesma região.** Assinatura cruzada OK dentro do **mesmo inquilino Entra**.
+- Somente bancos de dados de usuários. A instância de origem e de destino deve diferir. Sem renome.
+- Operações de até **8** ao mesmo tempo por instância de origem.
+- **Não** para bancos de dados em um **failover group** ou com **link MI**.
+- Diferentes VNets precisam de peering e portas **5022** e **11000–11999** abertas.
+- **PITR backups não se mexa.** O alvo inicia um novo backup chain.
+- TDE com cliente-gerenciado chave → alvo precisa do **Chave chave Vault mesmo**.
+- O alvo **Política de atualização** deve ser igual ou superior.
+- Mover é projetado para **perda de dados zero**.
 
-**Other ways to relocate an MI database:**
-| Need | Use |
+**Outras maneiras de realocar um banco de dados MI:**
+| Necessidade | Utilização |
 |------|-----|
-| Another region | Geo-restore, failover group, or COPY_ONLY backup to URL + restore |
-| As it was yesterday | Point-in-time restore |
-| Whole instance for DR | Failover group |
+| Outra região | Geo-restore, failover group, ou COPY_ONLY backup a URL + restaurar |
+| Como foi ontem | Point-in-time restore |
+| instância inteira para DR | Failover group |
 
-## Remember for the exam
-- "SQL Server 2012, Web edition, to MI" → **LRS**.
-- "Keep adding log backups" → LRS **continuous**, not autocomplete. LRS limit = **30 days**.
-- "Readable target, Business Critical, seconds of downtime" → **MI link**.
-- "Fail back to on-premises" → MI link with SQL Server **2022/2025**.
-- "Arc-enabled server, migrate from the portal" → **Arc migration** (uses MI link or LRS).
-- "Refresh test MI from prod, prod stays online" → **database copy**.
-- "Move to MI in another region" → **not** copy/move. Use geo-restore or backup/restore.
-- "Ready for completion, nothing happens" → you must click **Complete** within **24 h**.
+## Para lembrar na prova
+- "SQL Server 2012, edição Web, a MI " → **LRS**.
+- "Continue adicionando log backups" → LRS **contínuo**, não autocompletar. LRS limit = **30 dias**.
+- "Alvo legível, Business Critical, segundos de inatividade" → **link MI**.
+- Para fazer failback para on-premises, use MI link com SQL Server **2022/2025**.
+- "Servidor habilitado para Arc, migrar do portal" → **Migração de arco** (usa o link MI ou LRS).
+- "Refresh teste MI de prod, prod permanece online" → **database copy**.
+- "Mover para MI em outra região" → **E** copiar / mover. Use geo-restore ou backup / restaurar.
+- "Pronto para conclusão, nada acontece" → você deve clicar em **Completar** dentro **24 h**.
 
-## Quick check
-1. Your source is SQL Server 2019 Enterprise. You need a readable MI copy during migration. LRS or MI link?
-   <details><summary>Answer</summary>MI link. LRS keeps the database in restoring state, so it can't be read.</details>
-2. A copy operation is "Ready for completion" for two days, then disappears. Why?
-   <details><summary>Answer</summary>It wasn't completed within 24 hours, so it was auto-cancelled.</details>
-3. Which two engines does Azure Arc migration use?
-   <details><summary>Answer</summary>Managed Instance link and Log Replay Service.</details>
+## Teste rápido
+1. Sua fonte é SQL Server 2019 Enterprise. Você precisa de uma cópia MI legível durante a migração. LRS ou MI link?
+   <details><summary>Resposta</summary>MI link. LRS mantém o banco de dados em estado de restauração, por isso não pode ser lido.</details>
+2. Uma operação de cópia é "Pronto para conclusão" por dois dias, depois desaparece. Por quê?
+   <details><summary>Resposta</summary>Não foi concluído dentro de 24 horas, por isso foi cancelado automaticamente.</details>
+3. Quais são os dois motores que a migração do Azure Arc usa?
+   <details><summary>Resposta</summary>Managed Instance link e Log Replay Service.</details>

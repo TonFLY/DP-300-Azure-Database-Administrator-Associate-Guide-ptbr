@@ -1,60 +1,60 @@
-# Module 2: Implement a Secure Environment
+# Módulo 2 — Implementar um ambiente seguro
 
-**Exam weight:** 20–25% · **Reading time:** ~85 min · **Files:** 8
+**Peso do exame:** 20–25% · **Tempo de leitura:** ~85 min · **Arquivos:** 8
 
-## What you will learn
-You will learn how people and apps prove who they are, and how to give them only the rights they need. You will learn to encrypt data on disk, in chosen columns, and on the network. You will learn to control which networks can reach a database. Finally, you will learn the compliance tools: labels, audits, masking, row filters, ledger, threat alerts, and change tracking.
+## O que você vai aprender
+Você vai aprender como pessoas e aplicativos comprovam sua identidade e como conceder somente as permissões necessárias. Também vai criptografar dados em disco, em colunas específicas e em trânsito, e definir quais redes podem acessar o banco. Por fim, você vai estudar os controles de conformidade, como rótulos, auditoria, masking, filtros de linha, ledger, alertas de ameaças e change tracking.
 
-Picture a bank. The front door checks your ID (authentication). Your key card opens only some rooms (permissions). The vault is locked (TDE), and some safe boxes can be opened only by their owners, not by staff (Always Encrypted). Money moves in armoured vans (TLS) along private roads (Private Link). Cameras record everything (auditing), tellers see only part of a card number (masking), each branch sees only its own customers (row-level security), and a sealed logbook shows if a page was torn out (ledger).
+Imagine um banco. A porta da frente verifica o seu ID (autenticação). Seu cartão-chave abre apenas alguns quartos (permissões). O cofre está bloqueado (TDE), e algumas caixas seguras podem ser abertas apenas por seus proprietários, não por funcionários (Always Encrypted). O dinheiro move-se em vans blindadas (TLS) ao longo de estradas privadas (Private Link). As câmeras gravam tudo (auditando), os caixas veem apenas parte de um número de cartão (mascaramento), cada filial vê apenas seus próprios clientes (row-level security), e um diário de bordo selado mostra se uma página foi arrancada (ledger).
 
-## Lessons in this module
-| # | Lesson | What it covers | Time |
+## Lições neste módulo
+| # | Lição | O que ela cobre | Tempo |
 |---|--------|----------------|------|
-| 1 | [Authentication](<01 - Authentication.md>) | SQL vs Entra ID login, Entra admin, Entra-only auth, managed identities, Azure RBAC | ~10 min |
-| 2 | [Users, roles and permissions](<02 - Users, roles and permissions.md>) | Logins, users, roles, GRANT/DENY/REVOKE, ownership chains, least privilege | ~13 min |
-| 3 | [Troubleshoot login and permission problems](<03 - Troubleshoot login and permission problems.md>) | Transient faults, retry logic, fixing "login failed" | ~6 min |
-| 4 | [Encryption](<04 - Encryption.md>) | TDE, Key Vault keys, cell encryption, Always Encrypted, VBS and SGX enclaves, TLS | ~20 min |
-| 5 | [Network security](<05 - Network security.md>) | Firewall rules, service endpoints, Private Link, connection policy, SQL injection | ~8 min |
-| 6 | [Compliance controls](<06 - Compliance controls.md>) | Classification, Purview, auditing, masking, row-level security, ledger, Defender for SQL | ~17 min |
-| 7 | [Change tracking and change data capture](<07 - Change tracking and change data capture.md>) | CT vs CDC, setup, querying, platform limits | ~10 min |
+| 1 | [Autenticação](<01 - Authentication.md>) | SQL vs Entra ID login, Admin de entrada, Auth somente para entrada, managed identities, Azure RBAC | ~10 min |
+| 2 | [Usuários, roles e permissões](<02 - Users, roles and permissions.md>) | Logins, usuários, papéis, GRANT / DENY / REVOKE, cadeias de propriedade, menos privilégio | ~13 min |
+| 3 | [Solucionar problemas de login e permissão](<03 - Troubleshoot login and permission problems.md>) | Falhas transitórias, lógica de repetição, fixação "login falhou" | ~6 min |
+| 4 | [Criptografia](<04 - Encryption.md>) | TDE, Chaves chave Vault, encriptação de células, Always Encrypted, VBS e SGX enclaves, TLS | ~20 min |
+| 5 | [Segurança de rede](<05 - Network security.md>) | Regras de firewall, service endpoints, Private Link, política de conexão, injeção SQL | ~8 min |
+| 6 | [Controles de conformidade](<06 - Compliance controls.md>) | Classificação, Purview, auditoria, mascaramento, row-level security, livro-razão, Defender for SQL | ~17 min |
+| 7 | [Change tracking e change data capture](<07 - Change tracking and change data capture.md>) | CT vs CDC, configuração, consulta, limites da plataforma | ~10 min |
 
-## Words you will meet
-| Word | Simple meaning |
+## Palavras que você vai encontrar
+| Palavra | Significado simples |
 |------|----------------|
-| Authentication | Proving who you are |
-| Authorization | What you are allowed to do |
-| Microsoft Entra ID | Microsoft's cloud identity service (old name: Azure AD) |
-| Managed identity | An Azure-managed identity for a resource, with no password to store |
-| Login / User | Access to the server / access to one database |
-| Least privilege | Give only the rights needed for the job |
-| TDE | Encrypts the whole database and backups on disk |
-| Always Encrypted | Encrypts chosen columns in the app, so the server never sees plain values |
-| Secure enclave | A locked area of server memory where encrypted data can be safely worked on |
-| TLS | Encryption for data moving over the network |
-| Private Link | Gives the database a private IP inside your virtual network |
-| Service endpoint | Lets a chosen subnet reach the database over Azure's backbone |
-| Dynamic data masking | Hides part of a value in query results |
-| Row-level security | Each user sees only the rows they are allowed to see |
-| Ledger | Makes tampering with data detectable |
+| Autenticação | Provando quem você é |
+| Autorização | O que você tem permissão para fazer |
+| Microsoft Entra ID | Serviço de identidade em nuvem da Microsoft (nome antigo: Azure AD) |
+| Managed identity | Um Azure-managed identity para um recurso, sem senha para armazenar |
+| Login / Usuário | Acesso ao servidor / acesso a um banco de dados |
+| Menor privilégio | Dê apenas os direitos necessários para o job |
+| TDE | Criptografa toda a banco de dados e backups no disco |
+| Always Encrypted | Criptografa colunas escolhidas no aplicativo, para que o servidor nunca veja valores simples |
+| Secure enclave | Uma área bloqueada de memória do servidor onde os dados criptografados podem ser trabalhados com segurança |
+| TLS | Criptografia de dados que se deslocam pela rede |
+| Private Link | Dá ao banco de dados um IP privado dentro da sua rede virtual |
+| Service endpoint | Permite que uma sub-rede escolhida alcance o banco de dados sobre a espinha dorsal do Azure |
+| Dynamic data masking | Oculta parte de um valor nos resultados da consulta |
+| Row-level security | Cada usuário vê apenas as linhas que pode ver |
+| Ledger | Torna a manipulação de dados detectável |
 
-## Exam skills covered
-- [ ] Configure Microsoft Entra ID authentication for Azure SQL Database, Azure SQL Managed Instance, and SQL Server → 1
-- [ ] Configure authentication for SQL on Azure VMs and Azure SQL Managed Instance → 1
-- [ ] Configure security principals → 2
-- [ ] Create users from Microsoft Entra identities → 2
-- [ ] Configure database and object-level permissions using graphical tools → 2
-- [ ] Apply the principle of least privilege for all securables → 2
-- [ ] Troubleshoot authentication and authorization issues → 3
-- [ ] Manage authentication and authorization by using T-SQL → 2, 3
-- [ ] Implement transparent data encryption (TDE) → 4
-- [ ] Implement object-level encryption → 4
-- [ ] Configure server- and database-level firewall rules → 5
-- [ ] Implement Always Encrypted → 4
-- [ ] Implement Always Encrypted with secure enclaves → 4
-- [ ] Configure private links and service endpoints → 5
-- [ ] Apply a data classification strategy → 6
-- [ ] Configure server and database audits → 6
-- [ ] Implement change data tracking → 7
-- [ ] Implement dynamic data masking → 6
-- [ ] Implement ledger in Azure SQL → 6
-- [ ] Implement row-level security → 6
+## exame de habilidades cobertas
+- [ ] Configurar a autenticação Microsoft Entra ID para Azure SQL Database, Azure SQL Managed Instance e SQL Server → 1
+- [ ] Configurar autenticação para SQL em Azure VMs e Azure SQL Managed Instance → 1
+- [ ] Configurar os princípios de segurança → 2
+- [ ] Criar usuários a partir de identidades Microsoft Entra → 2
+- [ ] Configurar permissões de banco de dados e nível de objeto usando ferramentas gráficas → 2
+- [ ] Aplicar o princípio do privilégio mínimo para todos os bens protegidos → 2
+- [ ] Resolver problemas de autenticação e autorização → 3
+- [ ] Gerenciar autenticação e autorização usando T-SQL → 2, 3
+- [ ] Implementar transparent data encryption (TDE) → 4
+- [ ] Implemente a criptografia de nível de objeto → 4
+- [ ] Configurar regras de firewall de nível servidor e banco de dados → 5
+- [ ] Implementar Always Encrypted → 4
+- [ ] Implementar Always Encrypted with secure enclaves → 4
+- [ ] Configurar links privados e service endpoints → 5
+- [ ] Aplicar uma estratégia de classificação de dados → 6
+- [ ] Configurar auditorias de servidor e banco de dados → 6
+- [ ] Implementar o rastreamento de dados de mudança → 7
+- [ ] Implementar dynamic data masking → 6
+- [ ] Implemente o livro-razão em Azure SQL → 6
+- [ ] Implementar row-level security → 6

@@ -1,45 +1,45 @@
-# Module 4: Configure and Manage Automation of Tasks
+# Módulo 4 — Configurar e gerenciar a automação de tarefas
 
-**Exam weight:** 15–20% · **Reading time:** ~50 min · **Files:** 7
+**Peso do exame:** 15–20% · **Tempo de leitura:** ~50 min · **Arquivos:** 7
 
-## What you will learn
-You will create Azure SQL resources with code, and fix deployments that fail. You will schedule jobs with SQL Server Agent. You will learn what replaces Agent in Azure SQL Database. You will set up alerts when a task fails.
+## O que você vai aprender
+Você vai criar recursos Azure SQL com código, diagnosticar falhas de deployment e agendar jobs com SQL Server Agent. Também vai conhecer as alternativas de automação para Azure SQL Database e configurar alertas para falhas em tarefas.
 
-Think of a pizza chain. It builds every new shop from one **blueprint** (deployment automation). Each night a manager with a checklist cleans and counts the cash (SQL Server Agent). Shops with no night manager get the checklist run by head office (elastic jobs, Azure Automation, Logic Apps). If a task fails, someone's phone rings (alerts).
+Imagine uma rede de pizzarias. Cada loja nova segue uma mesma planta, ou **blueprint** (automação de deployment). À noite, o gerente segue um checklist para limpar a loja e contar o dinheiro (SQL Server Agent). Nas lojas sem gerente noturno, a sede executa o checklist (Elastic Jobs, Azure Automation e Logic Apps). Se uma tarefa falha, o responsável recebe um aviso (alertas).
 
-## Lessons in this module
-| # | Lesson | What it covers | Time |
+## Lições neste módulo
+| # | Lição | O que ela cobre | Tempo |
 |---|--------|----------------|------|
-| 1 | [Automate deployments](<01 - Automate deployments.md>) | Declarative vs imperative, ARM, Bicep, PowerShell, Azure CLI | ~8 min |
-| 2 | [Monitor and troubleshoot deployments](<02 - Monitor and troubleshoot deployments.md>) | What-if, deployment history, activity log, common errors, rollback | ~8 min |
-| 3 | [SQL Server Agent jobs](<03 - SQL Server Agent jobs.md>) | Jobs, schedules, maintenance plans, operators, alerts, Database Mail | ~8 min |
-| 4 | [Troubleshoot SQL Server Agent jobs](<04 - Troubleshoot SQL Server Agent jobs.md>) | Job history, owners, proxies, missing emails, AG jobs, MI limits | ~7 min |
-| 5 | [Automate tasks in Azure](<05 - Automate tasks in Azure.md>) | Elastic jobs, Azure Automation runbooks, Logic Apps, which tool when | ~9 min |
-| 6 | [Alerts, monitoring and troubleshooting automated tasks](<06 - Alerts, monitoring and troubleshooting automated tasks.md>) | Azure Monitor alerts, action groups, job history, Log Analytics | ~5 min |
+| 1 | [Automatizar implantações](<01 - Automate deployments.md>) | Declarativo vs imperativo, ARM, Bicep, PowerShell, Azure CLI | ~8 min |
+| 2 | [Monitorar e diagnosticar problemas em implantações](<02 - Monitor and troubleshoot deployments.md>) | What-if, histórico de implantação, registro de atividade, erros comuns, reversão | ~8 min |
+| 3 | [Jobs do SQL Server Agent](<03 - SQL Server Agent jobs.md>) | Jobs, horários, planos de manutenção, operadores, alertas, Database Mail | ~8 min |
+| 4 | [Diagnosticar problemas em jobs do SQL Server Agent](<04 - Troubleshoot SQL Server Agent jobs.md>) | História Job, proprietários, proxies, falta de e-mails, AG jobs, limites MI | ~7 min |
+| 5 | [Automatizar tarefas no Azure](<05 - Automate tasks in Azure.md>) | Elastic jobs, Azure Automation runbooks, Logic Apps, que ferramenta quando | ~9 min |
+| 6 | [Alertas, monitoramento e diagnóstico de tarefas automatizadas](<06 - Alerts, monitoring and troubleshooting automated tasks.md>) | Azure Monitor alerts, grupos de ação, história job, Log Analytics | ~5 min |
 
-## Words you will meet
-| Word | Simple meaning |
+## Palavras que você vai encontrar
+| Palavra | Significado simples |
 |------|----------------|
-| Infrastructure as Code (IaC) | Describing servers and databases in a code file, so you can build them again and again the same way |
-| ARM template | A JSON file that describes Azure resources |
-| Bicep | A simpler language for the same thing; it turns into ARM JSON when you deploy |
-| SQL Server Agent | The built-in job scheduler of SQL Server |
-| Operator | A person or email group that gets job emails |
-| Database Mail | The SQL Server feature that sends email |
-| Elastic job | A T-SQL job that runs on many Azure SQL databases at once |
-| Runbook | A PowerShell or Python script run by Azure Automation |
-| Logic App | A low-code workflow, drawn in a designer, that reacts to events |
-| Action group | The list of "who to tell and what to do" when an Azure alert fires |
+| Infraestrutura como Código (IaC) | Descrever servidores e bancos de dados em um arquivo de código, para que você possa construí-los novamente e novamente da mesma maneira |
+| Modelo ARM | Arquivo JSON que descreve os recursos do Azure |
+| Bicep | Uma linguagem mais simples para a mesma coisa; ela se transforma em ARM JSON quando você implanta |
+| SQL Server Agent | O programador job integrado do SQL Server |
+| Operador | Uma pessoa ou grupo de email que recebe e-mails job |
+| Database Mail | Recurso SQL Server que envia e-mail |
+| Elastic job | A T-SQL job que roda em muitos Azure SQL databases de uma só vez |
+| Runbook | script PowerShell ou Python executado por Azure Automation |
+| App Lógica | Um fluxo de trabalho de baixo código, desenhado em um designer, que reage a eventos |
+| Grupo de acção | A lista de "quem dizer e o que fazer" quando um alerta do Azure dispara |
 
-## Exam skills covered
-- [ ] Manage schedules for regular maintenance jobs → 3
-- [ ] Configure job alerts and notifications → 3, 4
-- [ ] Troubleshoot SQL Server Agent jobs → 4
-- [ ] Automate deployment by using ARM and Bicep templates → 1
-- [ ] Automate deployment by using Azure PowerShell → 1
-- [ ] Automate deployment by using Azure CLI → 1
-- [ ] Monitor and troubleshoot deployments → 2
-- [ ] Create and configure elastic jobs → 5
-- [ ] Create and configure database tasks by using automation → 5
-- [ ] Configure alerts and notifications on database tasks → 3, 6
-- [ ] Troubleshoot automated database tasks → 6
+## exame de habilidades cobertas
+- [ ] Gerenciar horários para manutenção regular jobs → 3
+- [ ] Configurar alertas e notificações job → 3, 4
+- [ ] Solução de problemas SQL Server Agent jobs → 4
+- [ ] Automatize a implantação usando modelos ARM e Bicep → 1
+- [ ] Automatizar a implantação usando Azure PowerShell → 1
+- [ ] Automatizar a implantação usando Azure CLI → 1
+- [ ] Monitorar e solucionar problemas de implantação → 2
+- [ ] Criar e configurar elastic jobs → 5
+- [ ] Criar e configurar tarefas de banco de dados usando automação → 5
+- [ ] Configurar alertas e notificações sobre tarefas de banco de dados → 3, 6
+- [ ] Resolver problemas automatizados de banco de dados tarefas → 6

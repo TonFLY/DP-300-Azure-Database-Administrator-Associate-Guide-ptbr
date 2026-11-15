@@ -1,26 +1,26 @@
-# Migrate to Azure SQL Database
+# Migrar para Azure SQL Database
 
-> **Exam skills:** Implement an offline migration strategy, Implement an online migration strategy, Implement a migration to Azure, Implement a migration between Azure SQL services
-> **Reading time:** ~8 min
+> **Habilidades cobradas:** Implementar uma estratégia de migração offline, implementar uma estratégia de migração online, implementar uma migração para o Azure, implementar uma migração entre serviços Azure SQL
+> **Tempo de leitura:** ~8 min
 
-## The big idea
-Azure SQL Database can't restore a normal `.bak` file. So you move **schema and data**, not backups. Offline: use **DMS** or a **BACPAC**. Online: use **transactional replication**. Only some tables: use **bcp** or **Azure Data Factory**.
+## Conceito central
+Azure SQL Database não pode restaurar um arquivo `.bak` normal. Então você move **schema e dados**, não backups. Offline: use **DMS** ou um **BACPAC**. Online: use **transactional replication**. Apenas algumas tabelas: use **bcp** ou **Azure Data Factory**.
 
-Analogy: you can't carry the whole fridge into a hotel room. You unpack the food and carry it in item by item.
+Analogia: você não pode levar a geladeira inteira para um quarto de hotel. Você descompacta a comida e carrega-a em item por item.
 
 ## Azure Database Migration Service (DMS)
-DMS is the main managed migration engine. To SQL Database it is **offline only**: downtime starts when the copy starts. Behind the scenes it runs **Azure Data Factory** pipelines.
+DMS é o principal motor de migração gerenciado. Para SQL Database é **Apenas offline**: o tempo de inatividade começa quando a cópia começa. Nos bastidores, ele executa pipelines **Azure Data Factory**.
 
-You can drive it from the **Azure portal**, **Azure CLI** (`az datamigration`) or **PowerShell** (`Az.DataMigration`). Scripts are good for pipelines, many databases and repeat runs.
+Você pode dirigi-lo a partir do **Azure portal**, **Azure CLI** (`az datamigration`) ou **PowerShell** (`Az.DataMigration`). Os scripts são bons para dutos, muitos bancos de dados e execuções repetidas.
 
-**What you need:**
-1. A **DMS** resource.
-2. The **target database** already created.
-3. A **self-hosted integration runtime (SHIR)**: a small agent installed on a machine that can reach the source. It also does the copy work, so size it well.
-4. **Permissions:** source login = **db_datareader + VIEW ANY DEFINITION**. Target login = **db_owner**.
-5. The **schema** on the target. Use DMS schema migration (tick **Migrate missing schema**), or deploy a DACPAC with SqlPackage first.
+**O que você precisa:**
+1. A **DMS** recursos.
+2. O **banco de dados alvo** já foi criado.
+3. A **Tempo de execução da integração auto-hospedada (SHIR)**: um pequeno agente instalado em uma máquina que pode chegar à fonte. Ele também faz o trabalho de cópia, para dimensioná-lo bem.
+4. **Permissões:** Fonte login = **db_datareader + VIEW ANY DEFINITION**. Alvo login = **db_owner**.
+5. O **esquema** no alvo. Uso DMS migração de esquema (tick **Migrar o esquema em falta**), ou implantar a DACPAC com SqlPackage Primeiro.
 
-**Steps with Azure CLI:**
+**Passos com Azure CLI:**
 ```bash
 az datamigration sql-service create -g rg --sql-migration-service-name dms1 --location westeurope
 az datamigration sql-server-schema --action MigrateSchema \
@@ -30,27 +30,27 @@ az datamigration sql-db create -g rg --sqldb-instance-name tgtsrv --target-db-na
    --scope "<target server id>" --migration-service "<dms id>"
 az datamigration sql-db show -g rg --sqldb-instance-name tgtsrv --target-db-name HR --expand MigrationStatusDetails
 ```
-- Only some tables? Add `--table-list` (PowerShell: `-TableList`).
-- PowerShell equivalent: `New-AzDataMigrationToSqlDb`.
-- In the portal, watch progress at **DMS resource → Monitor migrations**.
+- Adicionar `--table-list` (PowerShell: `-TableList`).
+- PowerShell equivalente: `New-AzDataMigrationToSqlDb`.
+- No portal, observe o progresso em **DMS recurso → Monitorar migrações**.
 
-**Status flow:** Preparing for copy (disables autostats, triggers, indexes on the target) → Copying → Copy finished → Rebuilding indexes → **Succeeded**.
+**Fluxo de estado:** Preparação para cópia (desativa autostats, gatilhos, índices no alvo) → Copia → Cópia terminada → Rebuilding indexes → **Sucedido**.
 
-**Speed tips:**
-- **Scale up** the target before, scale down after.
-- **Many small tables** are slow, because ADF starts one activity per table.
-- **Large BLOB columns** can time out.
-- Up to **10 concurrent database migrations per SHIR node**. Add nodes for more.
+**Dicas de velocidade:**
+- **Escala acima** o alvo antes, escalar para baixo depois.
+- **Muitas pequenas tabelas** são lentos, porque ADF inicia uma atividade por tabela.
+- **Colunas grandes BLOB** pode acabar.
+- Até **10 migrações simultâneas de banco de dados por nó SHIR**. Adicione nós para mais.
 
-**Example:** A bike company's HR database is quiet at weekends. The DBA starts a DMS offline migration on Friday night, checks Monitor migrations on Saturday, and switches the app on Sunday.
+**Exemplo:** O banco de dados HR de uma empresa de bicicletas é silencioso aos fins de semana. O DBA inicia uma migração offline DMS na sexta-feira à noite, verifica as migrações do Monitor no sábado e muda o aplicativo no domingo.
 
-Note: the old **Azure SQL migration extension** (Azure Data Studio, retired 28 Feb 2026) and **DMA** (retired July 2025) did the same job with a wizard. DMA had three modes: schema and data, schema only, data only. The engine today is DMS.
+Observação: o velho **Azure SQL migration extension** (Azure Data Studio, aposentado 28 Feb 2026) e **DMA** (aposentado julho 2025) fez o mesmo job com um assistente. DMA tinha três modos: esquema e dados, esquema apenas, dados apenas. O motor hoje é DMS.
 
-## BACPAC (export and import)
-A **BACPAC** is one compressed file with **schema and data**.
-1. **Export** from the source with SSMS or **SqlPackage**.
-2. Upload to **Azure Blob Storage**.
-3. **Import** with the **portal** (logical server → **Import database**) or **SqlPackage**.
+## BACPAC (exportação e importação)
+A **BACPAC** é um arquivo compactado com **schema e dados**.
+1. **Exportação** da fonte com SSMS ou **SqlPackage**.
+2. Carregar para **Azure Blob Storage**.
+3. **Importação** com o **portal** (servidor lógico → **Importar banco de dados**) ou **SqlPackage**.
 
 ```bash
 SqlPackage /a:Import /sf:HR.bacpac \
@@ -58,80 +58,80 @@ SqlPackage /a:Import /sf:HR.bacpac \
   /p:DatabaseEdition=Premium /p:DatabaseServiceObjective=P6
 ```
 
-Limits:
-- **Offline** only.
-- **No logins, Agent jobs or linked servers** (database-level objects only).
-- Databases **over 150 GB** often fail in the portal → use **SqlPackage**.
-- Portal import creates a **new single database** only (not into a pool). The storage can't sit behind a firewall.
-- For **Managed Instance**, import with **SqlPackage** or SSMS, not the portal.
-- Watch progress in **Import/Export history**.
+Limites:
+- Somente **Offline**.
+- **Não logins, Agente jobs ou servidores ligados** (apenas objetos de nível de banco de dados).
+- Bancos de dados **mais de 150 GB** muitas vezes falham no portal → usar **SqlPackage**.
+- A importação do Portal cria apenas um **novo banco de dados único** (não em uma piscina). O armazenamento não pode ficar atrás de um firewall.
+- Para **Managed Instance**, importe com **SqlPackage** ou SSMS, não o portal.
+- Assista ao progresso em **Histórico de importação/exportação**.
 
-**Example:** A 20 GB club membership database moves over a weekend. Export a BACPAC, upload it, import it at P6, then scale down.
+**Exemplo:** Um banco de dados de membros do clube de 20 GB move-se ao longo de um fim de semana. Exporte um BACPAC, carregue-o, importe-o em P6 e depois diminua a escala.
 
 ## Transactional replication (online)
-The only **online** way into SQL Database. The source keeps working while changes flow across.
+A única maneira **online** em SQL Database. A fonte continua trabalhando enquanto as mudanças fluem através.
 
-| Role | Who |
+| Papel | Quem |
 |------|-----|
-| **Publisher** | Source SQL Server (2016+) or Managed Instance |
-| **Distributor** | Moves the changes. Often on the publisher. |
-| **Subscriber** | Azure SQL Database (**push subscription only**) |
-| **Article** | One table |
-| **Publication** | A set of articles |
+| **Editora** | Fonte SQL Server (2016+) ou Managed Instance |
+| **Distribuidor** | Move as mudanças. Muitas vezes no editor. |
+| **Assinante** | Azure SQL Database (**somente assinatura push**) |
+| **Artigo** | Uma tabela |
+| **Publicação** | Um conjunto de artigos |
 
-How it works: a **Snapshot Agent** copies the starting data. The **Log Reader Agent** reads changes from the log. The **Distribution Agent** pushes them to Azure.
+Como funciona: um **Agente Snapshot** copia os dados iniciais. O **Agente Leitor de Log** lê as alterações do log. O **Agente de Distribuição** os empurra para o Azure.
 
-Set up with `sp_adddistributor`, `sp_addpublication`, `sp_addarticle`, `sp_addsubscription`, `sp_addpushsubscription_agent`.
+Configurar com `sp_adddistributor`, `sp_addpublication`, `sp_addarticle`, `sp_addsubscription`, `sp_addpushsubscription_agent`.
 
-Rules:
-- Every table needs a **primary key**.
-- SQL Database can only be a **push subscriber** of **transactional or snapshot** replication.
-- Connect with **SQL authentication** (Entra auth is also possible in some cases).
-- Monitor in **SSMS** on the publisher, **not** in the Azure portal.
+Regras:
+- Toda tabela precisa de um **chave primária**.
+- SQL Database só pode ser um **assinante push** de replicação **transacional ou snapshot**.
+- Conectar-se com **SQL authentication** (Entra auth também é possível em alguns casos).
+- Monitor em **SSMS** no editor, **E** no Azure portal.
 
-**Cutover:** stop app writes → check all changes arrived → point the app to Azure → remove replication.
+**Cutover:** stop app escreve → verificar todas as alterações chegou → apontar o aplicativo para Azure → remover replicação.
 
-**Example:** A warehouse inventory system runs 24/7. Replication keeps Azure in sync for a week. Cutover takes five minutes on a Sunday morning.
+**Exemplo:** Um sistema de inventário de armazém roda 24/7. Replicação mantém o Azure sincronizado por uma semana. Cutover leva cinco minutos em uma manhã de domingo.
 
-## Moving only some data
-| Need | Tool |
+## Mover apenas alguns dados
+| Necessidade | Ferramenta |
 |------|------|
-| Quick one-time copy of a table | **bcp** (bulk copy; target table must exist) |
-| Filtered, scheduled or transformed loads | **Azure Data Factory** (needs a SHIR for on-premises) |
+| Cópia rápida de uma única vez de uma tabela | **bcp** (cópia em volume; tabela alvo deve existir) |
+| Cargas filtradas, programadas ou transformadas | **Azure Data Factory** (precisa de um SHIR para on-premises) |
 
 ```bash
 bcp Shop.dbo.Product out product.dat -S onpremsrv -T -n
 bcp Shop.dbo.Product in product.dat -S tgtsrv.database.windows.net -U admin -P <pwd> -n
 ```
 
-**Example:** A company keeps sensitive sales data on-premises. It moves only the customer and product tables to Azure with Data Factory.
+**Exemplo:** Uma empresa mantém dados de vendas sensíveis on-premises. Ele move apenas as tabelas de clientes e produtos para o Azure com Data Factory.
 
-## Between Azure SQL services
-- **SQL Database → SQL Database or MI:** BACPAC export/import (SqlPackage for MI).
-- **MI → SQL Database:** MI can be a **publisher** for transactional replication, so you can move online. Or use BACPAC offline.
-- **Selected tables, any direction:** Azure Data Factory or bcp.
-- **MI → MI:** database **copy/move** (lesson 7).
+## Entre serviços Azure SQL
+- **SQL Database → SQL Database ou MI:** BACPAC exportação / importação (SqlPackage para MI).
+- **MI → SQL Database:** MI pode ser um **editor** para transactional replication, então você pode se mover online. Ou use BACPAC offline.
+- **Tabelas selecionadas, em qualquer direção:** Azure Data Factory ou bcp.
+- Banco de dados **MI → MI:** **copiar/mover** (lição 7).
 
-## Known DMS limits to SQL Database
-- **Computed columns** are not migrated.
-- Columns with defaults may get the **default instead of NULL**.
-- **Empty tables are skipped.**
-- **Double-byte characters** in table names are not supported. Rename, migrate, rename back.
-- **Disable CDC on the source** before schema migration.
+## Limites DMS conhecidos para SQL Database
+- **Colunas computadas** não são migrados.
+- Colunas com padrões podem obter o **padrão em vez de NULL**.
+- **Tabelas vazias são ignoradas.**
+- **caracteres de bytes duplos** em nomes de tabela não são suportados. Renomear, migrar, renomear de volta.
+- **Desativar CDC na fonte** antes da migração do esquema.
 
-## Remember for the exam
-- DMS to SQL Database = **offline only**. Online = **transactional replication**.
-- Script many migrations → `az datamigration sql-db create` or `New-AzDataMigrationToSqlDb`.
-- Only some tables in DMS → `--table-list` / `-TableList`.
-- "Some tables didn't migrate" → they were **empty**.
-- BACPAC over 150 GB → **SqlPackage**, not the portal.
-- BACPAC never moves logins or jobs.
-- Replication to SQL Database = **push** subscription, tables need a **primary key**, monitor in **SSMS**.
+## Para lembrar na prova
+- DMS E- SQL Database = **Apenas offline**. Online = **transactional replication**.
+- Script muitas migrações → `az datamigration sql-db create` ou `New-AzDataMigrationToSqlDb`.
+- Apenas algumas tabelas em DMS → `--table-list` / `-TableList`.
+- "Algumas tabelas não migraram" → eram **vazio**.
+- BACPAC sobre 150 GB → **SqlPackage**, não o portal.
+- BACPAC nunca se move logins ou jobs.
+- Replicação a SQL Database = **push** As tabelas precisam de uma **chave primária**, monitor em **SSMS**.
 
-## Quick check
-1. You must migrate 40 databases to SQL Database from a CI/CD pipeline. What do you use?
-   <details><summary>Answer</summary>Azure DMS driven by Azure CLI (`az datamigration`) or PowerShell (`New-AzDataMigrationToSqlDb`).</details>
-2. A portal BACPAC import of a 300 GB database keeps failing. What do you do?
-   <details><summary>Answer</summary>Import with SqlPackage. The portal often fails over 150 GB.</details>
-3. Replication setup fails on one table. What is the likely cause?
-   <details><summary>Answer</summary>The table has no primary key. Transactional replication needs one.</details>
+## Teste rápido
+1. Você deve migrar 40 bancos de dados para SQL Database a partir de um pipeline CI / CD. O que você usa?
+   <details><summary>Resposta</summary>Azure DMS conduzido por Azure CLI (`az datamigration`) ou PowerShell (`New-AzDataMigrationToSqlDb`).</details>
+2. A importação do portal BACPAC de um banco de dados 300 GB continua falhando. O que você faz?
+   <details><summary>Resposta</summary>Importação com SqlPackage. O portal muitas vezes falha mais de 150 GB.</details>
+3. A configuração de replicação falha em uma tabela. Qual é a causa provável?
+   <details><summary>Resposta</summary>A tabela não tem chave primária. Transactional replication precisa de uma.</details>

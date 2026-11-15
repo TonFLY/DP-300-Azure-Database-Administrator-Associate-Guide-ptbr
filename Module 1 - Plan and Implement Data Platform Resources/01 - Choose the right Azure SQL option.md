@@ -1,128 +1,128 @@
-# Choose the right Azure SQL option
+# Escolha a opção Azure SQL certa
 
-> **Exam skills:** Recommend a database offering based on specific requirements, Identify use cases for Azure Arc-enabled SQL services, Identify use cases for Azure SQL Database in Microsoft Fabric
-> **Reading time:** ~10 min
+> **Habilidades cobradas:** Recomendar uma oferta de banco de dados com base em requisitos específicos, Identificar casos de uso para os serviços SQL habilitados para Azure Arc, Identificar casos de uso de Azure SQL Database em Microsoft Fabric
+> **Tempo de leitura:** ~10 min
 
-## The big idea
-Azure has three main homes for SQL Server data. **SQL Server on Azure VM** gives you full control. **Azure SQL Managed Instance** (MI) is almost full SQL Server, but Microsoft runs it. **Azure SQL Database** is a single cloud database with the least admin work. Two extras sit beside them: **Azure Arc** (manage SQL Server outside Azure) and **SQL database in Microsoft Fabric** (a database built for analytics).
+## Conceito central
+O Azure tem três casas principais para dados SQL Server. **SQL Server em Azure VM** dá-lhe controle total. **Azure SQL Managed Instance** (MI) é quase completo SQL Server, mas a Microsoft o executa. **Azure SQL Database** é um único banco de dados em nuvem com menos trabalho de administração. Dois extras ficam ao lado deles: **Arco Azure** (gerenciar SQL Server fora do Azure) e **SQL database em Microsoft Fabric** (um banco de dados construído para análise).
 
-Analogy: your own house (VM), a serviced flat (MI), a hotel room (SQL Database). The more service you get, the less you can change.
+Analogia: sua própria casa (VM), um apartamento com serviço (MI), um quarto de hotel (SQL Database). Quanto mais serviço você recebe, menos você pode mudar.
 
-## Who manages what
-| Layer | SQL Database (PaaS) | Managed Instance (PaaS) | SQL Server on VM (IaaS) |
+## Quem gerencia o que
+| Camada | SQL Database (PaaS) | Managed Instance (PaaS) | SQL Server em VM (IaaS) |
 |-------|--------------------|------------------------|------------------------|
 | Hardware | Microsoft | Microsoft | Microsoft |
-| OS and patching | Microsoft | Microsoft | **You** |
-| SQL Server settings | Partial | Extensive | **Full** |
-| Network and storage | No | Partial (own subnet) | **Full** |
-| Backups and HA | Built in | Built in | You set them up |
+| OS e patching | Microsoft | Microsoft | **Você** |
+| Configurações SQL Server | Parcial | extensa | **Completo** |
+| Rede e armazenamento | Não | Parcial (sub-rede própria) | **Completo** |
+| Backups e HA | Construído em | Construído em | Você os criou |
 
-**PaaS** (Platform as a Service) means Microsoft runs the server for you. **IaaS** (Infrastructure as a Service) means Azure gives you a virtual machine and you run everything inside it.
+**PaaS** (Plataforma como Serviço) significa que a Microsoft executa o servidor para você. **IaaS** (Infraestrutura como Serviço) significa que o Azure lhe dá uma máquina virtual e você corre tudo dentro dela.
 
-## SQL Server on Azure VM (IaaS)
-It works like SQL Server on your own server. Pick it when you need:
-- **Old SQL Server versions** that a vendor still requires.
-- **SSIS, SSAS, SSRS** (Integration, Analysis, Reporting Services) on the same machine.
-- **OS access** to install agents, scripts or other apps.
-- Features PaaS does not have: **FILESTREAM, FileTable, PolyBase, cross-instance transactions**.
-- A plain **lift-and-shift** (move as-is) with no changes.
+## SQL Server em Azure VM (IaaS)
+Funciona como SQL Server no seu próprio servidor. Escolha-o quando precisar:
+- **Versões antigas SQL Server** que um fornecedor ainda precisa.
+- **SSIS, SSAS, SSRS** (Integração, Análise, Reporting Services) na mesma máquina.
+- **acesso OS** para instalar agentes, scripts ou outros aplicativos.
+- PaaS não tem: **FILESTREAM, FileTable, PolyBase, transações entre instâncias**.
+- Um **Elevação e Mudança** simples (mover-se como-é) sem alterações.
 
-Marketplace images today cover SQL Server **2016 to 2025**. 2012/2014 images are gone; install those by hand.
+As imagens do Marketplace hoje cobrem SQL Server **2016 a 2025**. As imagens 2012/2014 desapareceram; instale-as à mão.
 
-**Example:** A factory runs an old SQL Server 2016 app plus SSRS reports on one box. The vendor will not support anything newer. Choose a SQL Server VM.
+**Exemplo:** Uma fábrica executa um aplicativo SQL Server 2016 antigo mais relatórios SSRS em uma caixa. O fornecedor não suportará nada mais novo. Escolha um SQL Server VM.
 
 ## Azure SQL Managed Instance (PaaS)
-A full SQL Server **instance** run by Microsoft. It is close to 100% compatible with on-premises SQL Server. It has things SQL Database lacks:
-- **SQL Agent** jobs, **linked servers**, **CLR**, **Service Broker**.
-- **Cross-database queries** inside the instance.
-- System databases (msdb and others).
-- **Restore native .bak backups** from Azure Blob Storage.
-- Many databases per instance (up to 100; 500 on Next-gen General Purpose).
-- Lives in your own **virtual network** (private by default).
+Um SQL Server **instância** completo executado pela Microsoft. É perto de 100% compatível com on-premises SQL Server. Tem coisas que o SQL Database não tem:
+- **SQL Agent** jobs, **servidores ligados**, **CLR**, **Corretor de Serviço**.
+- **Consultas entre bancos de dados** dentro da instância.
+- Bancos de dados do sistema (msdb e outros).
+- **Restaurar nativo.bak backups** de Azure Blob Storage.
+- Muitas bancos de dados por instância (até 100; 500 em Next-gen General Purpose).
+- Vive em seu próprio **rede virtual** (privado por padrão).
 
-**Example:** A clothing retailer's catalog database uses SQL Agent jobs and cross-database joins. They want no code changes and no patching. Choose MI.
+**Exemplo:** A banco de dados de catálogos de um retalhista de vestuário utiliza SQL Agent jobs e junções de bancos de dados cruzadas. Eles não querem alterações de código nem patches. Escolha MI.
 
 ## Azure SQL Database (PaaS)
-One database (or a pool of them) with the least admin work. Best for **new cloud apps** and **unknown or spiky load**. Features you only get here:
-- **Hyperscale** up to 128 TB per database.
-- **Serverless** auto-scale and auto-pause.
-- **Elastic jobs** and **elastic query** across databases.
-- **Automatic tuning** that can create and drop indexes.
+Um banco de dados (ou um conjunto deles) com o mínimo trabalho de administração. Melhor para **novos aplicativos em nuvem** e **carga desconhecida ou spiky**. Características que você só chega aqui:
+- **Hyperscale** até 128 TB por banco de dados.
+- **Serverless** auto-escala e auto-pause.
+- **Elastic jobs** e **elastic query** entre bancos de dados.
+- **Automatic tuning** que pode criar e soltar índices.
 
-**Example:** A startup builds a new booking app. It does not know how busy it will be. Choose SQL Database, start small, scale later.
+**Exemplo:** Uma startup constrói um novo aplicativo de reserva. Não sabe o quão ocupado será. Escolha SQL Database, comece pequeno, escala mais tarde.
 
-## Compare at a glance
-| Need | Best choice |
+## Compare em um relance
+| Necessidade | Melhor escolha |
 |------|-------------|
-| Lift and shift, no changes, OS access | SQL Server on VM |
-| Old SQL version, SSIS/SSRS/SSAS on same box | SQL Server on VM |
-| FILESTREAM, FileTable, PolyBase | SQL Server on VM |
-| SQL Agent, linked servers, CLR, cross-db queries, few code changes | Managed Instance |
-| Restore native .bak files from on-premises | Managed Instance (or VM) |
-| New cloud-native app, least admin | SQL Database |
-| Many small databases with uneven load | SQL Database elastic pool |
-| Database over 4 TB, few app changes | SQL Database Hyperscale |
-| Big data warehouse, huge scans (MPP) | Azure Synapse Analytics |
+| Elevador e mudança, sem alterações, acesso OS | SQL Server em VM |
+| Versão antiga SQL, SSIS / SSRS / SSAS na mesma caixa | SQL Server em VM |
+| FILESTREAM, FileTable, PolyBase | SQL Server em VM |
+| SQL Agent, servidores vinculados, CLR, consultas de cross-db, poucas alterações de código | Managed Instance |
+| Restaurar arquivos.bak nativos do on-premises | Managed Instance (ou VM) |
+| Novo aplicativo nativo da nuvem, menos admin | SQL Database |
+| Muitas pequenas bancos de dados com carga irregular | SQL Database elastic pool |
+| Banco de dados sobre 4 TB, poucas alterações no aplicativo | SQL Database Hyperscale |
+| Big data warehouse, varreduras enormes (MPP) | Azure Synapse Analytics |
 
-Migration effort for an old app: SQL Database = high, MI = low, VM = very low.
+Esforço de migração para um aplicativo antigo: SQL Database = high, MI = low, VM = very low.
 
-**Azure Synapse Analytics** is for big analytics only. It is bad for many small reads and writes.
+**Azure Synapse Analytics** é apenas para grandes análises. É ruim para muitas pequenas leituras e escritos.
 
 ## Azure Arc-enabled SQL Server
-**Azure Arc** puts SQL Servers that run outside Azure (your data centre, other clouds, the edge) into the Azure portal. The server stays where it is.
+**Arco Azure** coloca Servidores SQL que correm fora do Azure (seu data center, outras nuvens, a borda) no Azure portal. O servidor permanece onde está.
 
-Use cases:
-- **One inventory** of all SQL Servers everywhere.
-- **Best-practice assessments** and **security scans** with Microsoft Defender for Cloud.
-- **Governance** with Azure Policy and Microsoft Purview.
-- **Patching** through Azure Update Manager or Arc automatic updates.
-- **Pay-as-you-go licensing** billed through Azure.
-- **Extended Security Updates (ESU)** for SQL versions past end of support.
-- **Migration assessment and migration to MI** from the portal (lesson 7).
-- Automated backups (preview) and Microsoft Entra authentication.
+Casos de uso:
+- **Um inventário** de todos os servidores SQL em todos os lugares.
+- **Avaliações de melhores práticas** e **varreduras de segurança** com Microsoft Defender for Cloud.
+- **Governação** com Azure Policy e Microsoft Purview.
+- **Patching** através de atualizações automáticas Azure Update Manager ou Arc.
+- **Licenciamento Pay-as-you-go** faturado através do Azure.
+- **Atualizações de Segurança Estendidas (ESU)** para versões SQL após o fim do suporte.
+- **Avaliação de migração e migração para MI** do portal (lição 7).
+- Automated backups (preview) e Microsoft Entra authentication.
 
-**Example:** A company has SQL Servers in 20 remote factories. It wants one place to see versions, scan for weak settings and patch them. It does not want to move them. Arc-enable them.
+**Exemplo:** Uma empresa tem Servidores SQL em 20 fábricas remotas. Quer um lugar para ver versões, procurar configurações fracas e corrigi-las. Não quer movê-las. Arc-habilitá-las.
 
-## SQL database in Microsoft Fabric
-The exam says "Azure SQL Database in Microsoft Fabric". The docs say "SQL database in Fabric". Same thing.
+## SQL database em Microsoft Fabric
+O exame diz "Azure SQL Database em Microsoft Fabric". Os documentos dizem "SQL database in Microsoft Fabric". A mesma coisa.
 
-It is an **OLTP** (day-to-day transactions) database that lives **inside a Fabric workspace**. It is SaaS, not an Azure resource. It uses the same engine as Azure SQL Database. It is **generally available since Nov 2025**.
+É um banco de dados **OLTP** (transações do dia-a-dia) que vive **dentro de um espaço de trabalho Tecido**. É SaaS, não um recurso Azure. Ele usa o mesmo motor que Azure SQL Database. É **geralmente disponível desde Nov 2025**.
 
-Its key feature: every table is **automatically mirrored** to **OneLake** in near real time, as Delta (Parquet) files. A read-only **SQL analytics endpoint** is created for you. Power BI and Spark can read the data with **no ETL** (no copy jobs). Mirroring cannot be turned off.
+Sua principal característica: cada tabela é **espelhado automaticamente** para **OneLake** em tempo quase real, como arquivos Delta (Parquet). Um read-only **Ponto de extremidade da análise SQL** é criado para você. Power BI e Spark podem ler os dados com **ETL** (sem cópia jobs). A espelhamento não pode ser desligada.
 
-Main limits compared with Azure SQL Database:
-- **Microsoft Entra authentication only.** No SQL logins.
-- Max **4 TB**, auto-scale up to **32 vCores**.
-- **No** geo-replication, failover groups, geo-restore or **LTR** (long-term backup retention).
-- Backups: point-in-time restore 7 days by default, up to 35.
-- **No** Always Encrypted, ledger, In-Memory OLTP or CDC.
-- **No** elastic pools (a Fabric **capacity** plays that role) and **no** SQL Agent or elastic jobs. Use **Data Factory pipelines** to schedule work.
-- **RLS, dynamic data masking and object permissions are not copied** to the OneLake mirror.
-- Deploy with the Fabric portal, REST API or Fabric CLI. No ARM, Bicep, Az PowerShell or Azure CLI.
+Limites principais em comparação com Azure SQL Database:
+- **Somente Microsoft Entra authentication.** No SQL logins.
+- Max **4 TB**, auto-escala até **32 vCores**.
+- **Não** geo-replication, failover groups, geo-restore ou **LTR** (retenção de longo prazo backup).
+- Backups: point-in-time restore 7 dias por padrão, até 35.
+- **Não** Always Encrypted, livro-razão, In-Memory OLTP ou CDC.
+- **Não** elastic pools (um tecido **capacidade** desempenha esse papel) e **Não** SQL Agent ou elastic jobs. Use **oleodutos Data Factory** para agendar o trabalho.
+- **RLS, dynamic data masking e permissões de objeto não são copiadas** para o espelho OneLake.
+- Implantar com o portal de tecido, REST API ou Tecido CLI. Não ARM, Bicep, Az PowerShell ou Azure CLI.
 
-Use it for:
-- **Translytical apps** (transactions plus near real-time analytics on the same data).
-- **Reverse ETL** (push lakehouse data back into an app database).
-- An **operational data store** or **AI/RAG apps** close to Fabric data.
+Use-o para:
+- **Apps translíticos** (transações mais análises quase em tempo real sobre os mesmos dados).
+- **ETL reverso** (empurre os dados da casa do lago de volta para um banco de dados de aplicativos).
+- An **armazenamento de dados operacionais** ou **Aplicações AI / RAG** perto de dados de tecido.
 
-If you only need an existing Azure SQL Database copied into OneLake, use **Fabric mirroring** instead. On MI, mirroring needs the **SQL Server 2025 or Always-up-to-date** update policy.
+Se você precisar apenas de um Azure SQL Database existente copiado para o OneLake, use o **tecido espelhamento**. No MI, o espelhamento precisa da política de atualização do **SQL Server 2025 ou sempre atualizado**.
 
-**Example:** A shop already uses Fabric and Power BI. It wants new orders to show up in dashboards within seconds, with no ETL jobs. Choose SQL database in Fabric.
+**Exemplo:** Uma loja já usa Tecido e Power BI. Ele quer que novas ordens apareçam nos painéis de controle em segundos, sem ETL jobs. Escolha SQL database no tecido.
 
-## Remember for the exam
-- "Minimal code changes + SQL Agent/linked servers/CLR" → **Managed Instance**.
-- "Need OS access, FILESTREAM or an old version" → **SQL Server on VM**.
-- "New cloud app, least admin, unpredictable load" → **SQL Database** (serverless).
-- Elastic jobs, elastic query and Hyperscale are **SQL Database only**.
-- "Manage on-premises and multi-cloud SQL Servers from Azure" → **Azure Arc**.
-- "OLTP data in Power BI in near real time with no ETL" → **SQL database in Fabric** (or Fabric mirroring).
-- Fabric SQL database: **Entra-only**, no geo-DR, no LTR, no Always Encrypted. If the question needs any of these, pick Azure SQL Database.
-- Don't confuse the Fabric SQL database (read/write) with its **SQL analytics endpoint** (read-only).
+## Para lembrar na prova
+- "Mudanças mínimas de código + SQL Agent / servidores vinculados / CLR " → **Managed Instance**.
+- "Necessidade de acesso OS, FILESTREAM ou uma versão antiga" → **SQL Server em VM**.
+- "Novo aplicativo de nuvem, menos admin, carga imprevisível" → **SQL Database** (serverless).
+- Elastic jobs, elastic query e Hyperscale são **Somente SQL Database**.
+- "Gerenciar servidores on-premises e multi-nuvem SQL do Azure" → **Arco Azure**.
+- "Dados OLTP em Power BI quase em tempo real sem ETL" → **SQL database in Microsoft Fabric** (ou espelhamento de tecido).
+- SQL database: **Somente intra**, sem geo- DR, sem LTR, sem Always Encrypted. Se a pergunta precisar de qualquer um desses, escolha Azure SQL Database.
+- Não confunda o tecido SQL database (ler/escrever) com o seu **Ponto de extremidade da análise SQL** (read-only).
 
-## Quick check
-1. An app uses SQL Agent jobs and linked servers. The team wants Microsoft to handle patching. Which option?
-   <details><summary>Answer</summary>Azure SQL Managed Instance. It supports Agent and linked servers and is PaaS.</details>
-2. A team must use SQL authentication and geo-restore. Can they use SQL database in Fabric?
-   <details><summary>Answer</summary>No. Fabric SQL database is Entra-only and has no geo-restore. Use Azure SQL Database.</details>
-3. You have 300 on-premises SQL Servers and want one inventory and security view in Azure without moving them. What do you use?
-   <details><summary>Answer</summary>Azure Arc-enabled SQL Server. It brings outside servers into Azure management.</details>
+## Teste rápido
+1. Um aplicativo usa SQL Agent jobs e servidores vinculados. A equipe quer que a Microsoft lide com patches. Qual opção?
+   <details><summary>Resposta</summary>Azure SQL Managed Instance. Ele suporta Agente e servidores vinculados e é PaaS.</details>
+2. Uma equipe deve usar SQL authentication e geo-restore. Eles podem usar SQL database in Microsoft Fabric?
+   <details><summary>Resposta</summary>Não. Tecido SQL database é apenas intra e não tem geo-restore. Use Azure SQL Database.</details>
+3. Você tem 300 servidores on-premises SQL e quer um inventário e uma visão de segurança no Azure sem movê-los. O que você usa?
+   <details><summary>Resposta</summary>Azure Arc-enabled SQL Server. Traz servidores externos para o gerenciamento do Azure.</details>

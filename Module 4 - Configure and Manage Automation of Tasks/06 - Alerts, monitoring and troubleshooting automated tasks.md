@@ -1,35 +1,35 @@
-# Alerts, monitoring and troubleshooting automated tasks
+# Alertas, monitoramento e diagnóstico de tarefas automatizadas
 
-> **Exam skills:** Configure alerts and notifications on database tasks, Troubleshoot automated database tasks
-> **Reading time:** ~5 min
+> **Habilidades cobradas:** Configurar alertas e notificações sobre tarefas de banco de dados, Solucionar problemas de tarefas automatizadas de banco de dados
+> **Tempo de leitura:** ~5 min
 
-## The big idea
-An automated task that fails quietly is worse than no task. You need to **see** each run, **get told** when one fails, and **find out why**. It is like a smoke alarm: it does not stop the fire, but it wakes you up in time.
+## Conceito central
+Uma tarefa automatizada que falha silenciosamente é pior do que nenhuma tarefa. Você precisa de **ver** cada execução, **ser dito** quando um falha, e **Descubra por que**. É como um alarme de fumaça: não pára o fogo, mas acorda-lo a tempo.
 
-## Azure Monitor alerts and action groups
-In Azure, alerts come from **Azure Monitor**. An alert rule has three parts:
-1. **Scope** – the resource to watch (an Automation account, an elastic job agent, a database).
-2. **Condition** – the signal and threshold. Example: "Failed elastic jobs greater than 0".
-3. **Action group** – what to do when it fires.
+## Azure Monitor alerts e grupos de ação
+No Azure, os alertas vêm do **Azure Monitor**. Uma regra de alerta tem três partes:
+1. **Scope** – o recurso para assistir (uma conta de automação, um elastic job agent, um banco de dados).
+2. **Condição** – o sinal e o limiar. Exemplo: "Falha elastic jobs maior que 0".
+3. **Grupo de acção** – o que fazer quando dispara.
 
-An **action group** can:
-- Send **email or SMS**.
-- Call a **webhook** (a web address another system listens on).
-- Start an **Automation runbook** (for example, to fix the problem itself).
+An **grupo de acção** pode:
+- Enviar **e-mail ou SMS**.
+- Ligue para um **webhook** (um endereço web que outro sistema escuta).
+- Inicie um **Automação runbook** (por exemplo, para corrigir o problema em si).
 
-You can filter an alert by **dimension**, such as one runbook name.
+Você pode filtrar um alerta por **dimensão**, como um nome runbook.
 
-**Example:** A shop's nightly "PurgeOldOrders" runbook fails. An alert on the Automation account's job metric, filtered to that runbook and status Failed, emails the DBA team through an action group.
+**Exemplo:** " Uma loja de noite "PurgeOldOrders" runbook falha. Um alerta na conta de automação job métrica, filtrada para que runbook e status falhou, e-mails o DBA equipe através de um grupo de ação.
 
 ## Monitor Azure Automation runbooks
-| Where | What you see |
+| Onde | O que você vê |
 |---|---|
-| Automation account → **Jobs** | Each run and its status (completed, failed, running) |
-| A job's **Errors** / **All logs** streams | The error text and output for that run |
-| **Activity log** | **Who** started a runbook and when |
-| **Log Analytics** | Job logs you can query with KQL, across many runs |
+| Conta de automação → **Jobs** | Cada execução e seu status (concluído, falhado, em execução) |
+| A job's **Erros** / **Todos os logs** fluxos | O texto de erro e a saída para essa execução |
+| **Diário de atividades** | **Quem** começou um runbook e quando |
+| **Log Analytics** | Registros Job que você pode consultar com KQL, através de muitas corridas |
 
-- To send job logs to Log Analytics, first turn on **Diagnostic settings** for the Automation account.
+- Para enviar logs job para Log Analytics, ligue primeiro o **Configurações diagnósticas** para a conta de automação.
 
 ```kusto
 AzureDiagnostics
@@ -39,11 +39,11 @@ AzureDiagnostics
 KQL = Kusto Query Language.
 
 ## Monitor elastic jobs
-| Where | What you see |
+| Onde | O que você vê |
 |---|---|
-| Portal → elastic job agent → **Overview** | Job runs and status |
-| PowerShell | `Get-AzSqlElasticJobExecution`, plus `Get-AzSqlElasticJobStepExecution` and `Get-AzSqlElasticJobTargetExecution` for **each step** and **each target database** |
-| T-SQL in the job database | The `jobs.job_executions` view |
+| Portal → elastic job agent → **Visão geral** | Job corre e status |
+| PowerShell | `Get-AzSqlElasticJobExecution`, mais `Get-AzSqlElasticJobStepExecution` e `Get-AzSqlElasticJobTargetExecution` para **Cada passo** e **cada banco de dados alvo** |
+| T-SQL na banco de dados job | Vista `jobs.job_executions` |
 
 ```sql
 -- Failed runs, newest first
@@ -56,38 +56,38 @@ ORDER BY start_time DESC;
 SELECT * FROM jobs.job_executions WHERE is_active = 1;
 ```
 
-- Elastic jobs **retry** on short, temporary errors (such as a network blip).
-- **Alerts:** the job agent works with **Azure Monitor**. Use the **Failed Elastic jobs** metric with an action group.
-- History in `jobs.job_executions` is **deleted after 45 days**. You can purge it sooner with `jobs.sp_purge_jobhistory`.
-- Give people who only need to watch jobs the **`jobs_reader`** role in the job database.
+- Elastic jobs **tentar novamente** em erros curtos e temporários (como um blip de rede).
+- **Alertas:** o agente job trabalha com **Azure Monitor**. Use a métrica **Falha Elastic jobs** com um grupo de ação.
+- A história em `jobs.job_executions` é **deletado após 45 dias**. Você pode limpá-lo mais cedo com `jobs.sp_purge_jobhistory`.
+- Dê às pessoas que só precisam assistir jobs o papel **`jobs_reader`** no banco de dados job.
 
-**Example:** An elastic job adds a column to 300 customer databases. It shows "Failed". `Get-AzSqlElasticJobTargetExecution` shows only 2 databases failed, because the job identity has no user in them. Add the user and rerun. The step is idempotent, so the 298 good databases are not harmed.
+**Exemplo:** An elastic job adiciona uma coluna a 300 bancos de dados de clientes. Mostra "Falha". `Get-AzSqlElasticJobTargetExecution` mostra apenas 2 bancos de dados falharam, porque a identidade job não tem usuário neles. Adicione o usuário e execute novamente. O passo é idempotente, então as 298 boas bancos de dados não são prejudicadas.
 
-## SQL Server Agent jobs
-Use Agent notifications and alerts (lesson 3) and job history (lesson 4). On **Managed Instance** there are no Agent alerts, so use **Azure Monitor alerts**.
+## Jobs do SQL Server Agent
+Use notificações e alertas do agente (lição 3) e histórico job (lição 4). No **Managed Instance** não há alertas do agente, então use **Azure Monitor alerts**.
 
-## Troubleshooting checklist
-| Symptom | Check |
+## Lista de verificação de solução de problemas
+| Sintoma | Verificar |
 |---|---|
-| Runbook fails at sign-in | Managed identity is on and has the right **RBAC role** |
-| Runbook says a cmdlet is not found | The module is **imported** (Az.Accounts before Az.Sql; SqlServer for `Invoke-Sqlcmd`) |
-| Elastic job fails on some databases | Per-target results. Does the job identity have a user in each target? Is the target reachable (firewall, private endpoint approved)? |
-| Logic App never fires on new rows | Polling interval; in Standard, **change tracking** on the table |
+| Runbook falha ao iniciar sessão | Managed identity está ligado e tem o direito **Papel RBAC** |
+| Runbook diz que um cmdlet não foi encontrado | O módulo é **Importado** (Az.Accounts antes de Az.Sql; SqlServer para `Invoke-Sqlcmd`) |
+| Elastic job falha em algumas bancos de dados | Resultados por alvo. A identidade job tem um usuário em cada alvo? O alvo é alcançável (firewall, private endpoint aprovado)? |
+| App Logic nunca dispara em novas linhas | Intervalo de polling; em Standard, **change tracking** sobre a tabela |
 
-## Remember for the exam
-- Azure alerts = **Azure Monitor alert rule + action group**.
-- Action group can email, SMS, call a **webhook**, or start a **runbook**.
-- Runbook status → Automation account **Jobs**. Who ran it → **activity log**.
-- Runbook logs in Log Analytics need **Diagnostic settings** first.
-- Elastic job alert → **Failed Elastic jobs** metric.
-- Elastic job history: `jobs.job_executions`, kept **45 days**. Watchers get **`jobs_reader`**.
-- Per-target failures → `Get-AzSqlElasticJobTargetExecution`.
-- MI has no Agent alerts → **Azure Monitor**.
+## Para lembrar na prova
+- Azure alerts = **Regra de alerta Azure Monitor + grupo de ação**.
+- O grupo de ação pode enviar e-mail, SMS, chamar um **webhook** ou iniciar um **runbook**.
+- Status Runbook → Conta de automação **Jobs**. Quem o executou → **log de atividade**.
+- Os logs Runbook no Log Analytics precisam de **Configurações diagnósticas** primeiro.
+- Alerta Elastic job métrica → **Falha Elastic jobs**.
+- História Elastic job: `jobs.job_executions`, mantido **45 dias**. Os observadores recebem **`jobs_reader`**.
+- Falhas por alvo → `Get-AzSqlElasticJobTargetExecution`.
+- MI não tem alertas de agente → **Azure Monitor**.
 
-## Quick check
-1. You want an email when any elastic job fails. What do you set up?
-   <details><summary>Answer</summary>An Azure Monitor alert on the Failed Elastic jobs metric of the job agent, with an action group that sends email.</details>
-2. You need to know who started a runbook yesterday. Where do you look?
-   <details><summary>Answer</summary>The activity log of the Automation account.</details>
-3. You want to query runbook job logs with KQL, but the AzureDiagnostics table is empty. What is missing?
-   <details><summary>Answer</summary>Diagnostic settings on the Automation account, sending job logs to the Log Analytics workspace.</details>
+## Teste rápido
+1. Você quer um e-mail quando algum elastic job falhar. O que você configura?
+   <details><summary>Resposta</summary>An Azure Monitor Alerta sobre o falhado Elastic jobs métrica da job com um grupo de ação que envia e-mail.</details>
+2. Você precisa saber quem começou um runbook ontem. Onde você olha?
+   <details><summary>Resposta</summary>O log de atividades da conta Automation.</details>
+3. Você quer consultar logs runbook job com KQL, mas a tabela AzureDiagnostics está vazia. O que está faltando?
+   <details><summary>Resposta</summary>Configurações de diagnóstico na conta Automação, enviando logs job para o Log Analytics workspace.</details>

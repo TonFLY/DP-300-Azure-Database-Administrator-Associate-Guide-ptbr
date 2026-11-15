@@ -1,36 +1,36 @@
-# Encryption
+# Criptografia
 
-> **Exam skills:** Implement transparent data encryption (TDE), Implement object-level encryption, Implement Always Encrypted, Implement Always Encrypted with secure enclaves
-> **Reading time:** ~20 min
+> **Habilidades cobradas:** Implementar transparent data encryption (TDE), Implementar criptografia de nível de objeto, Implementar Always Encrypted, Implementar Always Encrypted with secure enclaves
+> **Tempo de leitura:** ~20 min
 
-## The big idea
-Encryption scrambles data so only someone with the right **key** can read it. There are three places to protect data:
-- **At rest** (stored on disk) → **TDE**.
-- **In use, for chosen columns** (even the DBA must not see it) → **Always Encrypted**.
-- **In transit** (moving over the network) → **TLS**.
+## Conceito central
+A criptografia embaralha os dados para que apenas alguém com o **chave** certo possa lê-lo. Existem três lugares para proteger os dados:
+- **Em repouso** (armazenado em disco) → **TDE**.
+- **Em uso, para colunas escolhidas** (mesmo o DBA não deve vê-lo) → **Always Encrypted**.
+- **Em trânsito** (movendo-se sobre a rede) → **TLS**.
 
-Think of a bank. TDE is the locked vault. Always Encrypted is a sealed envelope that only the customer can open, even the bank staff cannot. TLS is the armoured van that moves money between branches.
+Pense em um banco. TDE é o cofre trancado. Always Encrypted é um envelope selado que só o cliente pode abrir, até mesmo a equipe do banco não pode. TLS é a van blindada que movimenta dinheiro entre filiais.
 
 ## Transparent Data Encryption (TDE)
-**TDE** encrypts the whole database **on disk**. It encrypts data files, log files and **backups**.
-- Data is encrypted when written to disk (page by page) and decrypted when read into memory.
-- It is **transparent**: apps need **no code changes**.
-- Anyone with SELECT rights still sees normal data. TDE does **not** hide data from users or DBAs.
-- It protects against someone **stealing the files or backups** and opening them on another server.
-- Algorithms: AES_128, AES_192, AES_256. Azure SQL uses **AES-256**. TRIPLE_DES_3KEY (3DES) is deprecated since SQL Server 2016.
+**TDE** criptografa todo o banco de dados **em disco**. Ele criptografa arquivos de dados, arquivos de log e **backups**.
+- Os dados são criptografados quando escritos em disco (página por página) e descriptografados quando lidos na memória.
+- É **transparente**: aplicativos precisam de **sem alterações de código**.
+- Qualquer pessoa com SELECT direitos ainda vê dados normais. TDE faz **E** ocultar dados de usuários ou DBAs.
+- Ele protege contra alguém **Roubando os arquivos ou backups** e abri-los em outro servidor.
+- Algoritmos: AES_128, AES_192, AES_256. Azure SQL usa **AES-256**. TRIPLE_DES_3KEY (3DES) é obsoleto desde SQL Server 2016.
 
-**Example:** A thief copies a backup file of a hospital database. Without the TDE key, the file is unreadable on any other server.
+**Exemplo:** Um ladrão copia um arquivo backup de um banco de dados hospitalar. Sem a chave TDE, o arquivo é ilegível em qualquer outro servidor.
 
-### TDE in Azure SQL
-- **On by default** for new databases: Azure SQL Database since **May 2017**, Managed Instance since **February 2019**. Older databases must be turned on by hand.
-- Default key: **service-managed** (Microsoft creates and rotates it).
-- Or **customer-managed key (CMK)**, also called **BYOK** (bring your own key). The key lives in **Azure Key Vault** (see below).
-- Portal: database → **Transparent data encryption**.
-- Encrypting a big database takes time. It runs in the background at low priority.
+### TDE em Azure SQL
+- **Por padrão** para novas bancos de dados: Azure SQL Database desde **Maio 2017**, Managed Instance desde **fevereiro 2019**. Os bancos de dados mais antigas devem ser ligadas à mão.
+- Chave padrão: **serviço-gerenciado** (a Microsoft cria e gira).
+- Ou **chave gerenciada pelo cliente (CMK)**também chamado **BYOK** (traze sua própria chave). A chave vive em **Azure Key Vault** (veja abaixo).
+- Portal: banco de dados → **Transparent data encryption**.
+- Criptografar um grande banco de dados leva tempo. Ele é executado em segundo plano com baixa prioridade.
 
-### TDE on SQL Server (VM or on-premises)
-You set it up yourself with T-SQL. The chain of keys is:
-**Service master key** (made at SQL setup) → protects the **database master key** → protects a **certificate** → protects the **database encryption key (DEK)** → encrypts the data.
+### TDE em SQL Server (VM ou on-premises)
+Você configurar-se com T-SQL. A cadeia de chaves é:
+**Chave mestra de serviço** (feito na configuração SQL) → protege o **chave mestre banco de dados** → protege um **certificado** → protege o **chave de criptografia de banco de dados (DEK)** → criptografa os dados.
 
 ```sql
 USE master;
@@ -42,35 +42,35 @@ CREATE DATABASE ENCRYPTION KEY WITH ALGORITHM = AES_256
 ALTER DATABASE TDE_Demo SET ENCRYPTION ON;
 ```
 
-- **Back up the certificate and its private key.** Without them you cannot restore the encrypted backups anywhere.
-- **Always On availability groups:** copy the certificate to **every replica**. If not, the database cannot be read after a failover.
+- **Faça backup do certificado e de sua chave privada.** Sem eles, você não pode restaurar a criptografia backups Em qualquer lugar.
+- **Always On availability groups:** copie o certificado para **Cada réplica**. Caso contrário, a banco de dados não pode ser lida após um failover.
 
-### Disk encryption on Azure VMs
-For SQL Server on a VM you can also encrypt the whole disk, as an extra layer under TDE.
-- **Azure Disk Encryption (ADE)** retires on **15 Sep 2028**. ADE-enabled VMs must move off it before then.
-- Microsoft recommends **encryption at host** for new VMs.
+### Criptografia de disco em Azure VMs
+Para SQL Server em um VM você também pode criptografar todo o disco, como uma camada extra sob TDE.
+- **Criptografia de disco do Azure (ADE)** se aposenta no **15 Sep 2028**. ADE habilitado VMs deve sair dele antes disso.
+- A Microsoft recomenda o **criptografia no host** para o novo VMs.
 
-## Azure Key Vault and customer-managed TDE keys
-**Azure Key Vault** is a safe cloud store for **secrets** (passwords), **keys** and **certificates**.
-- Keys are protected by software (**Standard** tier) or by **HSMs** (hardware security modules: special tamper-proof devices) in the **Premium** tier or **Managed HSM**.
-- It has its **own access control**. Even a subscription admin cannot read keys unless given access.
-- It logs who used which key, for audits.
+## Chaves Azure Key Vault e TDE gerenciadas pelo cliente
+**Azure Key Vault** é uma loja de nuvem segura para **Segredos** (senhas), **chaves** e **certificados**.
+- As chaves são protegidas por software (nível **Padrão**) ou por **HSMs** (módulos de segurança de hardware: dispositivos especiais à prova de adulteração) no nível **Premium** ou **Gerenciado HSM**.
+- Tem seu **próprio controle de acesso**. Mesmo um administrador de assinatura não pode ler chaves a menos que tenha acesso.
+- Ele registra quem usou qual chave, para auditorias.
 
-### Customer-managed key (CMK) for TDE in Azure SQL
-- The TDE key (called the **TDE protector**) sits in your Key Vault. You control it.
-- If you **delete or disable** the key, the database becomes **inaccessible**. That is your "kill switch".
-- The server reaches Key Vault with a **managed identity**. A **user-assigned managed identity** can be set up before the server exists.
-- **Automatic key rotation:** the server checks Key Vault for a new key version and switches to it **within 24 hours**. Only the DEK is re-encrypted, online. Portal: **Auto-rotate key** checkbox; PowerShell `-AutoRotationEnabled`; CLI `--auto-rotation-enabled`.
-- **Database-level CMK** (Azure SQL Database only, not MI): each database can have its own key. It needs a **user-assigned** managed identity (system-assigned is not supported at database level). It supports keys in another tenant and per-database auto-rotation.
+### Chave gerenciada pelo cliente (CMK) para TDE em Azure SQL
+- A chave TDE (chamada de **protetor TDE**) fica no seu cofre. Você controla isso.
+- Se você **delete ou desative** a chave, o banco de dados se torna **inacessível**. Esse é o seu "kill switch".
+- O servidor alcança o Key Vault com um **managed identity**. Um **user-assigned managed identity** pode ser configurado antes que o servidor exista.
+- **Rotação automática da chave:** o servidor verifica Key Vault para uma nova versão chave e muda para ele **dentro de 24 horas**. Somente o DEK é re-criptografado, online. Portal: **Auto-rotar chave** caixa de seleção; PowerShell `-AutoRotationEnabled`; CLI `--auto-rotation-enabled`.
+- **Nível de banco de dados CMK** (somente Azure SQL Database, não MI): cada banco de dados pode ter sua própria chave. Ele precisa de um **user-atributed** managed identity (sistema atribuído não é suportado no nível do banco de dados). Ele suporta chaves em outro inquilino e por rotação automática da banco de dados.
 
-**Example:** A bank must prove that it, not Microsoft, controls its encryption keys. It stores the TDE key in its own Key Vault. If the contract ends, it disables the key and the data is locked.
+**Exemplo:** Um banco deve provar que ele, e não a Microsoft, controla suas chaves de criptografia. Ele armazena a chave TDE em seu próprio Cofre Chave. Se o contrato terminar, ele desabilita a chave e os dados estão bloqueados.
 
-### Key Vault with SQL Server on a VM
-SQL Server on a VM (or on-premises) can keep its TDE, backup encryption and cell-level encryption keys in Key Vault. This uses **EKM** (Extensible Key Management: a plug-in that lets SQL Server use outside key stores). Steps in short:
-1. Create a Key Vault and a key. Register an app in Entra ID.
-2. Give the app the **Key Vault Crypto Service Encryption User** role (or old access-policy rights: get, list, wrapKey, unwrapKey).
-3. Install the **SQL Server Connector for Azure Key Vault**, enable EKM, create the cryptographic provider.
-4. Create a **credential** and an **asymmetric key** from the provider.
+### Vault chave com SQL Server em um VM
+SQL Server em um VM (ou on-premises) pode manter suas chaves de criptografia TDE, backup e criptografia de nível celular no Key Vault. Isso usa **EKM** (Gerenciamento de Chave Extensível: um plug-in que permite o uso do SQL Server fora das lojas de chaves). Passos em resumo:
+1. Crie um Cofre Chave e uma chave. Registre um aplicativo no Entra ID.
+2. Dê ao aplicativo o papel **Key Vault Cripto Cripto Serviço de Criptografia Usuário** (ou antigos direitos de política de acesso: obter, lista, wrapKey, unwrapKey).
+3. Instale o **Conector SQL Server para Azure Key Vault**, habilite o EKM, crie o provedor criptográfico.
+4. Crie um **credencial** e um **chave assimétrica** do provedor.
 
 ```sql
 CREATE CREDENTIAL sysadmin_ekm_cred
@@ -82,43 +82,43 @@ CREATE ASYMMETRIC KEY MyKey FROM PROVIDER [AzureKeyVault_EKM]
 WITH PROVIDER_KEY_NAME = 'MyAzureKey', CREATION_DISPOSITION = OPEN_EXISTING;
 ```
 
-- **SQL Server 2022 CU17+ on an Azure VM** (or SQL Server 2025 enabled by Azure Arc) can use a **managed identity** instead of the app registration. On-premises SQL Server still needs a service principal.
+- **SQL Server 2022 CU17 + em uma Azure VM** (ou SQL Server 2025 habilitado pelo Azure Arc) pode usar um **managed identity** em vez do registro do aplicativo. On-premises SQL Server ainda precisa de um service principal.
 
-## Object-level (cell-level) encryption
-You can encrypt single values or columns inside SQL Server using **symmetric keys** and certificates. The app (or T-SQL) encrypts and decrypts with functions on the server.
+## Criptografia em nível de objeto (nível celular)
+Você pode criptografar valores ou colunas únicas dentro do SQL Server usando **chaves simétricas** e certificados. O aplicativo (ou T-SQL) criptografa e descriptografa com funções no servidor.
 
-**Example:** An HR database encrypts the salary column with a symmetric key. Only payroll staff who can open the key can decrypt it.
+**Exemplo:** Um banco de dados HR criptografa a coluna salarial com uma chave simétrica. Somente a equipe da folha de pagamento que pode abrir a chave pode descriptografá-la.
 
-The downside: the **server** holds the keys and sees the plain values while decrypting. A powerful DBA can still read them. To keep data hidden even from the DBA, use **Always Encrypted**.
+A desvantagem: o **servidor** detém as chaves e vê os valores simples ao descriptografar. Um poderoso DBA ainda pode lê-los. Para manter os dados ocultos até mesmo do DBA, use **Always Encrypted**.
 
 ## Always Encrypted
-**Always Encrypted** encrypts chosen columns **on the client side** (inside the app's database driver).
-- SQL Server **never sees the plain data** or the keys. It only stores encrypted bytes.
-- DBAs, cloud admins and Microsoft staff **cannot** read the values.
-- Good for credit card numbers, national ID numbers, health data.
+O **Always Encrypted** criptografa as colunas escolhidas **do lado do cliente** (dentro do driver de banco de dados do aplicativo).
+- SQL Server **Nunca vê os dados simples** ou as chaves. Ele só armazena bytes criptografados.
+- DBAs, administradores de nuvem e funcionários da Microsoft **não pode** ler os valores.
+- Bom para números de cartão de crédito, números nacionais ID, dados de saúde.
 
-### Two keys
+### duas chaves
 
-| Key | What it does | Where it lives |
+| Chave | O que faz | Onde ele mora |
 |-----|-------------|----------------|
-| **Column master key (CMK)** | Protects the column encryption keys | Outside SQL: **Azure Key Vault**, Windows Certificate Store, or an HSM |
-| **Column encryption key (CEK)** | Encrypts the column data | Stored in the database, but **encrypted** by the CMK |
+| **chave mestra da coluna (CMK)** | Protege as chaves de criptografia da coluna | Fora SQL: **Azure Key Vault**, Windows Certificate Store, ou um HSM |
+| **Chave de encriptação da coluna (CEK)** | Criptografa os dados da coluna | Armazenado no banco de dados, mas **encriptado** pelo CMK |
 
-The client driver reads the encrypted CEK from the database, decrypts it with the CMK, then decrypts the data. Only the app can reach the CMK.
+O motorista do cliente lê o CEK criptografado da banco de dados, descriptografa-o com o CMK e depois descriptografa os dados. Somente o aplicativo pode chegar ao CMK.
 
-Note: the Always Encrypted acronym CMK (column master key) is different from TDE's CMK (customer-managed key). Read the question carefully.
+Observação: E- Always Encrypted acr CMK (coluna mestre chave) é diferente de TDE's CMK (chave gerenciada pelo cliente). Leia a pergunta com cuidado.
 
-### Two encryption types
+### Dois tipos de criptografia
 
-| Type | How it works | Can query? |
+| Tipo | Como funciona | Pode consultar? |
 |------|--------------|-----------|
-| **Deterministic** | Same value → always same encrypted value | Equality: `=`, joins, GROUP BY, indexes. Easier to guess. |
-| **Randomized** | Same value → different encrypted value each time | More secure, but no searching or joining (unless you use enclaves) |
+| **determinística** | O mesmo valor → sempre o mesmo valor criptografado | Igualdade: `=`, junta-se, GROUP BY, índices. Mais fácil de adivinhar. |
+| **Aleatorizado** | Valor mesmo valor → valor criptografado diferente cada vez | Mais seguro, mas sem pesquisa ou adesão (a menos que você use enclaves) |
 
-**Example:** A clinic encrypts `NationalID` with **deterministic** so staff can look up a patient by exact ID. It encrypts `Diagnosis` with **randomized** because nobody searches on it.
+**Exemplo:** Uma clínica criptografa `NationalID` com **determinista** para que a equipe possa procurar um paciente por ID exato. Ele criptografa `Diagnosis` com **randomizado** porque ninguém pesquisa nele.
 
-### How to set it up
-- Use the **Always Encrypted wizard** in SSMS (pick columns, pick type, pick key store), or PowerShell, or T-SQL for the key metadata:
+### Como configurar isso
+- Use o **assistente Always Encrypted** em SSMS (escolher colunas, escolher tipo, escolher loja chave), ou PowerShell, ou T-SQL para os metadados chave:
 
 ```sql
 CREATE COLUMN MASTER KEY MyCMK
@@ -129,84 +129,84 @@ WITH VALUES (COLUMN_MASTER_KEY = MyCMK, ALGORITHM = 'RSA_OAEP',
              ENCRYPTED_VALUE = 0x01...);
 ```
 
-- The app must use an Always Encrypted-capable driver (e.g. ADO.NET / Microsoft.Data.SqlClient, ODBC, JDBC) with **`Column Encryption Setting=Enabled`** in the connection string.
-- Never store the CMK on the SQL Server machine. **Back up the CMK**: if it is lost, the data is lost.
+- O aplicativo deve usar um driver compatível com Always Encrypted (e.g. ADO.NET / Microsoft.Data.SqlClient, ODBC, JDBC) com **`Column Encryption Setting=Enabled`** no connection string.
+- Nunca guarde o CMK na máquina SQL Server. **Fazer backup do CMK**: se ele for perdido, os dados serão perdidos.
 
-### Where it helps
+### Onde ajuda
 
-| Setup | What it protects against |
+| Configuração | O que protege contra |
 |-------|--------------------------|
-| On-premises app + on-premises database | On-premises DBAs |
-| On-premises app + Azure SQL | Cloud admins (keys stay on-premises) |
-| App and database both in Azure | Still encrypted, but Azure admins could manage the keys |
+| Aplicativo On-premises + banco de dados on-premises | On-premises DBAs |
+| app On-premises + Azure SQL | Administradores de nuvem (chaves ficar on-premises) |
+| App e banco de dados no Azure | Ainda criptografado, mas os administradores do Azure podem gerenciar as chaves |
 
 ## Always Encrypted with secure enclaves
-Plain Always Encrypted has a limit. The server cannot work on the plain data, so it can only do **equality on deterministic** columns. Range searches, LIKE, sorting and even first-time encryption must happen in the client app. For a big table, that means pulling all data out and pushing it back.
+Always Encrypted simples tem um limite. O servidor não pode trabalhar nos dados simples, por isso só pode fazer colunas **Igualdade em Determinismo**. Pesquisas de alcance, LIKE, classificação e até mesmo criptografia de primeira vez devem acontecer no aplicativo cliente. Para uma grande tabela, isso significa puxar todos os dados para fora e empurrá-lo para trás.
 
-A **secure enclave** fixes this. It is a **protected, locked-off area of memory inside the SQL Server process**. Nobody outside can look in: not the DBA, not the OS admin, not a debugger.
-- The client driver sends the column keys **into the enclave** over a secure channel.
-- SQL Server hands the encrypted work to the enclave. The enclave decrypts and computes **only inside itself**.
+A **secure enclave** Isso é um **área de memória protegida e bloqueada dentro do processo SQL Server**. Ninguém de fora pode olhar para dentro: não o DBANão o OS admin, não um depurador.
+- O motorista do cliente envia as teclas de coluna **no enclave** através de um canal seguro.
+- SQL Server entrega o trabalho criptografado ao enclave. O enclave descriptografa e computa **Apenas dentro de si mesmo**.
 
-**Example:** An HR app must find employees with salary between 40,000 and 45,000. Salary is encrypted with randomized encryption. With an enclave, SQL Server can run the `BETWEEN` inside the enclave. The DBA still never sees a salary.
+**Exemplo:** O aplicativo An HR deve encontrar funcionários com salário entre 40,000 e 45,000. O salário é criptografado com criptografia aleatória. Com um enclave, o SQL Server pode executar o `BETWEEN` dentro do enclave. O DBA ainda nunca vê um salário.
 
-### What enclaves add
+### O que os enclaves adicionam
 
-| Ability | Plain Always Encrypted | With secure enclaves |
+| Capacidade | Always Encrypted | Com secure enclaves |
 |---------|------------------------|----------------------|
-| `=` | Deterministic only | Deterministic **and randomized** |
-| `<`, `>`, `BETWEEN`, `IN`, `LIKE`, `DISTINCT` | No | Yes (randomized columns) |
-| Joins | Deterministic equality joins | Yes (SQL Server 2019: nested loop joins only) |
-| `ORDER BY`, `GROUP BY` | No | Yes in Azure SQL Database and SQL Server 2022+ (not 2019) |
-| Indexes on randomized columns | No | **Nonclustered** only |
-| Encrypt, rotate keys, decrypt | Client tool must move the data | **In place** with `ALTER TABLE ... ALTER COLUMN` |
+| `=` | Apenas determinista | Determinaistic **e randomizados** |
+| `<`, `>`, `BETWEEN`, `IN`, `LIKE`, `DISTINCT` | Não | Sim (colunas aleatórias) |
+| Join | Igualdade determinista junta-se | Sim (SQL Server 2019: loop aninhado se junta apenas) |
+| `ORDER BY`, `GROUP BY` | Não | Sim em Azure SQL Database e SQL Server 2022+ (não 2019) |
+| Indexes on randomized columns | Não | Somente **Nonclustered** |
+| Criptografar, girar chaves, descriptografar | Ferramenta cliente deve mover os dados | **No lugar** com `ALTER TABLE ... ALTER COLUMN` |
 
-- Rich queries (range, LIKE, sort) need **randomized** encryption. A deterministic enclave-enabled column still gets **equality only**.
-- **In-place encryption** works for both types, if all keys are enclave-enabled.
-- Text columns in enclave queries need a **`_BIN2` collation** (Azure SQL Database and SQL Server 2022 also accept **UTF-8** collations).
+- Consultas ricas (intervalo, LIKE, tipo) precisam de criptografia **randomizado**. Uma coluna determinística habilitada para enclave ainda recebe **igualdade apenas**.
+- O **Cript encriptação no local** funciona para ambos os tipos, se todas as chaves estiverem habilitadas para enclave.
+- As colunas de texto em consultas de enclave precisam de um **Colação `_BIN2`** (Azure SQL Database e SQL Server 2022 também aceitam colações **UTF-8**).
 
-### Two enclave types: VBS and Intel SGX
+### Dois tipos de enclave: VBS e Intel SGX
 
-| | **VBS enclaves** | **Intel SGX enclaves** |
+| | **Enclaves VBS** | **Enclaves Intel SGX** |
 |--|------------------|------------------------|
-| What it is | **Software**-based, uses the Windows hypervisor (virtualization-based security). No special hardware. | **Hardware**-based, built into Intel CPUs |
-| SQL Server 2019 / 2022 / 2025 on Windows (on-premises or VM) | **Yes – the only type** | No |
-| Azure SQL Database | Yes, on **any** tier and model (vCore, DTU, serverless, elastic pools) **except DC-series** | Only on **DC-series** hardware (vCore) |
-| Protects against | Attacks inside the VM / guest OS (e.g. DBA, memory dumps) | Attacks from guest OS **and** host OS |
-| Status | Current, **recommended** | **End of support 31 Oct 2027** |
+| O que é | **Software**-based, usa o hypervisor do Windows (segurança baseada em virtualização). Nenhum hardware especial. | Baseado em **Hardware**, incorporado no Intel CPUs |
+| SQL Server 2019 / 2022 / 2025 em Windows (on-premises ou VM) | **Sim – o único tipo** | Não |
+| Azure SQL Database | Sim, no nível **qualquer** e modelo (vCore, DTU, serverless, elastic pools) **DC-série** | Apenas em hardware **DC-série** (vCore) |
+| Protege contra | Ataques dentro do VM / convidado OS (e.g. DBA, depósitos de memória) | Ataques de hóspedes OS **e** host OS |
+| Status | Atual, **Recomendado** | **Fim do apoio 31 Oct 2027** |
 
-- **Managed Instance: no secure enclaves.** Plain Always Encrypted works on MI.
-- **SQL Server on Linux: no secure enclaves.**
-- After 31 Oct 2027, Azure moves databases still on DC-series to standard-series and **turns on VBS enclaves**.
-- DC-series facts, if asked: uses **physical** cores, max **40** cores, **no serverless**, few regions.
+- **Managed Instance: não secure enclaves.** Plain Always Encrypted funciona em MI.
+- **SQL Server no Linux: não secure enclaves.**
+- Após 31 de outubro de 2027, o Azure move bancos de dados ainda em DC -série para série padrão e **Ativa os enclaves VBS**.
+- Fatos da série DC, se perguntado: usa núcleos **físico**, núcleos **40** max, **serverless**, poucas regiões.
 
-### Attestation
-**Attestation** means the client checks that the enclave is genuine and untampered **before** sending it keys.
+### Atestado
+**Atestado** significa que o cliente verifica se o enclave é genuíno e sem obstáculos **antes** enviando-lhe chaves.
 
-| Product | Enclave | Attestation |
+| Produto | Enclave | Atestado |
 |---------|---------|-------------|
-| SQL Server 2019+ | VBS | **Host Guardian Service (HGS)** or **None** |
-| Azure SQL Database | SGX (DC-series) | **Microsoft Azure Attestation (MAA)** – required |
-| Azure SQL Database | VBS | **None** only (attestation not supported) |
+| SQL Server 2019+ | VBS | **Serviço de Guardião Anfitrião (HGS)** ou **Nenhum** |
+| Azure SQL Database | SGX (série DC) | **Microsoft Azure Attestation (MAA)** – necessário |
+| Azure SQL Database | VBS | Apenas **Nenhum** (teste não suportado) |
 
-- **HGS** is a Windows Server role. The SQL Server host is registered with it.
-- **MAA**: create an attestation provider, set its policy, give the server access, share the **attestation URL** with the app team.
-- **None** is quickest to set up, but the client cannot detect a tampered enclave.
-- Keep roles apart: the attestation admin should not be the DBA.
+- **HGS** é um papel Windows Server. O host SQL Server está registrado com ele.
+- **MAA**: crie um provedor de atestado, defina sua política, dê acesso ao servidor, compartilhe o **atestação URL** com a equipe do aplicativo.
+- **Nenhum** é mais rápido de configurar, mas o cliente não pode detectar um enclave adulterado.
+- Mantenha os papéis separados: o administrador do atestado não deve ser o DBA.
 
-### Enclave-enabled keys
-- **Enclave-enabled CMK:** has the **`ENCLAVE_COMPUTATIONS`** property and a signature. In SSMS, tick **Allow enclave computations** when you create the CMK.
-- **Enclave-enabled CEK:** any CEK protected by an enclave-enabled CMK. Only these can be used in the enclave.
-- Enclave-enabled CMKs can live only in **Windows Certificate Store** or **Azure Key Vault**.
+### Chaves habilitadas para Enclave
+- **Enclave habilitado CMK:** tem a propriedade **`ENCLAVE_COMPUTATIONS`** e uma assinatura. Em SSMS, marque **Permitir cálculos enclave** quando você criar o CMK.
+- **Enclave habilitado CEK:** qualquer CEK protegido por um CMK habilitado para enclave. Somente estes podem ser usados no enclave.
+- O CMKs habilitado para Enclave pode viver apenas em **Windows Certificate Store** ou **Azure Key Vault**.
 
-### Turn on the enclave
-**Azure SQL Database (VBS)** – off by default. It sets **`preferredEnclaveType = VBS`** on the database or elastic pool.
-- Portal: when creating, **Security** tab → **Always Encrypted** → **Enable secure enclaves = ON**. For an existing database: **Security → Data Encryption → Always Encrypted** tab. For an existing pool: **Settings → Configuration → Always Encrypted**.
+### Vire o enclave
+**Azure SQL Database (VBS)** – desligado por padrão. Ele define **`preferredEnclaveType = VBS`** no banco de dados ou elastic pool.
+- Portal: ao criar, guia **Segurança** → **Always Encrypted** → **Ativar secure enclaves = ON**. Para um banco de dados existente: guia **Segurança → Encriptação de Dados → Always Encrypted**. Para uma piscina existente: **Configuração → Configuração → Always Encrypted**.
 - PowerShell: `Set-AzSqlDatabase ... -PreferredEnclaveType VBS`. CLI: `az sql db update ... --preferred-enclave-type VBS`.
-- Databases added to a VBS pool **inherit** VBS. Adding a VBS database to a non-VBS pool is **not supported**.
+- Bancos de dados adicionados a um pool VBS **herdar** VBS. Adicionar um banco de dados VBS a um pool não VBS é **não apoiado**.
 
-**Azure SQL Database (SGX):** choose **DC-series** hardware and set up **MAA**.
+**Azure SQL Database (SGX):** escolher hardware **DC-série** e configurar **MAA**.
 
-**SQL Server 2019+ (VBS):** needs Windows Server 2019+ (or Windows 11 24H2+), CPU virtualization, and VBS running. In Azure, use a **Generation 2 VM**.
+**SQL Server 2019+ (VBS):** precisa de Windows Server 2019+ (ou Windows 11 24H2+), virtualização CPU e VBS em execução. No Azure, use um **Geração 2 VM**.
 
 ```sql
 EXEC sp_configure 'column encryption enclave type', 1;   -- 0 = none, 1 = VBS
@@ -215,11 +215,11 @@ RECONFIGURE;
 SELECT * FROM sys.dm_column_encryption_enclave;   -- one row = enclave ready
 ```
 
-### Using it
-- Connection string: `Column Encryption Setting=Enabled;Attestation Protocol=None;` (or `HGS` / `AAS` plus `Enclave Attestation Url`). If **Attestation Protocol is missing, enclaves are off**.
-- SSMS: Connect → Options → **Always Encrypted** tab → Enable Always Encrypted → **Enable secure enclaves** → choose protocol.
-- Queries must use **parameters** (e.g. `WHERE Salary BETWEEN @Min AND @Max`).
-- In-place encryption example:
+### Usá-lo
+- Connection string: `Column Encryption Setting=Enabled;Attestation Protocol=None;` (ou `HGS` / `AAS` mais `Enclave Attestation Url`). Se **Protocolo de Atestado está faltando, enclaves estão fora**.
+- SSMS: Conecte → Opções → **Always Encrypted** guia → Habilitar Always Encrypted → **Ativar secure enclaves** → escolher o protocolo.
+- As consultas devem usar **parâmetros** (e.g. `WHERE Salary BETWEEN @Min AND @Max`).
+- Exemplo de criptografia no local:
 
 ```sql
 ALTER TABLE dbo.Employees
@@ -229,57 +229,57 @@ ENCRYPTED WITH (COLUMN_ENCRYPTION_KEY = CEK1, ENCRYPTION_TYPE = RANDOMIZED,
 WITH (ONLINE = ON);
 ```
 
-### Limits to know
-- No clustered index, primary key, foreign key or unique constraint on enclave-enabled **randomized** columns.
-- Not for memory-optimized tables.
-- Turn on **Accelerated Database Recovery (ADR)** before indexing randomized enclave columns. ADR is on by default in Azure SQL, off by default in SQL Server.
-- Every **replica** (availability group, geo-replica) must support enclaves, or enclave queries fail after failover.
+### Limites para saber
+- Não clustered index, chave primária, chave estrangeira ou restrição única em enclave habilitado **randomizado** colunas.
+- Não para memory-optimized tables.
+- Ligue o **Accelerated Database Recovery (ADR)** antes de indexar colunas de enclave aleatório. O ADR está ativado por padrão no Azure SQL, desativado por padrão no SQL Server.
+- Cada **réplica** (availability group, geo-replica) deve suportar enclaves, ou as consultas de enclave falham após o failover.
 
-## Encrypted connections (TLS)
-**TLS** (Transport Layer Security) encrypts data **while it moves** between the app and the database. Without it, someone on the network could read passwords and query results.
+## Conexões encriptadas (TLS)
+**TLS** (Transport Layer Security) criptografa dados **enquanto se move** entre o aplicativo e o banco de dados. Sem ele, alguém na rede poderia ler senhas e consultar os resultados.
 
-### Azure SQL Database and Managed Instance
-- TLS is used **by default**.
-- Set **Minimum TLS version** (server → **Networking → Connectivity**, or `az sql server update --set minimalTlsVersion="1.2"`).
-- **TLS 1.0 and 1.1 retired on 31 Aug 2025.** The lowest minimum you can set is **1.2**. TLS 1.3 is also accepted.
-- Once you enforce a minimum version, you cannot go back to the default.
-- In the app: `Encrypt=True;TrustServerCertificate=False;`.
+### Azure SQL Database e Managed Instance
+- TLS é usado **por predefinição**.
+- Set **Versão mínima TLS** (servidor → **Conectividade de rede →**, ou `az sql server update --set minimalTlsVersion="1.2"`).
+- **TLS 1.0 e 1.1 se aposentaram em 31 de agosto de 2025.** O mínimo mais baixo que você pode definir é **1.2**. TLS 1.3 também é aceito.
+- Depois de aplicar uma versão mínima, você não pode voltar ao padrão.
+- No aplicativo: `Encrypt=True;TrustServerCertificate=False;`.
 
-### SQL Server on a VM
-1. Install a valid **TLS certificate** on the server. It must be in the local machine (or current user) store, not expired, and readable by the SQL Server service account. If not, SQL Server **may fail to start**.
-2. Open **SQL Server Configuration Manager** → Network Configuration → Protocols for your instance → Properties.
-3. **Certificate** tab: pick the certificate. **Flags** tab: **Force Encryption = Yes**.
-4. SQL Server **2022+** also has **Force Strict Encryption** (TDS 8.0: the whole session is wrapped in TLS; needed for **TLS 1.3**).
-5. **Restart** SQL Server.
+### SQL Server em um VM
+1. Instale um **Certificado TLS** válido no servidor. Ele deve estar na loja local da máquina (ou usuário atual), não expirado e legível pela conta de serviço SQL Server. Se não, SQL Server **Pode falhar ao começar**.
+2. Abrir **SQL Server Configuration Manager** → Rede Configuração → Protocolos para sua instância → Propriedades.
+3. Guia **Certificado**: escolha o certificado. Guia **Bandeiras**: **Force Encryption = Yes**.
+4. SQL Server **2022+** também tem **Encriptação Estrita Força** (TDS 8.0: toda a sessão é embrulhada em TLS; necessário para **TLS 1.3**).
+5. **Reiniciar** SQL Server.
 
-In **SSMS 20+**, set **Encryption** on the Login tab to **Mandatory** or **Strict**. Tick **Trust server certificate** only if you must.
+Em **SSMS 20+**, defina **Criptografia** na guia Login para **Obrigatório** ou **Estrita**. Marque **Certificado de servidor de confiança** apenas se precisar.
 
-## Compare at a glance
+## Compare em um relance
 
 | | TDE | Always Encrypted | TLS |
 |--|-----|------------------|-----|
-| Protects | Whole database + backups on disk | Chosen columns | Data on the network |
-| Server sees plain data? | Yes | **No** | n/a |
-| Hides data from DBA? | No | **Yes** | No |
-| App changes? | None | Driver + connection setting | Connection string |
-| Default in Azure SQL? | Yes | No | Yes |
+| Protectores | Banco de dados inteiro + backups no disco | Colunas Escolhidas | Dados na rede |
+| Servidor vê dados simples? | Sim | **Não** | n/a |
+| Oculta dados de DBA? | Não | **Sim** | Não |
+| Mudanças de aplicativo? | Nenhum | Condutor + configuração de conexão | Connection string |
+| Default em Azure SQL? | Sim | Não | Sim |
 
-## Remember for the exam
-- "Stolen backup or disk" → **TDE**. "Hide data from DBAs / cloud admins" → **Always Encrypted**.
-- TDE is on by default in Azure SQL; certificate backup is vital on SQL Server; copy the cert to all AG replicas.
-- Customer-managed TDE key lives in **Key Vault**; deleting or disabling it makes the database inaccessible; auto-rotation within **24 hours**.
-- Always Encrypted: CMK protects CEK; CEK encrypts data. App needs `Column Encryption Setting=Enabled`.
+## Para lembrar na prova
+- "Stolen backup ou disco" → **TDE**. "Ocultar dados de DBAs / administradores de nuvem" → **Always Encrypted**.
+- TDE está ativado por padrão em Azure SQL; certificado backup é vital em SQL Server; copie o certificado para todas as réplicas AG.
+- A chave TDE gerenciada pelo cliente vive em **Key Vault**; a exclusão ou desativação torna o banco de dados inacessível; auto-rotação dentro de **24 horas**.
+- Always Encrypted: CMK protege CEK; CEK criptografa dados. O aplicativo precisa de `Column Encryption Setting=Enabled`.
 - Deterministic = equality and joins. Randomized = safer, no queries without enclaves.
-- Range / LIKE / ORDER BY on encrypted data, or encrypt a big column without moving data → **secure enclaves**, **randomized**, enclave-enabled keys.
-- **VBS** = software, any Azure SQL DB tier, attestation **None**, the only type for SQL Server. **SGX** = DC-series only, **MAA** required, retiring **31 Oct 2027**. **HGS** = SQL Server only.
-- **No enclaves** on Managed Instance or Linux.
-- SQL Server enclave: `sp_configure 'column encryption enclave type', 1` + **restart**.
-- TLS minimum is **1.2** in Azure SQL (1.0/1.1 retired 31 Aug 2025).
+- Faixa / LIKE / ORDER BY em dados criptografados, ou criptografar uma grande coluna sem mover dados → **secure enclaves**, **randomizado**, chaves habilitadas para enclave.
+- **VBS** = software, any Azure SQL DB nível, atestado **Nenhum**, o único tipo para SQL Server. **SGX** = DC-apenas séries, **MAA** necessário, aposentar-se **31 Oct 2027**. **HGS** = SQL Server Apenas.
+- **Sem enclaves** em Managed Instance ou Linux.
+- Enclave SQL Server: `sp_configure 'column encryption enclave type', 1` + **reiniciar**.
+- TLS mínimo é **1.2** em Azure SQL (1.0/1.1 aposentado 31 Aug 2025).
 
-## Quick check
-1. Auditors require that DBAs must never see credit card numbers, but the app must still search by exact card number. Which feature and type?
-   <details><summary>Answer</summary>Always Encrypted with deterministic encryption. It hides data from DBAs and still allows equality lookups.</details>
-2. You need LIKE searches on an encrypted column in Azure SQL Database at the lowest cost. What do you configure?
-   <details><summary>Answer</summary>Always Encrypted with VBS secure enclaves (preferredEnclaveType = VBS), randomized encryption, enclave-enabled keys, and Attestation Protocol = None. VBS works on any tier.</details>
-3. A company disables its TDE key in Azure Key Vault. What happens to the database?
-   <details><summary>Answer</summary>It becomes inaccessible, because the server can no longer unlock the database encryption key.</details>
+## Teste rápido
+1. Os auditores exigem que o DBAs nunca deve ver números de cartão de crédito, mas o aplicativo ainda deve pesquisar pelo número exato do cartão. Qual recurso e tipo?
+   <details><summary>Resposta</summary>Always Encrypted com criptografia determinística. Ele esconde dados do DBAs e ainda permite pesquisas de igualdade.</details>
+2. Você precisa de pesquisas LIKE em uma coluna criptografada no Azure SQL Database ao menor custo. O que você configura?
+   <details><summary>Resposta</summary>Use Always Encrypted com VBS secure enclaves (preferredEnclaveType = VBS), randomized encryption, chaves habilitadas para enclave e Attestation Protocol = None. VBS funciona em todos os tiers.</details>
+3. Uma empresa desativa sua chave TDE no Azure Key Vault. O que acontece com o banco de dados?
+   <details><summary>Resposta</summary>Torna-se inacessível, porque o servidor não pode mais desbloquear a chave de criptografia do banco de dados.</details>

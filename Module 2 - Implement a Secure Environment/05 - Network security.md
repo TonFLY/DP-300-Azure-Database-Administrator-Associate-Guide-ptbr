@@ -1,20 +1,20 @@
-# Network security
+# Segurança de rede
 
-> **Exam skills:** Configure server- and database-level firewall rules, Configure private links and service endpoints
-> **Reading time:** ~8 min
+> **Habilidades cobradas:** Configurar regras de firewall de servidor e banco de dados, Configurar links privados e service endpoints
+> **Tempo de leitura:** ~8 min
 
-## The big idea
-Before anyone can log in, their network traffic must reach the database. Network security decides **which networks and IP addresses** can even knock on the door. Think of a gated housing estate. The firewall is the gate guard with a list of allowed cars. A private link is a private tunnel from your garage straight into the estate.
+## Conceito central
+Antes que qualquer um possa fazer login, seu tráfego de rede deve chegar ao banco de dados. A segurança de rede decide que o **quais redes e endereços IP** pode até bater na porta. Pense em um imóvel fechado. O firewall é o guarda de portão com uma lista de carros permitidos. O private link é um túnel privado da sua garagem direto para a propriedade.
 
-## Firewall rules in Azure SQL Database
-The Azure SQL Database firewall allows or blocks connections by **IP address** or by **virtual network rule**. Every connection goes through it first. By default, **everything is blocked**.
+## Regras de firewall no Azure SQL Database
+O firewall Azure SQL Database permite ou bloqueia conexões por **Endereço IP** ou por **regra de rede virtual**. Cada conexão passa por ela primeiro. Por padrão, **Está tudo bloqueado**.
 
-### Two levels
+### Dois níveis
 
-| Level | Scope | How to set it |
+| Nível | Scope | Como definir |
 |-------|-------|---------------|
-| **Server-level** | All databases on the logical server | Portal, PowerShell, CLI, REST, or T-SQL `sp_set_firewall_rule` in **master** |
-| **Database-level** | One database only | **T-SQL only**: `sp_set_database_firewall_rule` in **that database** |
+| **nível servidor** | Todos os bancos de dados no servidor lógico | Portal, PowerShell, CLI, REST ou T-SQL `sp_set_firewall_rule` em **mestre** |
+| **nível de banco de dados** | Apenas um banco de dados | **Somente T-SQL**: `sp_set_database_firewall_rule` em **Esse banco de dados** |
 
 ```sql
 -- In master: allow the office IP to reach every database
@@ -23,95 +23,95 @@ EXEC sp_set_firewall_rule N'Office', '52.120.14.22', '52.120.14.22';
 EXEC sp_set_database_firewall_rule N'Partner', '203.0.113.5', '203.0.113.5';
 ```
 
-### Order of checks
-1. Azure checks the **database-level** rules for that database.
-2. If none match, it checks the **server-level** rules.
-3. If still none match, the connection is **blocked**.
+### Ordem dos controlos
+1. O Azure verifica as regras **nível de banco de dados** para esse banco de dados.
+2. Se não houver correspondência, verifica as regras do **servidor-nível**.
+3. Se ainda não houver correspondência, a conexão é **bloqueado**.
 
-**Example:** A school has 10 databases. All staff use the school office IP, so the DBA adds one **server-level** rule. An outside exam board needs only the `ResultsDB`. The DBA adds a **database-level** rule for its IP in `ResultsDB` only.
+**Exemplo:** Uma escola tem 10 bancos de dados. Todos os funcionários usam o escritório da escola IP, então o DBA adiciona um **servidor-nível** Um quadro de exame externo precisa apenas da `ResultsDB`. O DBA adiciona a **nível de banco de dados** regra para sua IP E- `ResultsDB` Apenas.
 
-### Limits and tips
-- Up to **256** server-level and **256** database-level IP rules.
-- These IP firewall rules are for **Azure SQL Database**. **Managed Instance** uses **NSGs** (network security groups: allow/deny rules on a subnet) instead.
-- In **SSMS**, if your IP is blocked, it offers to add a firewall rule for you. (Azure Data Studio was retired on 28 Feb 2026.)
+### Limites e dicas
+- Até regras IP de nível de servidor **256** e **256** de nível de banco de dados.
+- Estas regras de firewall IP são para **Azure SQL Database**. **Managed Instance** usa **NSGs** (network security groups: permitir / negar regras em uma sub-rede).
+- Em **SSMS**, se o seu IP está bloqueado, ele oferece para adicionar uma regra de firewall para você. (Azure Data Studio foi aposentado em 28 de fevereiro de 2026.)
 
-### "Allow Azure services and resources to access this server"
-- This creates a special rule `0.0.0.0` named **AllowAllWindowsAzureIps**.
-- It lets **all** Azure services in, **including other customers' subscriptions**. It is not just your Azure resources.
-- Prefer **VNet rules** or **private endpoints** instead.
+### "Permitir que os serviços e recursos do Azure acessem este servidor"
+- Isso cria uma regra especial `0.0.0.0` chamada **AllowAllWindowsAzureIps**.
+- Ele permite que os serviços do Azure **Todos** entrem, **incluindo assinaturas de outros clientes**. Não são apenas seus recursos do Azure.
+- Prefira **Regras VNet** ou **private endpoints** em vez disso.
 
-## Virtual network service endpoints
-A **service endpoint** lets traffic from a chosen **subnet** reach Azure SQL over the Microsoft backbone network. You then add a **virtual network rule** to the SQL firewall to allow that subnet.
+## Rede virtual service endpoints
+A **service endpoint** permite o tráfego a partir de um escolhido **subnet** alcance Azure SQL sobre a rede de backbone da Microsoft. Você então adiciona um **regra de rede virtual** E a SQL para permitir que essa sub-rede.
 
-- Access is controlled **by subnet**, not by IP.
-- The database **still uses its public endpoint** (public address). Traffic is just routed better and tagged with the subnet.
-- Applies within one **Azure region**.
-- Easy to set up.
+- O acesso é controlado **subnet**, não por IP.
+- O banco de dados **Ainda usa seu endpoint público** (endereço público). O tráfego é apenas melhor encaminhado e marcado com a sub-rede.
+- Aplica-se dentro de um **região Azure**.
+- Fácil de configurar.
 
-**Example:** A web app runs on VMs in subnet 10.0.0.0/24. The DBA turns on the SQL service endpoint for that subnet and adds a VNet rule. Only that subnet can connect; other Azure traffic is blocked.
+**Exemplo:** Um aplicativo web é executado em VMs na sub-rede 10.0.0.0/24. O DBA liga o SQL service endpoint para essa sub-rede e adiciona uma regra VNet. Somente essa sub-rede pode se conectar; outro tráfego do Azure está bloqueado.
 
 ## Private Link (private endpoint)
-**Private Link** gives your database a **private IP address inside your VNet**. This is called a **private endpoint**.
-- Traffic stays on Microsoft's private network. It never goes over the public internet.
-- Works **across regions**, and from on-premises over **VPN** or **ExpressRoute**.
-- It is the **most secure** choice, and best against **data exfiltration** (data being copied out to places it should not go).
-- Set **Public network access = Disable** so only private endpoint connections are allowed. After that, you cannot add or edit firewall rules (error **42101**).
+**Private Link** dá ao seu banco de dados um **Endereço IP privado dentro do seu VNet**. Isso é chamado de **private endpoint**.
+- O tráfego permanece na rede privada da Microsoft. Nunca passa pela internet pública.
+- Funciona **entre regiões**, e de on-premises sobre **VPN** ou **ExpressRoute**.
+- É a escolha **mais seguro**, e melhor contra **exfiltração de dados** (dados sendo copiados para lugares que não deve ir).
+- Set **Public network access = Disable** para que apenas conexões private endpoint sejam permitidas. Depois disso, você não pode adicionar ou editar regras de firewall (erro **42101**).
 
-**Example:** A healthcare app must have no public exposure at all. The DBA creates a private endpoint so the database gets 10.1.2.5 inside the hospital VNet, then disables public network access.
+**Exemplo:** O DBA cria um private endpoint para que o banco de dados obtenha o 10.1.2.5 dentro do hospital VNet e, em seguida, desabilite o acesso à rede pública.
 
-## Other network options
-- **VPN Gateway:** an encrypted tunnel over the internet from on-premises to Azure. Cheaper. Good for dev/test or smaller workloads.
-- **ExpressRoute:** a **dedicated private line** from your datacentre to Azure. It does not use the internet. Fast, reliable, more expensive. Used for strict compliance.
-- **Network security perimeter** (preview for Azure SQL Database): groups SQL Database with other PaaS resources (Storage, Key Vault) and controls traffic in and out. It starts in **transition** mode (formerly "learning" mode), then you switch to **Enforced**.
+## Outras opções de rede
+- **Gateway VPN:** um túnel criptografado pela internet de on-premises para Azure. Mais barato. Bom para dev / teste ou cargas de trabalho menores.
+- **ExpressRoute:** a **linha privada dedicada** do seu datacenter para o Azure. Ele não usa a internet. Rápido, confiável, mais caro. Usado para conformidade estrita.
+- **perímetro de segurança da rede** (preview para Azure SQL Database): grupos SQL Database com outros recursos PaaS (Armazenamento, Cofre Chave) e controla o tráfego dentro e fora. Começa no modo **transição** (antigo modo "aprender"), então você muda para **Forçado**.
 
-### Connection policy
-Set on the server: **Networking → Connectivity**.
-- **Redirect** (recommended): the client connects straight to the database node. Needs outbound ports **11000–11999**.
-- **Proxy:** all traffic goes through the gateway on port **1433**.
-- **Default:** Redirect for clients inside Azure, Proxy for clients outside Azure.
+### Política de ligação
+No servidor: **Conectividade de rede →**.
+- **redirecionamento** (recomendado): o cliente se conecta diretamente ao nó do banco de dados. Precisa de portas de saída **11000–11999**.
+- **Proxy:** todo o tráfego passa pelo gateway no porto **1433**.
+- **Padrão:** Redirecionamento para clientes dentro do Azure, Proxy para clientes fora do Azure.
 
 ### SQL Server on Azure VMs
-A VM is protected like any server: **NSGs** on the subnet, the **Windows Firewall** inside the VM, and VPN or ExpressRoute for hybrid links.
+A VM É protegido como qualquer servidor: **NSGs** Na sub-rede, o **Firewall do Windows** dentro da VMe, VPN : ExpressRoute para ligações híbridas.
 
-## SQL injection (basics)
-**SQL injection** is an attack where a user types SQL code into an input box, and the app runs it.
+## Injeção SQL (básico)
+**injeção SQL** é um ataque onde um usuário digita código SQL em uma caixa de entrada e o aplicativo executa.
 
-**Example:** An app builds `SELECT * FROM Orders WHERE OrderId = ` + user input. An attacker types `25; DELETE FROM Orders;`. The database runs both statements and deletes all orders.
+**Exemplo:** Um aplicativo constrói `SELECT * FROM Orders WHERE OrderId = ` + entrada do usuário. Um atacante digita `25; DELETE FROM Orders;`. O banco de dados executa ambas as declarações e exclui todas as ordens.
 
-How to prevent it:
-- **Parameterized queries** (best): `WHERE OrderId = @OrderId`. The input is treated as data, never as code.
-- **Stored procedures** and **ORM** libraries (e.g. Entity Framework).
-- **Validate input** (is it really a number?).
-- **Least privilege** for the app's account, so a bad query can do little harm.
-- **Web Application Firewall (WAF)** and **Microsoft Defender for SQL**, which alerts on SQL injection attempts (lesson 6).
+Como evitá-lo:
+- **Consultas parametrizadas** (melhor): `WHERE OrderId = @OrderId`. A entrada é tratada como dados, nunca como código.
+- Bibliotecas **Procedimentos armazenados** e **ORM** (e.g. Estrutura de Entidade).
+- **Validar a entrada** (é realmente um número?).
+- **Menor privilégio** para a conta do aplicativo, então uma consulta ruim pode fazer pouco dano.
+- **Firewall de Aplicação Web (WAF)** e **Microsoft Defender for SQL**, que alerta sobre tentativas de injeção SQL (lição 6).
 
-Blocking words like "DELETE" is **not enough**. Attackers can hide commands in encoded or binary data.
+Palavras de bloqueio como "DELETE" é **não o suficiente**. Os atacantes podem ocultar comandos em dados codificados ou binários.
 
-## Compare at a glance
+## Compare em um relance
 
-| Option | How access is controlled | Public endpoint used? | Pick it when |
+| Opção | Como o acesso é controlado | Endpoint público usado? | Escolha-o quando |
 |--------|-------------------------|----------------------|--------------|
-| Server-level IP rule | IP range, all databases | Yes | Whole company office IP |
-| Database-level IP rule | IP range, one database | Yes | Partner needs one database |
-| Service endpoint + VNet rule | Subnet | **Yes** | Simple subnet-only access, public endpoint is OK |
-| Private Link | Private IP in your VNet | **No** (can disable public access) | Highest security, no public exposure, cross-region, on-premises via VPN/ExpressRoute |
-| VPN Gateway | Encrypted tunnel over internet | – | Low-cost hybrid link |
-| ExpressRoute | Private dedicated circuit | – | High-bandwidth, compliance hybrid link |
+| Regra IP de nível de servidor | Faixa IP, todas Os bancos de dados | Sim | Escritório da empresa inteira IP |
+| Regra IP de nível de banco de dados | Faixa IP, uma banco de dados | Sim | Parceiro precisa de um banco de dados |
+| Regra Service endpoint + VNet | Sub-rede | **Sim** | Acesso simples apenas à sub-rede, ponto final público é OK |
+| Private Link | IP privado em seu VNet | **Não** (pode desativar o acesso público) | Maior segurança, sem exposição pública, cross-region, on-premises via VPN / ExpressRoute |
+| Gateway VPN | Túnel encriptado através da Internet | – | Ligação híbrida de baixo custo |
+| ExpressRoute | circuito dedicado privado | – | Ligação híbrida de alta largura de banda, conformidade |
 
-## Remember for the exam
-- Check order: **database rule → server rule → block**.
-- Database-level rules: **T-SQL only**, in the user database. Server-level: portal/CLI/PowerShell or T-SQL in **master**.
-- **256** rules per level. Managed Instance uses **NSGs**, not these IP rules.
-- "Allow Azure services" = `0.0.0.0` rule, opens to **all** Azure customers. Avoid it.
-- **Service endpoint** = subnet-based, still a public endpoint, one region.
-- **Private Link** = private IP, no public internet, best protection; disable public access to force it.
-- Redirect needs ports **11000–11999**; Proxy uses **1433**.
-- SQL injection → **parameterized queries**; Defender for SQL detects attempts.
+## Para lembrar na prova
+- Ordem de verificação: **regra de banco de dados → regra do servidor → bloco**.
+- Regras de nível de banco de dados: **Somente T-SQL**, no banco de dados do usuário. Nível do servidor: portal / CLI / PowerShell ou T-SQL em **mestre**.
+- **256** regras por nível. Managed Instance usos **NSGs**Não estes IP Regras.
+- "Allow Azure services" = `0.0.0.0` regra, abre-se a **Todos** Clientes Azure. Evite isso.
+- **Service endpoint** é configurado na subnet, usa um endpoint público e fica restrito a uma região.
+- **Private Link** = private IP, sem internet pública, melhor proteção; desativar o acesso público para forçá-lo.
+- Redirecionar precisa de portas **11000–11999**; Proxy usa **1433**.
+- Injeção SQL → **consultas parametrizadas**; Defender para SQL detecta tentativas.
 
-## Quick check
-1. An external auditor needs access to only one of your 20 databases. What rule do you create, and where?
-   <details><summary>Answer</summary>A database-level firewall rule with sp_set_database_firewall_rule, run inside that database.</details>
-2. Security says the database must have no public endpoint at all. What do you use?
-   <details><summary>Answer</summary>A private endpoint (Private Link), and set Public network access to Disable.</details>
-3. Clients inside Azure fail to connect using the Redirect policy. Which ports should you check?
-   <details><summary>Answer</summary>Outbound ports 11000–11999 (plus 1433 for the gateway). Redirect connects straight to the node on those ports.</details>
+## Teste rápido
+1. Um auditor externo precisa ter acesso a apenas uma das suas 20 bancos de dados. Que regra você cria e onde?
+   <details><summary>Resposta</summary>Uma regra de firewall de nível de banco de dados com sp_set_database_firewall_rule, é executada dentro desse banco de dados.</details>
+2. A segurança diz que o banco de dados não deve ter nenhum ponto final público. O que você usa?
+   <details><summary>Resposta</summary>A private endpoint (Private Link), e definir acesso à rede pública para desabilitar.</details>
+3. Os clientes dentro do Azure não conseguem se conectar usando a política de Redirecionamento. Quais portas você deve verificar?
+   <details><summary>Resposta</summary>Portas de saída 11000–11999 (mais 1433 para o gateway). Redirecionar conecta diretamente ao nó nessas portas.</details>

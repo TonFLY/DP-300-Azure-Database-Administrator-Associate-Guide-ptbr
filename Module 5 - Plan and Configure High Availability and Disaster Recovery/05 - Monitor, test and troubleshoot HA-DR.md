@@ -1,76 +1,76 @@
-# Monitor, test and troubleshoot HA/DR
+# Monitor, teste e solução de problemas HA/DR
 
-> **Exam skills:** Plan a testing procedure for an HA/DR solution, Monitor an HA/DR solution, Troubleshoot an HA/DR solution
-> **Reading time:** ~13 min
+> **Habilidades cobradas:** Planear um procedimento de teste para uma solução HA/DR, Monitorar uma solução HA/DR, Solucionar problemas uma solução HA/DR
+> **Tempo de leitura:** ~13 min
 
-## The big idea
-An HA/DR design is only a theory until you fail it over, measure it and fail it back. You **test** it with drills, **monitor** it so you see lag before it hurts, and **troubleshoot** it when replicas fall behind or failovers fail.
+## Conceito central
+An HA/DR o design é apenas uma teoria até que você falhe, meça e falhe de volta. Você **ensaio** com brocas, **monitor** para que você veja o atraso antes que doe, e **Solução de problemas** quando as réplicas ficam para trás ou os failovers falham.
 
-Think of a fire drill at a school. You ring the bell, time how long it takes to get everyone out, check nobody is missing, and fix the blocked door you found.
+Pense em um exercício de fogo em uma escola. Você toca a campainha, tempo leva para tirar todos para fora, verifique se ninguém está faltando e conserte a porta bloqueada que você encontrou.
 
-## Plan a testing procedure (DR drill)
-| Step | What to do |
+## Planejar um procedimento de teste (erro DR)
+| etapa | O que fazer |
 |---|---|
-| 1. Scope | List every part: database, app tier, DNS, storage, logins, jobs, firewall/NSG rules |
-| 2. Baseline | Record current lag and the target RPO/RTO |
-| 3. Choose test type | **Planned** failover (safe in production) or **forced** (test environment only) |
-| 4. Run | Run the failover. Note start and end times |
-| 5. Validate | App connects through the **listener**, logins work, jobs run, reads and writes succeed |
-| 6. Record | Actual RTO, actual RPO, problems, runbook fixes |
-| 7. Fail back | Use a **planned** failover to return |
+| 1. Scope | Lista de todas as partes: banco de dados, nível de aplicativo, DNS, armazenamento, logins, jobs, firewall / NSG regras |
+| 2. Linha de base | Recorde de atraso atual e o alvo RPO / RTO |
+| 3. Escolha o tipo de teste | **Planejado** failover (seguro em produção) ou **forçado** (apenas ambiente de teste) |
+| 4. Executar | Execute o failover. Anote os tempos de início e fim |
+| 5. Validar | O aplicativo se conecta através do **listener**, trabalho logins, jobs executar, lê e escreve com sucesso |
+| 6. Gravar | RTO, real RPO, problemas, correções runbook |
+| 7. Falha de volta | Use um **planejado** failover para retornar |
 
-- **Planned failover** = sync first, **no data loss**. Use it for drills in production, moving regions and **failback**.
-- **Forced failover** = switch now, **possible data loss**. Only for a real outage when the primary is unreachable.
-- **Geo-restore drill**: use a **copy** of production. Simulate the outage (for example rename the source database), geo-restore to another server, and repoint the app.
-- **ASR drill**: run a **test failover** of a recovery plan into an isolated test network. Production keeps running.
-- Run drills **regularly**. Many industry standards require them.
+- **Planned failover** = sync first, **sem perda de dados**. Use-o para brocas na produção, regiões em movimento e **failback**.
+- **Forced failover** = switch now, **possível perda de dados**. Apenas para uma interrupção real quando o primário é inalcançável.
+- **broca Geo-restore**: use um **cópia** de produção. Simule a interrupção (por exemplo, renomeie o banco de dados de origem), geo-restore para outro servidor e renomeie o aplicativo.
+- **broca ASR**: execute um **teste failover** de um plano de recuperação em uma rede de testes isolada. A produção continua funcionando.
+- Executa brocas **regularmente**. Muitos padrões da indústria exigem-los.
 
-**Example:** An insurance firm runs a DR drill every quarter. It does a planned failover of its failover group, checks the app, notes RTO = 4 minutes, then fails back.
+**Exemplo:** Uma empresa de seguros administra a DR A cada trimestre. Faz um planned failover da sua failover group, verifica o aplicativo, notas RTO = 4 minutes, then fails back.
 
-## Test local HA in SQL Database and SQL MI
-A **user-initiated failover** moves the database to another replica so you can test the app's **retry logic**.
+## Teste HA local em SQL Database e SQL MI
+A **Iniciado pelo usuário failover** o banco de dados move-se para outra réplica para que você possa testar **retry lógica**.
 
-| Target | PowerShell | Azure CLI |
+| Alvo | PowerShell | Azure CLI |
 |---|---|---|
-| Single database | `Invoke-AzSqlDatabaseFailover` | No `az sql db failover`. Use `az rest` |
+| Banco de dados único | `Invoke-AzSqlDatabaseFailover` | Não `az sql db failover`. Uso `az rest` |
 | Elastic pool | `Invoke-AzSqlElasticPoolFailover` | `az rest` |
-| Managed Instance | `Invoke-AzSqlInstanceFailover` (`-ReadableSecondary` for BC) | `az sql mi failover` (`--replica-type ReadableSecondary`) |
+| Managed Instance | `Invoke-AzSqlInstanceFailover` (`-ReadableSecondary` para BC) | `az sql mi failover` (`--replica-type ReadableSecondary`) |
 
 ```powershell
 Invoke-AzSqlDatabaseFailover -ResourceGroupName rg-prod -ServerName sql-prod-weu -DatabaseName SalesDb
 Invoke-AzSqlInstanceFailover -ResourceGroupName rg-prod -Name mi-prod-weu
 ```
 
-- Limit: **one failover every 15 minutes** per database, elastic pool or managed instance.
-- Portal: **Settings → Maintenance → Restart** (preview) uses the same API. Restarting a **pool restarts all its databases**.
-- Not available for **Hyperscale readable secondary** replicas.
-- MI failover is **blocked** until a new database's first full backup finishes, and while a **restore** is running.
-- MI permission: **SQL Managed Instance Contributor** (or `Microsoft.Sql/managedInstances/failover/action`).
+- Limite: **um failover a cada 15 minutos** por banco de dados, elastic pool ou managed instance.
+- Portal: **Configuração → Manutenção → Reiniciar** (preview) usa o mesmo API. Reiniciando um **pool reinicia todas as suas bancos de dados**.
+- Não disponível para réplicas **Secundário legível Hyperscale**.
+- MI failover é **bloqueado** até que o primeiro full backup de um novo banco de dados termine e enquanto um **restaurar** estiver em execução.
+- Permissão MI: **Contribuidor SQL Managed Instance** (ou `Microsoft.Sql/managedInstances/failover/action`).
 
-## Test geo DR: geo-replication and failover groups
-Run these against the **secondary**.
+## Teste geo DR: geo-replication e failover groups
+Execute-os contra o **secundário**.
 
-| Feature | Planned (no data loss) | Forced (possible data loss) |
+| Recurso | Planejado (sem perda de dados) | Forçado (possível perda de dados) |
 |---|---|---|
-| Geo-replication, PowerShell | `Set-AzSqlDatabaseSecondary ... -Failover` | add `-AllowDataLoss` |
-| Geo-replication, CLI | `az sql db replica set-primary` | add `--allow-data-loss` |
-| Geo-replication, T-SQL (master of secondary server) | `ALTER DATABASE [SalesDb] FAILOVER;` | `ALTER DATABASE [SalesDb] FORCE_FAILOVER_ALLOW_DATA_LOSS;` |
-| Failover group (SQL DB), PowerShell | `Switch-AzSqlDatabaseFailoverGroup` | add `-AllowDataLoss` |
-| Failover group (SQL DB), CLI | `az sql failover-group set-primary` | add `--allow-data-loss` |
-| Failover group (SQL MI) | `Switch-AzSqlDatabaseInstanceFailoverGroup` / `az sql instance-failover-group set-primary` | add allow-data-loss option |
+| Geo-replication, PowerShell | `Set-AzSqlDatabaseSecondary ... -Failover` | adicionar `-AllowDataLoss` |
+| Geo-replication, CLI | `az sql db replica set-primary` | adicionar `--allow-data-loss` |
+| Geo-replication, T-SQL (mestre do servidor secundário) | `ALTER DATABASE [SalesDb] FAILOVER;` | `ALTER DATABASE [SalesDb] FORCE_FAILOVER_ALLOW_DATA_LOSS;` |
+| Failover group (SQL DB), PowerShell | `Switch-AzSqlDatabaseFailoverGroup` | adicionar `-AllowDataLoss` |
+| Failover group (SQL DB), CLI | `az sql failover-group set-primary` | adicionar `--allow-data-loss` |
+| Failover group (SQL MI) | `Switch-AzSqlDatabaseInstanceFailoverGroup` / `az sql instance-failover-group set-primary` | opção de add-data-loss |
 
 ```powershell
 # -ServerName must be the SECONDARY server
 Switch-AzSqlDatabaseFailoverGroup -ResourceGroupName rg-dr -ServerName sql-prod-neu -FailoverGroupName fog-sales
 ```
 
-- `-TryPlannedBeforeForcedFailover` tries planned first, then forced.
-- If the database is **in a failover group**, you can't use the geo-replication failover command. Fail over the **group**.
-- Check roles with `Get-AzSqlDatabaseFailoverGroup` (`ReplicationRole`) or `az sql failover-group show`.
-- The **Activity log** shows "Failover Azure SQL failover group". If Microsoft started it, **Event initiated by** shows `-`.
-- **MI drills:** use a **planned** failover. MI groups can't fail over while **Seeding**. A new full backup runs after every failover, so failing back too soon can be delayed.
+- `-TryPlannedBeforeForcedFailover` tenta primeiro planejado, depois forçado.
+- Se o banco de dados for **em um failover group**, você não pode usar o comando geo-replication failover. Fail over the **grupo**.
+- Verifique as funções com `Get-AzSqlDatabaseFailoverGroup` (`ReplicationRole`) ou `az sql failover-group show`.
+- **Diário de atividades** mostra "Failover Azure SQL failover group". Se a Microsoft começou, **Evento iniciado por** mostra `-`.
+- **brocas MI:** usar um **planejado** failover. Grupos MI não pode falhar enquanto **semeadura**. Um novo full backup corre após cada failover, então falhar de volta muito cedo pode ser adiado.
 
-## Test HA/DR on SQL Server VMs
+## Teste HA/DR em SQL Server VMs
 ```sql
 -- Planned: run on the TARGET secondary (sync commit + SYNCHRONIZED)
 ALTER AVAILABILITY GROUP [AG1] FAILOVER;
@@ -80,61 +80,61 @@ ALTER AVAILABILITY GROUP [AG1] FORCE_FAILOVER_ALLOW_DATA_LOSS;
 ALTER DATABASE [SalesDb] SET HADR RESUME;
 ```
 
-- PowerShell: `Switch-SqlAvailabilityGroup` (add `-AllowDataLoss` to force). FCI: `Move-ClusterGroup` or Failover Cluster Manager → Roles → **Move**.
-- Check readiness: `is_failover_ready = 1` in `sys.dm_hadr_database_replica_cluster_states`, or **Failover Readiness** in the **Always On dashboard**.
-- Before forcing, pick the secondary with the **highest `end_of_log_lsn`** (least data loss). **Block clients** from the old primary to avoid **split brain**.
-- To fail over to an **async** replica with no data loss: switch it to **SYNCHRONOUS_COMMIT**, wait for **SYNCHRONIZED**, then run `FAILOVER`.
+- PowerShell: `Switch-SqlAvailabilityGroup` (adicione `-AllowDataLoss` à força). FCI: `Move-ClusterGroup` ou Failover Cluster Manager → Papéis → **Mover**.
+- Prontidão de verificação: `is_failover_ready = 1` em `sys.dm_hadr_database_replica_cluster_states`, ou **Failover prontidão** no **painel Always On**.
+- Antes de forçar, escolha o secundário com o **`end_of_log_lsn` mais alto** (menos perda de dados). **Bloquear clientes** do primário antigo para evitar **cérebro dividido**.
+- Para falhar em uma réplica **async** sem perda de dados: alterne-a para **SYNCHRONOUS_COMMIT**, espere por **SYNCHRONIZED** e execute `FAILOVER`.
 
-### Test your backups
-A backup is only proven by a restore.
+### Teste seu backups
+O Abackup só é comprovado por uma restauração.
 ```sql
 RESTORE VERIFYONLY FROM URL = 'https://stbackups.blob.core.windows.net/sql/SalesDb_full.bak' WITH CHECKSUM;
 RESTORE DATABASE SalesDb_Test FROM URL = '...' WITH MOVE ..., STATS = 10;  -- on a test server
 DBCC CHECKDB ('SalesDb_Test') WITH NO_INFOMSGS;                            -- the real proof
 ```
-`RESTORE VERIFYONLY` checks the file is readable. It does **not** prove the database is consistent.
+`RESTORE VERIFYONLY` verifica se o arquivo é legível. Faz **E** O banco de dados é consistente.
 
-## Monitor: what to watch
-**Azure level**
-- **Azure Status page**: global outages (RSS feed).
-- **Azure Service Health**: problems, maintenance and outages for your subscription. Alerts by email or SMS.
-- **Resource Health**: health of one database or VM, and **why a failover happened** (planned maintenance or failure).
-- **Activity log**: restores, database creation, failover operations.
-- Status from CLI/PowerShell: `az sql db list`, `az sql mi list`, `Get-AzSqlDatabase`.
+## Monitor: o que assistir
+**Nível Azure**
+- **Página de status do Azure**: interrupções globais (alimentação RSS).
+- **Azure Service Health**: problemas, manutenção e interrupções para sua assinatura. Alertas por e-mail ou SMS.
+- **Recursos Saúde**: saúde de um banco de dados ou VM e **Por que um failover aconteceu** (manutenção planejada ou falha).
+- **Diário de atividades**: restaura, criação de banco de dados, operações failover.
+- Status de CLI / PowerShell: `az sql db list`, `az sql mi list`, `Get-AzSqlDatabase`.
 
-**Replication DMVs** (DMV = dynamic management view, a system view showing live server state)
-| Platform | DMV | Key columns |
+**DMVs de replicação** (dynamic management views, exibições de sistema que mostram o estado atual do servidor)
+| Plataforma | DMV | Colunas-chave |
 |---|---|---|
-| AG on VM | `sys.dm_hadr_database_replica_states` | `synchronization_state_desc`, `synchronization_health_desc`, `is_suspended`, `log_send_queue_size`, `redo_queue_size`, `secondary_lag_seconds` |
-| AG on VM | `sys.dm_hadr_availability_replica_states` | `role_desc`, `connected_state_desc` |
-| Geo-replication / failover group | `sys.dm_geo_replication_link_status` (run in the **user database** on the primary; empty in master) | `replication_state_desc`, `replication_lag_sec`, `last_replication` |
-| SQL DB / MI replicas | `sys.dm_database_replica_states` | `redo_queue_size`, `secondary_lag_seconds` |
-| Log shipping | `sp_help_log_shipping_monitor`, `msdb.dbo.log_shipping_monitor_*` | last backup, copy and restore file and time |
+| AG em VM | `sys.dm_hadr_database_replica_states` | `synchronization_state_desc`, `synchronization_health_desc`, `is_suspended`, `log_send_queue_size`, `redo_queue_size`, `secondary_lag_seconds` |
+| AG em VM | `sys.dm_hadr_availability_replica_states` | `role_desc`, `connected_state_desc` |
+| Geo-replication / failover group | `sys.dm_geo_replication_link_status` (executar no **banco de dados do usuário** no primário; vazio em mestre) | `replication_state_desc`, `replication_lag_sec`, `last_replication` |
+| SQL DB / réplicas MI | `sys.dm_database_replica_states` | `redo_queue_size`, `secondary_lag_seconds` |
+| Log shipping | `sp_help_log_shipping_monitor`, `msdb.dbo.log_shipping_monitor_*` | último backup, copiar e restaurar arquivo e tempo |
 
-- Big **log send queue** or `replication_lag_sec` → data at risk (**RPO**).
-- Big **redo queue** → slower failover (**RTO**).
+- Dados **log enviar fila** ou `replication_lag_sec` → em risco (**RPO**).
+- Big **redo fila** → mais lento failover (**RTO**).
 
-**Backup monitoring**
-- SQL Database: `sys.dm_database_backups` (empty on Hyperscale). SQL MI: `msdb.dbo.backupset`, or Extended Events (XEvents).
+**Monitoramento Backup**
+- SQL Database: `sys.dm_database_backups` (vazio em Hyperscale). SQL MI: `msdb.dbo.backupset` ou Extended Events (XEvents).
 - LTR backups: portal, `az sql db ltr-backup list`, `Get-AzSqlDatabaseLongTermRetentionBackup`.
 
-**Example:** A retail app alerts when `replication_lag_sec` goes above 5 seconds, because its RPO is 5 seconds.
+**Exemplo:** Um aplicativo de varejo alerta quando o `replication_lag_sec` ultrapassa 5 segundos, porque seu RPO é de 5 segundos.
 
-Design apps for availability too: keep the **app and database in the same region**, and add **retry logic**.
+Aplicativos de design para disponibilidade também: mantenha o **aplicativo e banco de dados na mesma região** e adicione **retry lógica**.
 
-## Troubleshoot AGs on Azure VMs
-| Symptom | Likely cause | Fix |
+## Solução de problemas AGs em Azure VMs
+| Sintoma | Causa provável | Correção |
 |---|---|---|
-| Listener unreachable after failover (single subnet, VNN) | Load balancer probe not answered | Set `ProbePort` on the listener IP, enable **Floating IP**, open the probe port (e.g. 59999) in the firewall |
-| Slow reconnect after failover | Client caches the old IP | `MultiSubnetFailover=True`. Else `RegisterAllProvidersIP=0`, `HostRecordTTL=300` |
-| DNN listener connection fails | Driver lacks `MultiSubnetFailover` or wrong port | Use a supporting driver and the **DNN port** in the connection string |
-| Errors **19407 / 19419** (lease expired), event **1135** (node removed) | Cluster monitoring too strict for Azure | **Relax** thresholds and timeouts (below) |
-| Errors **35201 / 35206** | Endpoint port, NSG or firewall, or session timeout too low | Check port **5022**, NSGs, endpoint. Raise `SESSION_TIMEOUT` |
-| Database **NOT SYNCHRONIZING / suspended** | Forced failover, disk/redo error, or user suspended it | Fix the cause, then `ALTER DATABASE ... SET HADR RESUME` |
-| Cluster offline, **quorum lost** | Lost votes or witness | **Cloud witness**, odd number of votes. Emergency: `Start-ClusterNode -FixQuorum`, then force failover |
-| "Not failing over group" | **Max failures in specified period** reached | Raise from 2 to **6** |
+| Listener inacessível após failover (sub-rede única, VNN) | Sonda Load balancer não respondida | Set `ProbePort` no listener IP, ativar **Floating IP**, abra a porta de sonda (e.g. 59999) no firewall |
+| Reconectar lentamente após failover | Cliente armazena em cache o antigo IP | `MultiSubnetFailover=True`. Else `RegisterAllProvidersIP=0`, `HostRecordTTL=300` |
+| A conexão DNN listener falha | Driver não tem `MultiSubnetFailover` ou porto errado | Use um driver de suporte e o **porto DNN** no connection string |
+| Erros **19407 / 19419** (a locação expirou), evento **1135** (nodo removido) | Monitoramento de cluster muito rigoroso para o Azure | Limites e tempos limite **Relaxar** (abaixo) |
+| Erros **35201 / 35206** | Porta de endpoint, NSG ou firewall, ou tempo limite de sessão muito baixo | Verifique a porta **5022**, NSGs, ponto final. Raise `SESSION_TIMEOUT` |
+| Banco de Dados **NOT SYNCHRONIZING / suspenso** | Forced failover, erro de disco/redo, ou o usuário suspendeu | Corrigir a causa, então `ALTER DATABASE ... SET HADR RESUME` |
+| Cluster offline, **quórum perdido** | Votos perdidos ou testemunha | **Testemunha de nuvem**, número ímpar de votos. Emergência: `Start-ClusterNode -FixQuorum`, então force failover |
+| "Não falhando sobre o grupo" | **Falhas máximas no período especificado** alcançado | Aumento de 2 para **6** |
 
-Relaxed settings for Azure:
+Configurações relaxadas para o Azure:
 ```powershell
 (Get-Cluster).SameSubnetThreshold = 40
 (Get-Cluster).CrossSubnetThreshold = 40
@@ -145,45 +145,45 @@ ALTER AVAILABILITY GROUP [AG1] SET (HEALTH_CHECK_TIMEOUT = 60000);  -- default 3
 ALTER AVAILABILITY GROUP [AG1] SET (FAILURE_CONDITION_LEVEL = 2);   -- default 3
 ALTER AVAILABILITY GROUP [AG1] MODIFY REPLICA ON 'SQLVM1' WITH (SESSION_TIMEOUT = 20); -- default 10 s
 ```
-- **Lease timeout**: default 20 s, raise to **40 s** (in Failover Cluster Manager).
-- Where to look: SQL error log, **AlwaysOn_health** Extended Events session (created by the wizard, start it yourself if you used T-SQL), **Always On dashboard**, **cluster log**, Azure **Activity log** and **Resource Health**.
+- **Tempo limite de locação**: default 20 s, aumentar para **40 s** (em Failover Cluster Manager).
+- Onde procurar: log de erros SQL, sessão **AlwaysOn_health** Extended Events (criado pelo assistente, inicie você mesmo se você usou T-SQL), **painel Always On**, **log de cluster**, Azure **Diário de atividades** e **Recursos Saúde**.
 
-**Example:** A 2-node AG keeps failing over at night with error 19407. The DBA raises `SameSubnetThreshold` to 40 and the lease timeout to 40 s. The false failovers stop.
+**Exemplo:** A 2-node AG continua falhando durante a noite com erro 19407. O DBA eleva `SameSubnetThreshold` para 40 e o tempo limite de arrendamento para 40 s. Os failovers falsos param.
 
-## Troubleshoot geo-replication and failover groups
-- **Lag keeps growing** (`replication_lag_sec` up, `redo_queue_size` rising): usually the **secondary is smaller** than the primary. Wait type `HADR_THROTTLE_LOG_RATE_MISMATCHED_SLO`. Fix: **same tier and compute size**. Other causes: big index rebuilds, bulk loads, long queries on the readable secondary.
-- `replication_lag_sec` is **NULL** for a long time → primary can't reach the secondary (network). Alert on it.
-- **Stuck in SEEDING**: you can't fail over or connect yet. Seeding runs at about **500 GB/h (SQL DB)** and **360 GB/h (MI)**. MI group creation is cancelled after **6 days**.
-- **MI roles don't switch**: check **VNet peering** and NSG/firewall rules. Both instances must share the **DNS zone**.
-- **Logins fail after failover**: use **contained users** and **database-level firewall rules** (they replicate). For server logins, create them on the secondary with the **same SID**. MI system databases are not replicated.
-- **Reconnect**: DNS TTL is **30 s**. Existing connections drop. Apps need **retry logic**.
-- **Protect a critical transaction**: call `sp_wait_for_database_copy_sync` after commit. It waits until the log reaches the geo-secondary.
+## Solução de problemas geo-replication e failover groups
+- **Lag continua crescendo** (`replication_lag_sec` para cima, `redo_queue_size` subindo): geralmente o **secundário é menor** do que o primário. Wait type `HADR_THROTTLE_LOG_RATE_MISMATCHED_SLO`. Corrigir: **mesmo nível e tamanho de computação**. Outras causas: grandes reconstruções de índice, cargas a granel, consultas longas no secundário legível.
+- `replication_lag_sec` é **NULL** por um longo tempo → primário não pode chegar ao secundário (rede). Alertar sobre ele.
+- **Preso em SEEDING**: você não pode falhar ou se conectar ainda. A semeadura é executada em cerca de **500 GB/hSQL DB)** e **360 GB /h (MI)**. A criação do grupo MI é cancelada após o **6 dias**.
+- **Os papéis MI não mudam**: verifique as regras **VNet peering** e NSG /firewall. Ambas as instâncias devem compartilhar o **zona DNS**.
+- **Logins falha após failover**: use **usuários contidos** e **regras de firewall de nível de banco de dados** (eles replicam). Para o servidor logins, crie-os no secundário com o **mesmo SID**. Os bancos de dados do sistema MI não são replicadas.
+- **Reconectar**: DNS TTL é **30 s**. As conexões existentes caem. Os aplicativos precisam de **retry lógica**.
+- **Proteger uma transação crítica**: ligue para `sp_wait_for_database_copy_sync` após o commit. Ele espera até que o log atinja o geo-secundário.
 
-## Troubleshoot log shipping and backups
+## Solução de problemas log shipping e backups
 ```sql
 EXEC master.dbo.sp_help_log_shipping_monitor;
 SELECT * FROM msdb.dbo.log_shipping_monitor_error_detail ORDER BY log_time DESC;
 ```
-- Alert **14420** = no **backup** within the threshold. Alert **14421** = no **restore** within the threshold. The alert job runs on the **monitor server** (or primary/secondary if none).
-- **Broken log chain** (restore error **4305**, "too recent to apply"): someone took an extra log backup outside the log shipping job, or switched to SIMPLE. Fix: restore the missing log, or re-seed from a full backup. Use **COPY_ONLY** for ad-hoc backups.
-- Geo-secondaries: **PITR retention is not replicated** (it defaults to 7 days). Set it yourself.
+- Alerta **14420** = no **backup** dentro do limiar. Alerta **14421** = no **restaurar** dentro do limiar. O alerta job em execução no **servidor monitor** (ou primário/secundário se nenhum).
+- **Cadeia de log quebrada** (erro de restauração **4305**, "muito recente para aplicar"): alguém tomou um log extra backup fora do log shipping job, ou mudou para SIMPLE. Corrigir: restaurar o log ausente, ou re-semente de um full backup. Use **COPY_ONLY** para ad-hoc backups.
+- Geo-secundários: **A retenção PITR não é replicada** (o padrão é de 7 dias). Defina você mesmo.
 
-## Remember for the exam
-- Drills: **planned** failover (no data loss) in production and for failback. **Forced** only for real outages.
-- Test app retry logic on SQL DB → `Invoke-AzSqlDatabaseFailover`. **One per 15 minutes**.
-- Fail over a failover group → `Switch-AzSqlDatabaseFailoverGroup` on the **secondary** server.
-- Primary region down → `-AllowDataLoss` / `--allow-data-loss` / `FORCE_FAILOVER_ALLOW_DATA_LOSS`.
-- After AG forced failover → secondaries **suspended** → `SET HADR RESUME`.
-- Planned AG failover needs **sync commit + SYNCHRONIZED**, run on the **target**.
-- RPO metric: `replication_lag_sec`, `log_send_queue_size`. RTO metric: `redo_queue_size`.
-- `sys.dm_geo_replication_link_status` → run in the **user database**, not master.
-- Error 19407 on Azure VMs → relax **SameSubnetThreshold 40**, lease **40 s**, health check **60 s**.
-- Log shipping alerts: **14420 backup**, **14421 restore**.
+## Para lembrar na prova
+- Brocas: **planejado** failover (sem perda de dados) em produção e para failback. **Forçado** apenas para interrupções reais.
+- Teste a lógica de repetição do aplicativo em SQL DB → `Invoke-AzSqlDatabaseFailover`. **1 por 15 minutos**.
+- Falha sobre um failover group → `Switch-AzSqlDatabaseFailoverGroup` no servidor **secundário**.
+- Região primária para baixo → `-AllowDataLoss` / `--allow-data-loss` / `FORCE_FAILOVER_ALLOW_DATA_LOSS`.
+- Após AG forced failover → segundos **Suspensão** → `SET HADR RESUME`.
+- Planned AG failover precisa de **commit + SYNCHRONIZED**, executado no **alvo**.
+- métrica RPO: `replication_lag_sec`, `log_send_queue_size`. métrica RTO: `redo_queue_size`.
+- `sys.dm_geo_replication_link_status` → é executado no **banco de dados do usuário**, não mestre.
+- Erro 19407 em Azure VMs → relax **SameSubnetThreshold 40**, leasing **40 s**, verificação de saúde **60 s**.
+- Alertas Log shipping: **14420 backup**, **restauração 14421**.
 
-## Quick check
-1. You want to check that an app reconnects correctly when its Azure SQL database fails over inside the region. Which command?
-   <details><summary>Answer</summary>Invoke-AzSqlDatabaseFailover. It triggers a local HA failover. Failover group commands test regional DR instead.</details>
-2. After a forced AG failover, the secondary databases show NOT SYNCHRONIZING. What do you run?
-   <details><summary>Answer</summary>ALTER DATABASE ... SET HADR RESUME on each secondary. Forced failover suspends data movement.</details>
-3. A geo-secondary keeps falling behind and shows wait type HADR_THROTTLE_LOG_RATE_MISMATCHED_SLO. What is the fix?
-   <details><summary>Answer</summary>Scale the secondary to the same service tier and compute size as the primary.</details>
+## Teste rápido
+1. Você quer verificar se um aplicativo se reconecta corretamente quando o Azure SQL database falhar dentro da região. Qual comando?
+   <details><summary>Resposta</summary>Use Invoke-AzSqlDatabaseFailover. O cmdlet dispara um failover local de HA. Os comandos de failover group testam o DR regional.</details>
+2. Depois de um AG failover forçado, Os bancos de dados secundárias mostram NOT SYNCHRONIZING. O que você executa?
+   <details><summary>Resposta</summary>ALTER DATABASE... SET HADR RESUME em cada secundário. Forced failover suspende o movimento de dados.</details>
+3. Um geo-secundário continua ficando para trás e mostra wait type HADR_THROTTLE_LOG_RATE_MISMATCHED_SLO. Qual é a correção?
+   <details><summary>Resposta</summary>Escalar o secundário para o mesmo nível de serviço e tamanho de computação como o primário.</details>

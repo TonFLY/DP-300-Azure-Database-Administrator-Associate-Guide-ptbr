@@ -1,30 +1,30 @@
-# Migrate to SQL Server on Azure VMs
+# Migrar para SQL Server on Azure VMs
 
-> **Exam skills:** Implement an offline migration strategy, Implement an online migration strategy, Implement a migration to Azure
-> **Reading time:** ~6 min
+> **Habilidades cobradas:** Implemente uma estratégia de migração offline, implemente uma estratégia online de migração, implemente uma migração para o Azure
+> **Tempo de leitura:** ~6 min
 
-## The big idea
-A SQL Server VM is normal SQL Server. So every on-premises trick works: backup and restore, log shipping, availability groups. Pick by downtime: **hours OK** → backup/restore; **minutes** → DMS or log shipping; **almost none** → distributed AG.
+## Conceito central
+SQL Server VM é normal SQL Server. Assim, cada truque on-premises funciona: backup e restaurar, log shipping, availability groups. Escolha pelo tempo de inatividade: **horas OK** → backup / restauração; **minutos** → DMS ou log shipping; **Quase quase nenhum** → distribuído AG.
 
-Analogy: moving to an identical house in another town. Everything fits. You only choose how fast you move.
+Analogia: movendo-se para uma casa idêntica em outra cidade. Tudo se encaixa. Você só escolhe o quão rápido você se move.
 
-## Downtime and method
-| Downtime | Method |
+## Tempo de inatividade e método
+| Tempo de inatividade | Método |
 |----------|--------|
-| Almost none | **Distributed AG** / Always On AG |
-| Minutes | **DMS online**, log shipping, transactional replication, Azure Migrate |
-| Hours or days | Backup/restore, detach/attach, BACPAC, bcp |
+| Quase nenhum | **AG distribuído** / Always On AG |
+| Minutos | **DMS online**, log shipping, transactional replication, Azure Migrate |
+| Horas ou dias | Backup /restaurar, desacoplar/anexar, BACPAC, bcp |
 
-## Native backup and restore
-The simplest method.
-1. Back up the database, ideally straight to **Azure Blob Storage** with `BACKUP TO URL`.
-2. Restore it on the VM from the same URL.
+## Nativo backup e restaurar
+O método mais simples.
+1. Faça backup do banco de dados, idealmente direto para **Azure Blob Storage** com `BACKUP TO URL`.
+2. Restaure-o no VM do mesmo URL.
 
-**Block blob vs page blob:**
-| Blob | Credential | Use |
+**Blob vs blob de página:**
+| Blob | Credencial | Utilização |
 |------|-----------|-----|
-| **Block blob** | **SAS token** | Recommended (SQL 2016+). Bigger, faster, safer. |
-| Page blob | Storage account key | Older method |
+| **Bloco Blob** | **token SAS** | Recomendado (SQL 2016+). Maior, mais rápido, mais seguro. |
+| Página blob | Chave da conta de armazenamento | Método mais antigo |
 
 ```sql
 CREATE CREDENTIAL [https://myacc.blob.core.windows.net/sqlbackups]
@@ -34,61 +34,61 @@ BACKUP DATABASE contoso TO URL = 'https://myacc.blob.core.windows.net/sqlbackups
 RESTORE DATABASE contoso FROM URL = 'https://myacc.blob.core.windows.net/sqlbackups/contoso.bak'
   WITH NORECOVERY;   -- keep restoring diffs and logs, then WITH RECOVERY
 ```
-- `NORECOVERY` leaves the database **restoring**, so you can add more log backups. This shortens downtime.
-- Backups **over 200 GB**: **stripe** over several files/URLs, and compress.
-- If you back up to a local file, upload with **AzCopy** (command line) or **Azure Storage Explorer** (GUI).
-- SQL on a VM does not "know" it is in Azure. You set up the credential yourself.
+- `NORECOVERY` deixa o banco de dados **Restaurando**, para que você possa adicionar mais log backups. Isso encurta o tempo de inatividade.
+- Backups **mais de 200 GB**: **listra** sobre vários arquivos / URLs e comprima.
+- Se você fizer backup de um arquivo local, faça o upload com **AzCopy** (linha de comando) ou **Azure Storage Explorer** (GUI).
+- SQL em um VM não "sabe" que está no Azure. Você mesmo configura a credencial.
 
-**Example:** A 300 GB accounts database moves on a long weekend. Friday: full backup striped over 4 URLs. Saturday: restore with NORECOVERY, then the final log backup, then RECOVERY.
+**Exemplo:** Um banco de dados de contas 300 GB se move em um fim de semana longo. Sexta-feira: full backup listou mais de 4 URLs. Sábado: restaurar com NORECOVERY, então o log final backup, então RECOVERY.
 
 ## Distributed availability group
-A **distributed AG** joins two availability groups, for example on-premises and Azure. Data flows live until you fail over.
-- Source keeps working. Downtime is only the **failover**.
-- From a **standalone instance**: no Windows cluster or listener needed.
-- From an **existing AG**: needs a Windows failover cluster and listener.
-- No shared storage needed.
-- Needs **VPN or ExpressRoute** between sites.
-- Configure with **T-SQL**. The old "Add Azure Replica Wizard" only worked with classic VMs, which retired in Sep 2023.
+A **distribuído AG** junta-se dois availability groups, por exemplo on-premises e Azure. Os fluxos de dados vivem até você falhar.
+- O tempo de inatividade é apenas o **failover**.
+- De um **instância autônoma**: nenhum cluster Windows ou listener necessário.
+- De um **existente AG**: precisa de um cluster Windows failover e listener.
+- Não é necessário armazenamento compartilhado.
+- Precisa de **VPN ou ExpressRoute** entre os locais.
+- Configurar com **T-SQL**. O velho "Add Azure Replica Wizard" só trabalhou com clássico VMs, que se aposentou em setembro de 2023.
 
-**Example:** A global retailer's CRM cannot be down. A distributed AG copies it to Azure VMs for two weeks. Cutover is a planned failover of a few seconds.
+**Exemplo:** O CRM de um varejista global não pode ser baixado. Um AG distribuído o copia para Azure VMs por duas semanas. Cutover é um planned failover de alguns segundos.
 
-## Other methods
-| Method | Downtime | When |
+## Outros métodos
+| Método | Tempo de inatividade | Quando |
 |--------|----------|------|
-| **DMS** (portal, CLI, PowerShell) | Online or offline | Restores your backups from a share or Blob. Needs a SHIR for network shares |
-| **Azure Migrate** | Low | Moves the **whole server** (OS + SQL) as-is |
-| **Log shipping** | Low | Ship log backups, final log at cutover. Simpler than AGs |
-| **Transactional replication** | Low | No Always On available |
-| **Detach/attach from URL** | High | Move `.mdf`/`.ldf` files to Blob, attach on VM |
-| **Convert to VHD** | Medium | Upload the whole VM disk. Old versions, system + user databases |
-| **BACPAC** | Medium | Small, simple databases |
-| **bcp** | High | Table-level data only |
-| **Azure Data Factory** | Low/medium | Many sources, transforms |
-| **Azure Import/Export service** | Offline | Ship **physical disks** when the network is too slow |
+| **DMS** (portal, CLI, PowerShell) | Online ou offline | Restaura o seu backups a partir de uma partilha ou Blob. Precisa de um SHIR para partilhas de rede |
+| **Azure Migrate** | Baixa | Move o **servidor inteiro** (OS + SQL) como está |
+| **Log shipping** | Baixa | Registro do navio backups, log final no cutover. Mais simples que AGs |
+| **Transactional replication** | Baixa | Always On disponível |
+| **Detach/attach de URL** | Alta | Mover arquivos `.mdf` / `.ldf` para Blob, anexar em VM |
+| **Converter em VHD** | Média | Faça o upload de todo o disco VM. Versões antigas, sistema + banco de dados do usuário |
+| **BACPAC** | Média | Bancos de dados pequenos e simples |
+| **bcp** | Alta | Apenas dados de nível de tabela |
+| **Azure Data Factory** | Baixo/médio | Muitas fontes, transforma |
+| **Serviço de Importação/Exportação Azure** | Offline | Navio **discos físicos** quando a rede é muito lenta |
 
-**DMS to a VM, things to know:**
-- DMS does **not take backups**. You provide them (compressed is faster).
-- Backups on a **network share** need a **SHIR**. You can't reuse an Azure Data Factory SHIR.
-- Up to **10 concurrent migrations** per SHIR.
-- In Blob Storage, keep each database in **its own folder**.
-- You **can't overwrite** an existing database on the target. Drop it or use a new name.
+**DMS a um VM, coisas para saber:**
+- DMS faz **não tomar backups**. Você fornece-los (comprimido é mais rápido).
+- Backups em um **compartilhamento de rede** precisa de um **SHIR**. Você não pode reutilizar um Azure Data Factory SHIR.
+- Até **10 migrações simultâneas** por SHIR.
+- Em Blob Storage, manter cada banco de dados em **sua própria pasta**.
+- Você **não pode substituir** um banco de dados existente no alvo. Solte-o ou use um novo nome.
 
-Note: DMA (retired July 2025) could also move **logins and server roles** to a VM. Today, script logins yourself.
+Observação: DMA (aposentado em julho de 2025) também poderia mover **logins e funções de servidor** para um VM. Hoje, script logins você mesmo.
 
-## Remember for the exam
-- "Near-zero downtime to a SQL VM" → **distributed AG**.
-- "Simple, downtime OK" → **backup to URL + restore**.
-- Backup to URL: **block blob + SAS** is recommended.
-- Over 200 GB → **striped** backups.
-- `WITH NORECOVERY` keeps the database ready for more restores.
-- "Move the whole server as-is" → **Azure Migrate**.
-- "Network too slow for 50 TB" → **Azure Import/Export** (ship disks).
-- DMS network share → **SHIR** needed.
+## Para lembrar na prova
+- Tempo de inatividade próximo de zero para um SQL VM " → **distribuído AG**.
+- "Simples, tempo de inatividade OK" → **backup a URL + restaurar**.
+- Backup a URL: **bloco bloco blob + SAS** é recomendado.
+- Mais de 200 GB → **listrado** backups.
+- `WITH NORECOVERY` mantém o banco de dados pronto para mais restaurações.
+- "Mova todo o servidor como está" → **Azure Migrate**.
+- "Rede muito lenta para 50 TB" → **Azure Import/Export** (discos de navio).
+- DMS compartilhamento de rede → **SHIR** necessário.
 
-## Quick check
-1. Which credential type gives a block blob backup?
-   <details><summary>Answer</summary>A SAS token (shared access signature). A storage account key gives a page blob.</details>
-2. You migrate a standalone SQL Server with a distributed AG. Do you need a Windows cluster on the source?
-   <details><summary>Answer</summary>No. Only an existing AG source needs a cluster and listener.</details>
-3. Restored database must accept more log backups. Which option do you use?
-   <details><summary>Answer</summary>WITH NORECOVERY. Use WITH RECOVERY only on the last restore.</details>
+## Teste rápido
+1. Que tipo de credencial dá uma bolha de bloco backup?
+   <details><summary>Resposta</summary>Um token SAS (assinatura de acesso compartilhado). Uma chave de conta de armazenamento dá uma bolha de página.</details>
+2. Você migra um SQL Server autônomo com um AG distribuído. Você precisa de um cluster do Windows na fonte?
+   <details><summary>Resposta</summary>Não. Apenas uma fonte AG existente precisa de um cluster e listener.</details>
+3. O banco de dados restaurado deve aceitar mais log backups. Que opção você usa?
+   <details><summary>Resposta</summary>WITH NORECOVERY. Use WITH RECOVERY apenas na última restauração.</details>

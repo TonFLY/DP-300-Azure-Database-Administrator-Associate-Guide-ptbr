@@ -1,60 +1,60 @@
-# Module 3: Monitor, Configure and Optimize Database Resources
+# Módulo 3 — Monitorar, configurar e otimizar recursos de banco de dados
 
-**Exam weight:** 20–25% · **Reading time:** ~96 min · **Files:** 10
+**Peso do exame:** 20–25% · **Tempo de leitura:** ~96 min · **Arquivos:** 10
 
-## What you will learn
-You will learn how to tell when a database is slow, and why. You will learn the monitoring tools for VMs, Azure SQL Database and Managed Instance. You will learn to set compute, storage and server settings and keep indexes healthy. You will learn to read plans, use Query Store, fix blocking and rewrite slow queries.
+## O que você vai aprender
+Você vai aprender a identificar e diagnosticar a lentidão de um banco de dados. O módulo cobre ferramentas de monitoramento para VMs, Azure SQL Database e Managed Instance, além de configurações de computação, armazenamento, servidor e manutenção de índices. Você também vai ler planos de execução, usar Query Store, resolver bloqueios e reescrever consultas lentas.
 
-Think of a busy restaurant. The manager writes down a normal evening (the **baseline**) and watches the kitchen with cameras (**monitoring tools**). They pick enough chefs and a big enough fridge (**compute and storage**) and clean every night (**maintenance**). Each recipe card shows every step (**execution plan**), and a logbook remembers which recipe worked best (**Query Store**). Two chefs fighting over one stove make a queue (**blocking**). A tidy pantry makes every dish faster (**indexes**).
+Pense em um restaurante movimentado. O gerente anota como é uma noite normal (a **baseline**) e observa a cozinha com câmeras (**ferramentas de monitoramento**). Ele define quantos cozinheiros e quanta refrigeração são necessários (**computação e armazenamento**) e organiza a limpeza ao fim da noite (**manutenção**). Uma ficha de receita mostra as etapas (**plano de execução**) e um registro destaca a receita que funcionou melhor (**Query Store**). Dois cozinheiros disputando o mesmo fogão criam uma fila (**bloqueio**). Uma despensa organizada agiliza o preparo (**índices**).
 
-## Lessons in this module
-| # | Lesson | What it covers | Time |
+## Lições neste módulo
+| # | Lição | O que ela cobre | Tempo |
 |---|--------|----------------|------|
-| 1 | [Performance baselines and monitoring tools](<01 - Performance baselines and monitoring tools.md>) | Baselines, metric sources, alerts, QPI | ~11 min |
-| 2 | [Extended Events, database watcher and Intelligent Insights](<02 - Extended Events, database watcher and Intelligent Insights.md>) | XE sessions, database watcher, SQLInsights | ~11 min |
-| 3 | [Configure compute, storage and server settings](<03 - Configure compute, storage and server settings.md>) | Disks, VM size, tempdb, scaling, MAXDOP, Resource Governor | ~12 min |
-| 4 | [Database maintenance](<04 - Database maintenance.md>) | Indexes, statistics, DBCC CHECKDB, scoped config | ~10 min |
-| 5 | [Automatic tuning and intelligent query processing](<05 - Automatic tuning and intelligent query processing.md>) | Plan correction, auto indexes, IQP | ~9 min |
-| 6 | [Execution plans and DMVs](<06 - Execution plans and DMVs.md>) | Estimated vs actual plans, key DMVs | ~9 min |
-| 7 | [Query Store](<07 - Query Store.md>) | Settings, reports, plan forcing, hints | ~8 min |
-| 8 | [Blocking, locking and wait statistics](<08 - Blocking, locking and wait statistics.md>) | Locks, deadlocks, RCSI, wait types | ~11 min |
-| 9 | [Index design and query tuning](<09 - Index design and query tuning.md>) | Index types, design, query rewrites, hints | ~12 min |
+| 1 | [Bases de base de desempenho e ferramentas de monitoramento](<01 - Performance baselines and monitoring tools.md>) | Linhas de base, fontes métricas, alertas, QPI | ~11 min |
+| 2 | [Extended Events, database watcher e Intelligent Insights](<02 - Extended Events, database watcher and Intelligent Insights.md>) | Sessões XE, database watcher, SQLInsights | ~11 min |
+| 3 | [Configurar configurações de computação, armazenamento e servidor](<03 - Configure compute, storage and server settings.md>) | Discos, tamanho VM, tempdb, escala, MAXDOP, Resource Governor | ~12 min |
+| 4 | [Manutenção de bancos de dados](<04 - Database maintenance.md>) | Indexes, statistics, DBCC CHECKDB, configuração de escopo | ~10 min |
+| 5 | [Automatic tuning e intelligent query processing](<05 - Automatic tuning and intelligent query processing.md>) | Correção de plano, índices auto, IQP | ~9 min |
+| 6 | [Planos de execução e DMVs](<06 - Execution plans and DMVs.md>) | Estimado vs planos reais, chave DMVs | ~9 min |
+| 7 | [Query Store](<07 - Query Store.md>) | Configurações, relatórios, plan forcing, dicas | ~8 min |
+| 8 | [Estatísticas de bloqueio, bloqueio e espera](<08 - Blocking, locking and wait statistics.md>) | Fechaduras, deadlocks, RCSI, wait types | ~11 min |
+| 9 | [Design de índices e query tuning](<09 - Index design and query tuning.md>) | Tipos de índice, design, reescritas de consulta, dicas | ~12 min |
 
-## Words you will meet
-| Word | Simple meaning |
+## Palavras que você vai encontrar
+| Palavra | Significado simples |
 |------|----------------|
-| Baseline | Your normal performance numbers, recorded to compare against later |
-| DMV | A built-in system view (`sys.dm_...`) that shows what SQL Server is doing now |
-| Execution plan | The step-by-step recipe SQL Server uses to run a query |
-| Query Store | A recorder in the database that keeps query plans and run times over time |
-| Plan regression | A new plan that is slower than an older one |
-| Statistics | Notes on how values are spread in a column, used to guess row counts |
-| MAXDOP | The most CPU cores one query can use |
-| Resource Governor | A feature that limits CPU, memory and I/O per group of users |
-| Blocking | One session waiting for another to release a lock |
-| SARGable | Written so SQL Server can use an index seek |
+| linha de base | Seus números normais de desempenho, registrados para comparar com os números mais tarde |
+| DMV | Uma visão interna do sistema (`sys.dm_...`) que mostra o que o SQL Server está fazendo agora |
+| Plano de execução | A receita passo a passo SQL Server usa para executar uma consulta |
+| Query Store | Um gravador no banco de dados que mantém planos de consulta e tempos de execução ao longo do tempo |
+| Regressão do plano | Um novo plano que é mais lento do que um mais velho |
+| Estatísticas | Notas sobre como os valores são distribuídos em uma coluna, usados para adivinhar a contagem de linhas |
+| MAXDOP | A maioria dos núcleos CPU que uma consulta pode usar |
+| Resource Governor | Uma característica que limita CPU, memória e E/S por grupo de usuários |
+| Bloqueio | Uma sessão à espera de outra para liberar um bloqueio |
+| SARGable | Escrito para que SQL Server possa usar um index seek |
 
-## Exam skills covered
-- [ ] Prepare an operational performance baseline → 1
-- [ ] Determine sources for performance metrics → 1
-- [ ] Interpret performance metrics → 1, 8
-- [ ] Configure and monitor activity and performance → 1
-- [ ] Monitor by using database watcher → 2
-- [ ] Monitor by using Extended Events → 2
-- [ ] Configure Query Store → 7
-- [ ] Monitor by using Query Store → 7
-- [ ] Identify and resolve session blocking → 8
-- [ ] Identify performance issues using dynamic management views (DMVs) → 6, 8
-- [ ] Identify and implement index changes for queries → 9
-- [ ] Recommend query construct modifications based on resource usage → 9
-- [ ] Review execution plans → 6
-- [ ] Monitor by using Intelligent Insights → 2
-- [ ] Implement index maintenance tasks → 4
-- [ ] Implement statistics maintenance tasks → 4
-- [ ] Implement database integrity checks → 4
-- [ ] Configure database automatic tuning → 5
-- [ ] Configure server settings for performance → 3
-- [ ] Configure Resource Governor for performance → 3
-- [ ] Implement database-scoped configuration → 4
-- [ ] Configure compute and storage resources for scaling → 3
-- [ ] Identify use cases for intelligent query processing (IQP) features → 5
+## exame de habilidades cobertas
+- [ ] Preparar uma linha de base de desempenho operacional → 1
+- [ ] Determinar fontes para métricas de desempenho → 1
+- [ ] Interpretar métricas de desempenho → 1, 8
+- [ ] Configurar e monitorar a atividade e o desempenho → 1
+- [ ] Monitor usando database watcher → 2
+- [ ] Monitor usando Extended Events → 2
+- [ ] Configurar Query Store → 7
+- [ ] Usando Query Store → 7
+- [ ] Identificar e resolver bloqueio de sessão → 8
+- [ ] Identificar problemas de desempenho usando visões dinâmicas de gerenciamento (DMVs) → 6, 8
+- [ ] Identificar e implementar alterações de índice para consultas → 9
+- [ ] Recomendar modificações de construção de consulta com base no uso de recursos → 9
+- [ ] Planos de execução da revisão → 6
+- [ ] Monitor usando Intelligent Insights → 2
+- [ ] Implementar tarefas de manutenção do índice → 4
+- [ ] Implementar estatísticas tarefas de manutenção → 4
+- [ ] Implementar verificações de integridade do banco de dados → 4
+- [ ] Configurar banco de dados automatic tuning → 5
+- [ ] Configurar as configurações do servidor para o desempenho → 3
+- [ ] Configurar Resource Governor para desempenho → 3
+- [ ] Implementar configuração de banco de dados com escopo → 4
+- [ ] Configurar recursos de computação e armazenamento para escala → 3
+- [ ] Identificar casos de uso para intelligent query processing (IQP) características → 5

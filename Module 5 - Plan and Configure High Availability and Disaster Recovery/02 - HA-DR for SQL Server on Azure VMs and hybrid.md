@@ -1,58 +1,58 @@
-# HA/DR for SQL Server on Azure VMs and hybrid
+# HA/DR para SQL Server on Azure VMs e híbrido
 
-> **Exam skills:** Evaluate Azure-specific HA/DR solutions, Evaluate HA/DR for hybrid deployments, Configure Always On Failover Cluster Instances on Azure VMs, Configure Always On availability groups on SQL Managed Instance and Azure VMs, Configure log shipping
-> **Reading time:** ~17 min
+> **Habilidades cobradas:** Avalie soluções HA/DR específicas do Azure, avalie HA/DR para implantações híbridas, Configure Always On Failover Cluster Instances em Azure VMs, Configure Always On availability groups em SQL Managed Instance e Azure VMs, Configure log shipping
+> **Tempo de leitura:** ~17 min
 
-## The big idea
-On a VM, Azure keeps the hardware running, but SQL Server is your job. You use two layers. **Azure features** (availability sets, zones, Site Recovery) protect the VMs. **SQL Server features** (FCI, AG, log shipping) protect SQL Server and the data. You usually need both.
+## Conceito central
+Em um VM, o Azure mantém o hardware em funcionamento, mas o SQL Server é seu job. Você usa duas camadas. **Recursos do Azure** (conjuntos de disponibilidade, zonas, recuperação do local) protege o VMs. **Características de SQL Server** (FCI, AG, log shipping) protege o SQL Server e os dados. Você geralmente precisa de ambos.
 
-Think of a school bus company. Azure gives you spare buses parked in different garages. But you still need a trained driver and a plan to move the children to the spare bus.
+Pense em uma empresa de ônibus escolar. Azure dá-lhe ônibus sobressalentes estacionados em diferentes garagens. Mas você ainda precisa de um motorista treinado e um plano para mover as crianças para o ônibus sobressalente.
 
-## Azure features that protect the VM
-| Feature | Protects against | Scope |
+## Recursos do Azure que protegem o VM
+| Recurso | Protege contra | Scope |
 |---|---|---|
-| **Availability set** | Host hardware failure and Azure maintenance reboots | One datacenter |
-| **Availability zone** | A whole datacenter failing | Across datacenters in one region |
-| **Azure Site Recovery (ASR)** | A whole region failing | Another region |
+| **Conjunto de disponibilidade** | Falha de hardware do host e reinicializações de manutenção do Azure | Um datacenter |
+| **Availability zone** | Um datacenter inteiro falhando | Através de datacenters em uma região |
+| **Azure Site Recovery (ASR)** | Toda uma região falha | Outra região |
 
-### Availability sets
-- Spread VMs across **fault domains** (separate power, network and racks) and **update domains** (groups that are rebooted at different times during maintenance).
-- Two SQL Server VMs in one set will not sit on the same physical server.
-- Use a separate availability set for each tier (web, SQL, domain controllers).
-- Does **not** protect against SQL Server or Windows problems inside the VM.
+### Conjuntos de disponibilidade
+- Espalhe VMs através de **domínios de falha** (poder separado, rede e racks) e **domínios de atualização** (grupos que são reiniciados em diferentes momentos durante a manutenção).
+- Dois SQL Server VMs em um conjunto não se sentarão no mesmo servidor físico.
+- Use um conjunto de disponibilidade separado para cada camada (web, SQL, controladores de domínio).
+- O **E** protege contra problemas SQL Server ou Windows dentro do VM.
 
 ### Availability zones
-- Zones 1, 2 and 3 are **physically separate datacenters** in one region, each with its own power, cooling and network.
-- Higher availability than sets.
-- Round-trip latency between zones is low (Microsoft targets below about 2 ms), so **synchronous** AG replicas still work across zones.
-- You **can't combine** availability zones and availability sets for the same VM.
+- As zonas 1, 2 e 3 são **Data centers fisicamente separados** em uma região, cada uma com sua própria energia, resfriamento e rede.
+- Maior disponibilidade do que os sets.
+- A latência de ida e volta entre as zonas é baixa (a Microsoft tem alvos abaixo de cerca de 2 ms), então réplicas **síncrono** AG ainda funcionam em todas as zonas.
+- Você **não pode combinar** availability zones e disponibilidade para o mesmo VM.
 
-**Example:** A hospital puts SQL VM 1 in zone 1 and SQL VM 2 in zone 2, joined by an AG. A fire in zone 1's building does not stop the database.
+**Exemplo:** Um hospital coloca SQL VM 1 na zona 1 e SQL VM 2 na zona 2, acompanhado por um AG. Um incêndio no prédio da zona 1 não interrompe o banco de dados.
 
 ### Azure Site Recovery (ASR)
-- **Replicates whole VMs** (disks) to another Azure region, or from on-premises to Azure.
-- **Not SQL-aware.** It does not understand transactions. RTO and RPO are at VM level.
-- Gives **crash-consistent** recovery points every 5 minutes. **App-consistent** points use **VSS** (Volume Shadow Copy Service, a Windows feature that briefly freezes disk writes for a clean snapshot), which can affect SQL Server if not tuned.
-- Can roll a VM back to a point before a **ransomware** infection.
-- **Multi-VM consistency** recovers several VMs to the same point, but adds overhead. Use it only when you need it.
-- After failover, the new VMs are **not protected until you re-enable replication**.
-- Good when you want simple DR for many VMs, or SQL-level DR is too complex. For mission-critical SQL, prefer AGs.
+- **Replica todo VMs** (discos) para outra região do Azure, ou de on-premises para Azure.
+- **Não SQL-consciente.** Não entende transações. RTO e RPO estão no nível VM.
+- Gives **crash-consistente** pontos de recuperação a cada 5 minutos. **App-consistente** pontos de uso **VSS** (Volume Shadow Copy Service, um recurso do Windows que congela brevemente o disco escreve para uma cópia limpa snapshot), o que pode afetar SQL Server Se não estiver sintonizado.
+- Pode rolar um VM de volta a um ponto antes de uma infecção **ransomware ransomware**.
+- **Consistência Multi- VM** recupera vários VMs ao mesmo ponto, mas adiciona sobrecarga. Use-o somente quando precisar.
+- Depois de failover, o novo VMs é **não protegido até que você re-ativar a replicação**.
+- Bom quando você quer DR simples para muitos VMs, ou SQL nível DR é muito complexo. Para missão crítica SQL, prefira AGs.
 
-## Windows Server Failover Cluster (WSFC) on Azure
-Both FCIs and AGs on Windows sit on a **WSFC** (a group of Windows servers that watch each other and move work when one fails). Linux uses **Pacemaker** instead.
+## Cluster Windows Server Failover (WSFC) no Azure
+Tanto o FCIs quanto o AGs no Windows se sentam em um **WSFC** (um grupo de servidores do Windows que assistem uns aos outros e movem o trabalho quando um falha). O Linux usa o **Pacemaker** em vez disso.
 
-| Term | Meaning |
+| Termo | Significado |
 |---|---|
-| **Quorum** | A vote that decides if the cluster may keep running |
-| **Witness** | An extra vote that breaks ties |
-| **Cloud witness** | A witness stored in Azure Storage. **Recommended** in Azure and hybrid |
-| **AD DS and DNS** | Needed for a normal cluster. A **workgroup cluster** skips AD DS but still needs DNS |
+| **Quorum** | Uma votação que decide se o cluster pode continuar funcionando |
+| **Testemunha** | Um voto extra que quebra os laços |
+| **Testemunha de nuvem** | Uma testemunha armazenada em Azure Storage. **Recomendado** no Azure e híbrido |
+| **AD DS e DNS** | Necessário para um cluster normal. A **grupo de trabalho cluster** pula AD DS, mas ainda precisa de DNS |
 
-Azure-specific points:
-- Use a **cloud witness** (Windows Server 2016+) when you can. Use a **disk witness** when the FCI uses **Azure shared disks**. A file share witness is the fallback.
-- IP addresses are set **in Azure**, not inside the VM. The VMs see them as DHCP addresses.
-- Usually **one network card** per VM.
-- **Create the cluster with PowerShell**, not the GUI, to handle Azure networking.
+Pontos específicos do Azure:
+- Use um **testemunha nuvem** (Windows Server 2016+) quando puder. Use um **testemunha disco** quando o FCI usar o **Discos partilhados Azure**. Uma testemunha de compartilhamento de arquivos é o fallback.
+- Os endereços IP são definidos **em Azure**, não dentro do VM. O VMs os vê como endereços DHCP.
+- Normalmente **uma placa de rede** por VM.
+- **Crie o cluster com PowerShell**, não o GUI, para lidar com a rede Azure.
 
 ```powershell
 Install-WindowsFeature Failover-Clustering -IncludeManagementTools   # on each node
@@ -61,51 +61,51 @@ New-Cluster -Name MyWSFC -Node Node1,Node2 -StaticAddress 10.0.0.5 -NoStorage
 # Workgroup cluster (no AD DS): add -AdministrativeAccessPoint DNS
 ```
 
-- From **Windows Server 2019**, Azure clusters use a **DNN** (distributed network name, a cluster name that points at all node IPs, so no load balancer is needed) by default instead of a **VNN** (virtual network name, one floating IP).
+- A partir de **Windows Server 2019**, clusters do Azure usam um **DNN** (distributed network name, um nome de cluster que aponta para todos os nodos IPs, então nenhum load balancer é necessário) por padrão em vez de um **VNN** (virtual network name, um floating IP).
 
 ## Always On failover cluster instance (FCI)
-- Protects the **whole SQL Server instance**: all databases, logins, Agent jobs, linked servers.
-- **One copy of the data** on **shared storage**. The nodes take turns owning it.
-- Failover **restarts SQL Server** on another node. Users are disconnected briefly. Slower than an AG failover.
-- Clients connect to a **virtual name**, so they don't care which node is active.
-- Needs **AD DS and DNS**.
-- **Shared storage options on Azure:** **Azure shared disks**, **Premium file shares**, **Storage Spaces Direct (S2D)**, or **Azure Elastic SAN** (SQL Server 2022+).
+- Protege o **instância SQL Server inteira**: todas Os bancos de dados, logins, Agente jobs, servidores ligados.
+- **Uma cópia dos dados** em **armazenamento compartilhado**. Os nós se revezam possuindo-o.
+- Failover **reinicia SQL Server** em outro nó. Os usuários são desconectados brevemente. Mais lento do que um AG failover.
+- Os clientes se conectam a um **nome virtual**, então eles não se importam com qual nó está ativo.
+- Precisa de **AD DS e DNS**.
+- **Opções de armazenamento compartilhado no Azure:** **Discos partilhados Azure**, **compartilhamentos de arquivos Premium**, **Espaços de Armazenamento Direto (S2D)** ou **Azure Elastic SAN** (SQL Server 2022+).
 
-How clients find the active node:
-- **Multiple subnets** (each node in its own subnet): **recommended**. No load balancer and no DNN needed.
-- **Single subnet**: use a **DNN** (SQL Server 2019 CU2+, Windows Server 2016+, recommended) or a **VNN + Standard Azure Load Balancer**.
-- Note: Basic Load Balancer was retired on 30 Sep 2025. Use Standard.
+Como os clientes encontram o nó ativo:
+- **Sub-redes múltiplas** (cada nó em sua própria sub-rede): **Recomendado**. Sem load balancer e sem necessidade de DNN.
+- **Sub-rede única**: use um **DNN** (SQL Server 2019 CU2 +, Windows Server 2016 +, recomendado) ou um **VNN + padrão Azure Load Balancer**.
+- Observação: O Basic Load Balancer foi aposentado em 30 de setembro de 2025. Use Standard.
 
-Test an FCI: Failover Cluster Manager → Roles → **Move** → Best Possible Node or Select Node. Or `Move-ClusterGroup`. For shared disks, check each node can take the disks (Storage → Disks → Move Available Storage).
+Teste um FCI: Failover Cluster Manager → Papéis → **Mover** → Melhor Nó Possível ou Selecione Nó. Ou `Move-ClusterGroup`. Para discos compartilhados, verifique se cada nó pode pegar os discos (Armazenamento → Discos → Mover Armazenamento Disponível).
 
-**Example:** A factory runs an old app that needs SQL Agent jobs and DTC (Distributed Transaction Coordinator). It uses a two-node FCI on Azure shared disks. A node failure moves the whole instance with no app change.
+**Exemplo:** Uma fábrica executa um aplicativo antigo que precisa de SQL Agent jobs e DTC (Coordenador de Transação Distribuída). Ele usa um FCI de dois nós em discos compartilhados do Azure. Uma falha de nó move toda a instância sem alteração de aplicativo.
 
 ## Always On availability groups (AG)
-- Protects **one or more databases**, not the whole instance.
-- **No shared storage.** Each replica has its own full copy, so storage cost is higher.
-- **Faster failover** than an FCI.
-- **Readable secondaries** for reports, and backups can run on secondaries.
-- **Synchronous commit** (primary waits for the secondary, no data loss, use nearby) or **asynchronous commit** (no wait, possible data loss, use far away).
-- **Editions:** Standard = **basic AG**, 1 database and 2 replicas. Enterprise = many databases, up to **9 replicas**.
-- Instance-level objects (logins, jobs) are **not** copied. **Contained AGs** (SQL Server 2022+) fix this: each has its own `master` and `msdb`, so logins, permissions and Agent jobs fail over with the AG.
+- Protege **uma ou mais bancos de dados**, não a instância inteira.
+- **Sem armazenamento compartilhado.** Cada réplica tem sua própria cópia completa, portanto, o custo de armazenamento é maior.
+- **failover mais rápido** do que um FCI.
+- **Secundários legíveis** para relatórios, e backups pode ser executado em secundários.
+- **Commit síncrono** (esperas primárias para o secundário, sem perda de dados, use nas proximidades) ou **commit assíncrono** (sem espera, possível perda de dados, use longe).
+- **Edições:** Standard = **básico AG**, 1 database and 2 replicas. Enterprise = many databases, up to **9 réplicas**.
+- Objetos de nível de instância (logins, jobs) são copiados **E**. **Contendo AGs** (SQL Server 2022 +) corrige isso: cada um tem seu próprio `master` e `msdb`, então logins, permissões e o Agente jobs falham com o AG.
 
-### Configure an AG on Azure VMs
-1. Build the WSFC.
-2. Enable the AG feature (SQL Server Configuration Manager or PowerShell), then **restart** SQL Server.
-3. Create the AG with SSMS, T-SQL or PowerShell.
-4. Create the **listener** (one name apps use to reach the current primary).
+### Configurar um AG no Azure VMs
+1. Construa o WSFC.
+2. Habilite o recurso AG (SQL Server Configuration Manager ou PowerShell), então **reiniciar** SQL Server.
+3. Crie o AG com SSMS, T-SQL ou PowerShell.
+4. Crie o **listener** (aplicativos de um nome usados para alcançar a primária atual).
 
 ```powershell
 Enable-SqlAlwaysOn -ServerInstance "SQLVM1"
 ```
 
-Each replica has two key settings:
-| Setting | Choices | Meaning |
+Cada réplica tem duas configurações principais:
+| Configuração | Escolhas | Significado |
 |---|---|---|
-| **Availability mode** | `SYNCHRONOUS_COMMIT` / `ASYNCHRONOUS_COMMIT` | Wait for the secondary to harden the log, or not |
-| **Failover mode** | `AUTOMATIC` / `MANUAL` | Automatic failover needs **synchronous commit** on both sides |
+| **Modo de disponibilidade** | `SYNCHRONOUS_COMMIT` / `ASYNCHRONOUS_COMMIT` | Espere o secundário endurecer o tronco, ou não |
+| **modo Failover** | `AUTOMATIC` / `MANUAL` | Automatic failover precisa de **commit síncrono** em ambos os lados |
 
-Short T-SQL example (run on the primary):
+Exemplo T-SQL curto (executar no primário):
 ```sql
 CREATE AVAILABILITY GROUP [AG1]
 FOR DATABASE [SalesDb]
@@ -117,109 +117,109 @@ REPLICA ON
    SECONDARY_ROLE (ALLOW_CONNECTIONS = READ_ONLY));
 -- Then on SQLVM2: ALTER AVAILABILITY GROUP [AG1] JOIN;
 ```
-- The database must use the **FULL** recovery model and have a **full backup** before it can join.
-- **Port 5022** is the default **database mirroring endpoint** that replicas use to talk. Open it in NSGs and the Windows firewall.
-- **Automatic seeding** (`SEEDING_MODE = AUTOMATIC`) copies the database to the secondary for you. Otherwise you back up and restore it `WITH NORECOVERY` yourself.
+- O banco de dados deve usar o modelo de recuperação **FULL** e ter um **full backup** antes que ele possa participar.
+- **Porto 5022** é o **banco de dados espelhando endpoint** padrão que as réplicas usam para falar. Abra-o no NSGs e no firewall do Windows.
+- **Automatic seeding** (`SEEDING_MODE = AUTOMATIC`) copia o banco de dados para o secundário para você. Caso contrário, você faz backup e restaurá-lo `WITH NORECOVERY` você mesmo.
 
-Listener options in Azure:
-- **Multiple subnets** (replicas in different subnets): **recommended**. The listener has one IP per subnet. No load balancer.
+Opções Listener no Azure:
+- **Sub-redes múltiplas** (replicas em diferentes sub-redes): **Recomendado**. O listener tem um IP por sub-rede. No load balancer.
 - **DNN listener** (SQL Server 2016 SP3 / 2017 CU25 / 2019 CU8+, Windows Server 2016+).
-- **VNN listener in one subnet**: needs a **Standard internal load balancer** with **Floating IP** (Direct Server Return) on, and a **probe port** (such as **59999**) set on the listener IP resource.
+- **VNN listener em uma sub-rede**: precisa de um **Padrão interno load balancer** com **Floating IP** (Retorno do Servidor Direto) ligado, e um **porto da ponta de sonda** (como **59999**) definido no recurso listener IP.
 
 ```powershell
 Get-ClusterResource "AG1_IP" | Set-ClusterParameter ProbePort 59999
 Test-NetConnection AG1-Listener -Port 1433   # check the listener answers
 ```
 
-**Example:** An online shop puts two sync replicas in two zones (HA, automatic failover) and one async replica in another region (DR). Reports run on the readable secondary.
+**Exemplo:** Uma loja online coloca duas réplicas de sincronização em duas zonas (HA, automatic failover) e uma réplica assíncrona em outra região (DR). Os relatórios são executados no secundário legível.
 
-## Distributed availability groups
-- An **"AG of AGs"**: links two separate AGs, each on its **own cluster** with its own quorum and witness.
-- Added in SQL Server 2016 (Enterprise).
-- Good for **multi-region DR** and **on-premises to Azure**. No single cluster stretched across regions.
-- Each side manages itself, and **failback** is simpler.
-- In Azure, each region needs its own load balancer for the endpoint port **5022** (when using VNN).
+## availability groups distribuído
+- An **"AG de AGs"**: liga dois AGs separados, cada um em seu **próprio cluster** com seu próprio quórum e testemunha.
+- Adicionado em SQL Server 2016 (Enterprise).
+- Bom para **multi-região DR** e **on-premises para Azure**. Nenhum único cluster se estendia por regiões.
+- Cada lado gerencia a si mesmo, e **failback** é mais simples.
+- No Azure, cada região precisa de seu próprio load balancer para a porta de endpoint **5022** (quando estiver usando o VNN).
 
-## AG stretched across regions or hybrid
-- One AG with replicas in two regions, or on-premises plus Azure. One feature gives HA and DR.
-- Works in Standard or Enterprise.
-- Needs good network, **AD DS and DNS in every site**, and careful **witness placement** to avoid **split brain** (two nodes both thinking they are primary).
+## AG estendido através de regiões ou híbrido
+- Um AG com réplicas em duas regiões ou on-premises mais Azure. Uma característica dá HA e DR.
+- Funciona em Standard ou Enterprise.
+- Precisa de uma boa rede, **AD DS e DNS em todos os sites**, e cuidado **colocação de testemunhas** para evitar **cérebro dividido** (dois nós ambos pensando que eles são primários).
 
 ## Log shipping
-- Protects **databases**. Takes **transaction log backups** on the primary, **copies** them to a secondary, and **restores** them there on a schedule.
-- Creates a **warm standby** (a copy that is minutes behind and ready to bring online).
-- **Manual failover only.** Some data loss is expected unless the failover is planned.
-- **Simple, cheap, reliable.** Works even on slow or unreliable networks.
-- Can protect an **FCI** at a DR site, because an FCI does not copy data by itself.
-- Needs the **FULL** or **BULK_LOGGED** recovery model.
-- Set up with the **SSMS wizard** (database Properties → Transaction Log Shipping) or **T-SQL**. Three SQL Agent jobs do the work: **backup** (on primary), **copy** and **restore** (on secondary). An optional **monitor server** records history and raises alerts.
-- Take any extra log backups with **COPY_ONLY**, or you break the chain.
+- Protege **bancos de dados**. Leva **transaction log backups** no primário, **cópias**-los para um secundário, e **restaura**-los lá em uma programação.
+- Cria um **em standby quente** (uma cópia que está minutos atrás e pronta para trazer online).
+- **Somente Manual failover.** Alguma perda de dados é esperada, a menos que o failover seja planejado.
+- **Simples, barato, confiável.** Funciona mesmo em redes lentas ou não confiáveis.
+- Pode proteger um **FCI** em um site DR, porque um FCI não copia dados por si só.
+- Precisa do modelo de recuperação **FULL** ou **BULK_LOGGED**.
+- **assistente SSMS** (Propriedades de Banco de dados → Transaction Log Shipping) ou **T-SQL**. Três SQL Agent jobs fazem o trabalho: **backup** (no primário), **cópia** e **restaurar** (no secundário). Um **servidor monitor** opcional registra histórico e levanta alertas.
+- Pegue qualquer log extra backups com **COPY_ONLY**, ou você quebra a cadeia.
 
-Steps to configure:
-1. Set the database to **FULL** recovery and take a full backup.
-2. Create a **shared folder** for the log backups that the secondary can read.
-3. Start the wizard (or T-SQL) on the primary. Set the backup schedule and the backup folder.
-4. Add the secondary server. Choose how to initialise it (new full backup, existing backup, or already restored).
-5. Choose the restore mode on the secondary:
-   - **No recovery mode**: the database can't be read.
-   - **Standby mode**: read-only between restores. Users are disconnected during each restore.
-6. Optionally add a **monitor server**.
+Passos para configurar:
+1. Defina o banco de dados para recuperação **FULL** e pegue um full backup.
+2. Crie um **pasta compartilhada** para o log backups que o secundário possa ler.
+3. Inicie o assistente (ou T-SQL) no primário. Defina o cronograma backup e a pasta backup.
+4. Adicione o servidor secundário. Escolha como inicializá-lo (novo full backup, backup existente ou já restaurado).
+5. Escolha o modo de restauração no secundário:
+   - **Nenhum modo de recuperação**: o banco de dados não pode ser lido.
+   - **modo de espera**: read-only entre restaurações. Os usuários são desconectados durante cada restauração.
+6. Opcionalmente, adicione um **servidor monitor**.
 
-The T-SQL stored procedures start with `sp_add_log_shipping_` (for example `sp_add_log_shipping_primary_database` on the primary and `sp_add_log_shipping_secondary_database` on the secondary).
+Os procedimentos armazenados T-SQL começam com `sp_add_log_shipping_` (por exemplo, `sp_add_log_shipping_primary_database` no primário e `sp_add_log_shipping_secondary_database` no secundário).
 
-To **fail over**: take a **tail-log backup** of the primary if it is still reachable (`BACKUP LOG ... WITH NORECOVERY`), copy and restore all remaining logs on the secondary, then restore the last one `WITH RECOVERY`. Repoint the apps, because log shipping has **no listener**.
+To **falhar sobre**: tomar a **tail-log backup** do primário se ainda for alcançável (`BACKUP LOG ... WITH NORECOVERY`), copiar e restaurar todos os registros restantes no secundário, em seguida, restaurar o último `WITH RECOVERY`. Reaponte os aplicativos, porque log shipping tem **listener**.
 
-**Example:** A news site ships logs every 15 minutes to a VM in another region. If the main region fails, the DBA restores the last logs and brings the standby online.
+**Exemplo:** Um site de notícias envia logs a cada 15 minutos para um VM em outra região. Se a região principal falhar, o DBA restaura os últimos logs e traz o standby online.
 
 ## FCI vs AG vs log shipping
 | | FCI | AG | Log shipping |
 |---|---|---|---|
-| Protects | Whole instance | Databases | Databases |
-| Shared storage | Required | No | No |
-| Data copies | One | One per replica | One per secondary |
-| Automatic failover | Yes | Yes (sync replicas) | **No** |
-| Readable copy | No | Yes | Only in standby mode, between restores |
-| Complexity | High | Medium | Low |
-| Cost | Medium-high | High | Low |
+| Protectores | instância inteira | Bancos de dados | Bancos de dados |
+| Armazenamento compartilhado | Necessário | Não | Não |
+| Cópias de dados | Um | Um por réplica | Um por secundário |
+| Automatic failover | Sim | Sim (replicações sincronizadas) | **Não** |
+| Cópia legível | Não | Sim | Somente no modo de espera, entre restaurações |
+| Complexidade | Alta | Média | Baixa |
+| Custo | Médio-alto | Alta | Baixa |
 
-## Which VM solution when
-| Scenario | Solution |
+## Qual solução VM quando
+| Cenário | Solução |
 |---|---|
-| HA in one region | AG or FCI |
-| DR between Azure regions | AG across regions or distributed AG |
-| DR from on-premises to Azure | Distributed AG or log shipping (or MI link to SQL MI) |
-| Simple VM-level DR, many VMs | Azure Site Recovery |
-| Protect instance-level objects | FCI (or contained AG) |
-| Lowest-cost DR, manual work OK | Log shipping |
+| HA em uma região | AG ou FCI |
+| DR entre regiões do Azure | AG entre regiões ou AG distribuído |
+| DR de on-premises para Azure | AG ou log shipping distribuído (ou MI link para SQL MI) |
+| Simples VM - nível DR, muitos VMs | Azure Site Recovery |
+| Proteger objetos em nível de instância | FCI (ou contém AG) |
+| Mais barato DR, trabalho manual OK | Log shipping |
 
-## Hybrid HA/DR
-**Hybrid** means on-premises SQL Server plus Azure.
-- Uses for Azure: a **cloud DR site**, a **migration** staging area, **read replicas** for reports, and **cheap backup storage** in Blob Storage.
-- Mostly **IaaS**: the usual SQL features (AG, distributed AG, log shipping, FCI with log shipping) work across sites.
-- Needs **AD DS, DNS and WSFC** for AG-based designs.
-- **Network is the key.** Use **ExpressRoute** (private dedicated link, preferred) or **site-to-site VPN** (cheaper, slower). **Never** expose SQL VMs to the public internet.
-- PaaS can't join an on-premises AG or cluster. Exceptions:
-  - **Managed Instance link** (lesson 3): DR between SQL Server and SQL MI.
-  - **Transactional replication**: on-premises SQL Server (publisher) can push to SQL MI or SQL Database (subscriber). SQL MI can also be a publisher and push back to SQL Server. SQL Database can only be a subscriber.
-- Even with no hybrid DR, you can **back up on-premises databases to Azure Blob Storage** (see lesson 4).
+## Híbrido HA/DR
+**híbrido** significa on-premises SQL Server mais Azure.
+- Usos para Azure: um **nuvem DR site**, uma área de estadiamento **Migração**, **ler réplicas** para relatórios e **armazenamento barato backup** em Blob Storage.
+- Principalmente **IaaS**: as características usuais do SQL (AG, AG distribuído, log shipping, FCI com log shipping) funcionam em todos os sites.
+- Precisa de **AD DS, DNS e WSFC** para projetos baseados em AG.
+- **A rede é a chave.** Use **ExpressRoute** (link privado dedicado, preferido) ou **site-site VPN** (mais barato, mais lento). **Nunca** expor SQL VMs para a Internet pública.
+- PaaS não pode se juntar a um on-premises AG ou cluster. Exceções:
+  - **Managed Instance link** (lição 3): DR entre SQL Server e SQL MI.
+  - **Transactional replication**: on-premises SQL Server (editor) pode empurrar para SQL MI ou SQL Database (assinante). SQL MI também pode ser um editor e empurrar de volta para SQL Server. SQL Database só pode ser um assinante.
+- Mesmo sem híbrido DR, você pode **backup de bancos de dados on-premises para Azure Blob Storage** (ver lição 4).
 
-**Example:** A manufacturer keeps its primary AG replica in its own datacenter and an async secondary on an Azure VM, linked by ExpressRoute, with a cloud witness.
+**Exemplo:** Um fabricante mantém sua réplica AG primária em seu próprio datacenter e uma secundária assíncrona em uma Azure VM, ligada por ExpressRoute, com uma testemunha de nuvem.
 
-## Remember for the exam
+## Para lembrar na prova
 - Availability set = one datacenter. Zone = across datacenters. Site Recovery = across regions.
-- Sets and zones protect the **VM**, not SQL Server. You still need FCI/AG/log shipping.
-- ASR is **not SQL-aware**. Pick it for "simple DR for many VMs".
-- WSFC on Azure: **cloud witness**, **PowerShell** to create, IPs set **in Azure**.
-- FCI = whole instance + **shared storage** (shared disks, Premium file shares, S2D, Elastic SAN).
-- Multi-subnet = no load balancer. Single subnet = **DNN** (preferred) or VNN + **Standard** LB with **probe port** and **Floating IP**.
+- Conjuntos e zonas protegem o **VM**, não o SQL Server. Você ainda precisa do FCI / AG / log shipping.
+- ASR é **E SQL-aware**. Escolha-o para "simples DR para muitos VMs".
+- WSFC no Azure: **testemunha nuvem**, **PowerShell** para criar, IPs conjunto **em Azure**.
+- FCI = whole instance + **armazenamento compartilhado** (discos compartilhados, compartilhamentos de arquivos Premium, S2D, Elastic SAN).
+- Multi-subnet = no load balancer. Single subnet = **DNN** (preferido) ou VNN + **Padrão** LB com **porto da ponta de sonda** e **Floating IP**.
 - AG Standard edition = basic AG, 1 DB, 2 replicas. Enterprise = up to 9 replicas.
-- Log shipping = **manual failover**, cheapest, works on weak networks.
-- Hybrid: **ExpressRoute** preferred, never public internet.
+- Log shipping = **manual failover**mais barato, funciona em redes fracas.
+- Híbrido: **ExpressRoute** preferido, nunca internet pública.
 
-## Quick check
-1. Your VMs must survive a whole datacenter outage inside one region. What do you use?
-   <details><summary>Answer</summary>Availability zones. Availability sets only protect inside one datacenter.</details>
-2. An AG has both replicas in one subnet with a VNN listener. Apps can't reach the listener after failover. What do you check?
-   <details><summary>Answer</summary>The load balancer health probe: the probe port on the listener IP resource and Floating IP. Better: use a DNN or multi-subnet design.</details>
-3. You need cheap DR to another region and can accept manual failover and a few minutes of data loss. Which feature?
-   <details><summary>Answer</summary>Log shipping. It is simple and low cost but has no automatic failover.</details>
+## Teste rápido
+1. O seu VMs deve sobreviver a uma interrupção total do datacenter dentro de uma região. O que você usa?
+   <details><summary>Resposta</summary>Availability zones. Os conjuntos de disponibilidade protegem somente dentro de um datacenter.</details>
+2. O AG tem ambas as réplicas em uma sub-rede com um VNN listener. Os aplicativos não podem chegar ao listener após o failover. O que você verifica?
+   <details><summary>Resposta</summary>Sonda de saúde load balancer: a porta de sonda no recurso listener IP e Floating IP. Melhor: use um design DNN ou multi-subnet.</details>
+3. Você precisa de DR barato para outra região e pode aceitar manual failover e alguns minutos de perda de dados. Qual recurso?
+   <details><summary>Resposta</summary>Log shipping. É simples e de baixo custo, mas não tem automatic failover.</details>
